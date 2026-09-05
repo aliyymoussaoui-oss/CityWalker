@@ -53,9 +53,13 @@ le dit et continue de fonctionner sans les photos.
 
 ## Mettre la carte en ligne
 
-Le site est un site statique, sans build. Sur GitHub Pages :
-`Settings → Pages → Source: Deploy from a branch`, branche `main`, dossier `/`.
-L'adresse obtenue est celle à partager.
+Le site est statique : aucun serveur, aucune base de données, donc rien à
+dimensionner. Les étapes exactes sont dans **[DEPLOIEMENT.md](DEPLOIEMENT.md)** —
+Cloudflare Pages est l'option recommandée, elle fonctionne avec un dépôt privé.
+
+`python3 tools/build_single.py` produit en plus `dist/citywalker.html` :
+l'application entière dans un seul fichier de 237 Ko, qui s'ouvre même par
+double-clic, sans serveur.
 
 En local :
 

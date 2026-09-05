@@ -157,13 +157,28 @@
     }
   };
 
-  /** Téléchargement d'un Blob (repli : ouvre dans un nouvel onglet). */
-  CW.download = function download(blob, filename) {
+  /** Téléchargement d'un Blob.
+   *  Dans une page hébergée normalement, un lien <a download> suffit. Dans une
+   *  visionneuse qui bloque les téléchargements initiés par la page (artifact
+   *  Claude), on passe par la capacité `downloads` quand elle est accordée. */
+  CW.download = async function download(blob, filename) {
+    try {
+      if (window.claude && typeof window.claude.use === 'function') {
+        const downloads = await window.claude.use('downloads');
+        if (downloads && typeof downloads.save === 'function') {
+          await downloads.save({ filename, data: blob });
+          return true;
+        }
+      }
+    } catch (err) {
+      if (err && err.code === 'cancelled') return false;
+    }
     const url = URL.createObjectURL(blob);
     const a = CW.el('a', { href: url, download: filename, style: { display: 'none' } });
     document.body.appendChild(a);
     a.click();
     setTimeout(() => { a.remove(); URL.revokeObjectURL(url); }, 4000);
+    return true;
   };
 
   CW.readFileAsText = (file) => new Promise((resolve, reject) => {

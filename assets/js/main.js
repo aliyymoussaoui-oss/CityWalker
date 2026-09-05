@@ -28,7 +28,17 @@
 
   async function loadCity(id) {
     if (app.cities[id]) return app.cities[id];
-    const res = await fetch(`data/${id}.json`, { cache: 'no-cache' });
+    // Version « un seul fichier » : les données sont déjà dans la page.
+    if (window.CW_DATA && window.CW_DATA[id]) {
+      app.cities[id] = window.CW_DATA[id];
+      return app.cities[id];
+    }
+    let res;
+    try {
+      res = await fetch(`data/${id}.json`, { cache: 'no-cache' });
+    } catch (_) {
+      throw new Error("Les données n'ont pas pu être chargées. Ouvre la page via un serveur (http://) et non par double-clic sur le fichier.");
+    }
     if (!res.ok) throw new Error(`Impossible de charger la carte de ${id} (${res.status}).`);
     const data = await res.json();
     app.cities[id] = data;
@@ -37,10 +47,18 @@
 
   // ------------------------------------------------------------------ thème
 
+  // `data-theme` peut déjà être posé par l'hôte (ex. la visionneuse d'artifact) :
+  // on ne l'efface que si c'est nous qui l'avions posé.
+  let themeOwned = false;
   function applyTheme() {
     const t = app.settings.theme;
-    document.documentElement.dataset.theme = t === 'auto' ? '' : t;
-    if (t === 'auto') document.documentElement.removeAttribute('data-theme');
+    const root = document.documentElement;
+    if (t === 'auto') {
+      if (themeOwned) { root.removeAttribute('data-theme'); themeOwned = false; }
+    } else {
+      root.setAttribute('data-theme', t);
+      themeOwned = true;
+    }
   }
   function cycleTheme() {
     const order = ['auto', 'light', 'dark'];
@@ -485,8 +503,8 @@
           try {
             const bundle = await CW.exportBundle(CW.CITY_ORDER, (n) => { btn.textContent = `Préparation… ${n} photos`; });
             const blob = new Blob([JSON.stringify(bundle)], { type: 'application/json' });
-            CW.download(blob, `citywalker-${CW.todayISO()}.json`);
-            CW.toast(`Sauvegarde exportée (${CW.fmtBytes(blob.size)}).`);
+            const saved = await CW.download(blob, `citywalker-${CW.todayISO()}.json`);
+            if (saved) CW.toast(`Sauvegarde exportée (${CW.fmtBytes(blob.size)}).`);
           } catch (err) {
             CW.toast('Export impossible : ' + (err && err.message ? err.message : 'erreur inconnue'), 'error');
           } finally { btn.disabled = false; btn.textContent = 'Exporter'; }
