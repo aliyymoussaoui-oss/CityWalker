@@ -1,12 +1,14 @@
-# Publie le site sur GitHub Pages à chaque poussée sur `public`.
+# Publie le site sur GitHub Pages.
 #
-# Pages doit être activé une fois dans Settings → Pages → Source: GitHub Actions.
+# L'environnement `github-pages` n'accepte, par défaut, que des déploiements
+# venant de la branche par défaut du dépôt : le workflow écoute donc les deux
+# branches, et c'est la poussée sur la branche par défaut qui déploie vraiment.
 # Seuls les fichiers du site sont publiés : ni outils, ni tests, ni fixtures.
 name: Publier sur GitHub Pages
 
 on:
   push:
-    branches: [public]
+    branches: [public, claude/paris-montpellier-photo-maps-7nh7q2]
   workflow_dispatch:
 
 permissions:
