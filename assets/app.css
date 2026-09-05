@@ -422,6 +422,7 @@ a { color: var(--accent); }
 .star.is-on { color: var(--accent); }
 
 .photo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 6px; margin-bottom: 8px; }
+.photo-grid .empty { grid-column: 1 / -1; text-align: left; }
 .photo { position: relative; margin: 0; border-radius: var(--radius-sm); overflow: hidden; background: var(--surface-2); aspect-ratio: 4 / 3; }
 .photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .photo-del, .photo-open {
