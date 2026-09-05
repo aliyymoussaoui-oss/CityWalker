@@ -1,0 +1,850 @@
+{
+ "city": "montpellier",
+ "note": "Liste curatée. `zone` est une attente vérifiée au build par point-dans-polygone ; `sub` est le sous-quartier affiché.",
+ "spots": [
+  {
+   "id": "place-comedie",
+   "name": "Place de la Comédie",
+   "cat": "place",
+   "zone": "centre",
+   "sub": "Comédie",
+   "query": "Place de la Comédie, Montpellier",
+   "best": [
+    "nuit",
+    "jour"
+   ],
+   "tip": "Le « grand œuf » : monte sur les marches de l'Opéra pour cadrer la fontaine des Trois Grâces."
+  },
+  {
+   "id": "opera-comedie",
+   "name": "Opéra Comédie",
+   "cat": "monument",
+   "zone": "centre",
+   "sub": "Comédie",
+   "query": "Opéra Comédie, Montpellier",
+   "best": [
+    "nuit"
+   ]
+  },
+  {
+   "id": "esplanade-degaulle",
+   "name": "Esplanade Charles-de-Gaulle",
+   "cat": "parc",
+   "zone": "centre",
+   "sub": "Comédie",
+   "query": "Esplanade Charles-de-Gaulle, Montpellier",
+   "best": [
+    "automne"
+   ]
+  },
+  {
+   "id": "corum",
+   "name": "Le Corum",
+   "cat": "monument",
+   "zone": "centre",
+   "sub": "Comédie",
+   "query": "Le Corum, Montpellier",
+   "best": [
+    "sunset"
+   ],
+   "tip": "Le toit-terrasse est ouvert : panorama sur l'Écusson et, par temps clair, le Pic Saint-Loup."
+  },
+  {
+   "id": "musee-fabre",
+   "name": "Musée Fabre",
+   "cat": "musee",
+   "zone": "centre",
+   "sub": "Comédie",
+   "query": "Musée Fabre, Montpellier"
+  },
+  {
+   "id": "pavillon-populaire",
+   "name": "Pavillon Populaire (photographie)",
+   "cat": "culture",
+   "zone": "centre",
+   "sub": "Comédie",
+   "query": "Pavillon Populaire, Montpellier",
+   "tip": "Centre d'art dédié à la photo, entrée libre — le repère des photographes montpelliérains."
+  },
+  {
+   "id": "carre-sainte-anne",
+   "name": "Carré Sainte-Anne",
+   "cat": "culture",
+   "zone": "centre",
+   "sub": "Écusson",
+   "query": "Carré Sainte-Anne, Montpellier",
+   "best": [
+    "jour"
+   ]
+  },
+  {
+   "id": "place-canourgue",
+   "name": "Place de la Canourgue",
+   "cat": "place",
+   "zone": "centre",
+   "sub": "Écusson",
+   "query": "Place de la Canourgue, Montpellier",
+   "best": [
+    "sunset"
+   ],
+   "tip": "Le belvédère derrière la fontaine aux Licornes cadre la cathédrale."
+  },
+  {
+   "id": "cathedrale-saint-pierre",
+   "name": "Cathédrale Saint-Pierre",
+   "cat": "eglise",
+   "zone": "centre",
+   "sub": "Écusson",
+   "query": "Cathédrale Saint-Pierre, Montpellier",
+   "best": [
+    "nuit",
+    "jour"
+   ],
+   "tip": "Les deux tours-porches en forme de fusée : recule jusqu'à la rue de l'École de Médecine."
+  },
+  {
+   "id": "faculte-medecine",
+   "name": "Faculté de Médecine",
+   "cat": "monument",
+   "zone": "centre",
+   "sub": "Écusson",
+   "query": "Faculté de médecine de Montpellier",
+   "tip": "La plus ancienne faculté de médecine du monde encore en activité (1220).",
+   "lat": 43.612856,
+   "lon": 3.87425
+  },
+  {
+   "id": "jardin-des-plantes",
+   "name": "Jardin des Plantes",
+   "cat": "parc",
+   "zone": "centre",
+   "sub": "Écusson",
+   "query": "Jardin des plantes de Montpellier",
+   "best": [
+    "printemps",
+    "automne"
+   ],
+   "tip": "Plus ancien jardin botanique de France (1593) : la serre Martins et le bassin aux bambous."
+  },
+  {
+   "id": "promenade-peyrou",
+   "name": "Promenade du Peyrou",
+   "cat": "vue",
+   "zone": "centre",
+   "sub": "Peyrou",
+   "query": "Promenade du Peyrou, Montpellier",
+   "best": [
+    "sunset"
+   ],
+   "tip": "LE coucher de soleil de Montpellier : terrasse plein ouest au-dessus des Arceaux."
+  },
+  {
+   "id": "arc-de-triomphe",
+   "name": "Arc de Triomphe – Porte du Peyrou",
+   "cat": "monument",
+   "zone": "centre",
+   "sub": "Peyrou",
+   "query": "Arc de Triomphe, Montpellier",
+   "best": [
+    "sunset",
+    "nuit"
+   ]
+  },
+  {
+   "id": "chateau-eau-peyrou",
+   "name": "Château d'eau du Peyrou",
+   "cat": "monument",
+   "zone": "centre",
+   "sub": "Peyrou",
+   "query": "Château d'eau du Peyrou, Montpellier",
+   "best": [
+    "sunset"
+   ]
+  },
+  {
+   "id": "aqueduc-saint-clement",
+   "name": "Aqueduc Saint-Clément (les Arceaux)",
+   "cat": "monument",
+   "zone": "centre",
+   "sub": "Les Arceaux",
+   "query": "Boulevard des Arceaux, Montpellier",
+   "best": [
+    "sunset",
+    "nuit"
+   ],
+   "tip": "Les arches en enfilade : place-toi dans l'axe depuis le bas des Arceaux, en fin de journée."
+  },
+  {
+   "id": "marche-arceaux",
+   "name": "Marché des Arceaux",
+   "cat": "marche",
+   "zone": "centre",
+   "sub": "Les Arceaux",
+   "query": "Marché des Arceaux, Montpellier",
+   "best": [
+    "jour"
+   ],
+   "tip": "Mardi et samedi matin, sous les arches de l'aqueduc."
+  },
+  {
+   "id": "tour-babote",
+   "name": "Tour de la Babote",
+   "cat": "monument",
+   "zone": "centre",
+   "sub": "Écusson",
+   "query": "Tour de la Babote, Montpellier"
+  },
+  {
+   "id": "tour-des-pins",
+   "name": "Tour des Pins",
+   "cat": "monument",
+   "zone": "centre",
+   "sub": "Écusson",
+   "query": "Tour des Pins, Montpellier"
+  },
+  {
+   "id": "mikve",
+   "name": "Le Mikvé médiéval",
+   "cat": "insolite",
+   "zone": "centre",
+   "sub": "Écusson",
+   "query": "Mikvé, Montpellier",
+   "tip": "Bain rituel juif du XIIe siècle, l'un des mieux conservés d'Europe — visite guidée seulement."
+  },
+  {
+   "id": "hotel-varennes",
+   "name": "Hôtel de Varennes",
+   "cat": "monument",
+   "zone": "centre",
+   "sub": "Écusson",
+   "query": "Hôtel de Varennes, Montpellier"
+  },
+  {
+   "id": "hotel-saint-come",
+   "name": "Hôtel Saint-Côme",
+   "cat": "monument",
+   "zone": "centre",
+   "sub": "Écusson",
+   "query": "Hôtel Saint-Côme, Montpellier"
+  },
+  {
+   "id": "rue-ancien-courrier",
+   "name": "Rue de l'Ancien Courrier",
+   "cat": "rue",
+   "zone": "centre",
+   "sub": "Écusson",
+   "query": "Rue de l'Ancien Courrier, Montpellier",
+   "best": [
+    "jour"
+   ]
+  },
+  {
+   "id": "rue-bras-de-fer",
+   "name": "Rue du Bras de Fer",
+   "cat": "rue",
+   "zone": "centre",
+   "sub": "Écusson",
+   "query": "Rue du Bras de Fer, Montpellier",
+   "tip": "La ruelle voûtée la plus photogénique de l'Écusson."
+  },
+  {
+   "id": "place-saint-ravy",
+   "name": "Place Saint-Ravy",
+   "cat": "place",
+   "zone": "centre",
+   "sub": "Écusson",
+   "query": "Place Saint-Ravy, Montpellier"
+  },
+  {
+   "id": "marche-aux-fleurs",
+   "name": "Place du Marché aux Fleurs",
+   "cat": "place",
+   "zone": "centre",
+   "sub": "Écusson",
+   "query": "Place du Marché aux Fleurs, Montpellier"
+  },
+  {
+   "id": "chapelle-neuve",
+   "name": "Place de la Chapelle Neuve",
+   "cat": "place",
+   "zone": "centre",
+   "sub": "Écusson",
+   "query": "Place de la Chapelle Neuve, Montpellier",
+   "best": [
+    "automne"
+   ]
+  },
+  {
+   "id": "place-jean-jaures",
+   "name": "Place Jean-Jaurès",
+   "cat": "place",
+   "zone": "centre",
+   "sub": "Écusson",
+   "query": "Place Jean Jaurès, Montpellier",
+   "best": [
+    "nuit"
+   ]
+  },
+  {
+   "id": "notre-dame-des-tables",
+   "name": "Basilique Notre-Dame-des-Tables",
+   "cat": "eglise",
+   "zone": "centre",
+   "sub": "Écusson",
+   "query": "Basilique Notre-Dame des Tables, Montpellier",
+   "lat": 43.612034,
+   "lon": 3.879569
+  },
+  {
+   "id": "eglise-saint-roch",
+   "name": "Église Saint-Roch",
+   "cat": "eglise",
+   "zone": "centre",
+   "sub": "Saint-Roch",
+   "query": "Église Saint-Roch, Montpellier"
+  },
+  {
+   "id": "halles-castellane",
+   "name": "Halles Castellane",
+   "cat": "marche",
+   "zone": "centre",
+   "sub": "Écusson",
+   "query": "Halles Castellane, Montpellier",
+   "best": [
+    "jour"
+   ]
+  },
+  {
+   "id": "halles-laissac",
+   "name": "Halles Laissac",
+   "cat": "marche",
+   "zone": "centre",
+   "sub": "Saint-Roch",
+   "query": "Halles Laissac, Montpellier"
+  },
+  {
+   "id": "gare-saint-roch",
+   "name": "Gare de Montpellier-Saint-Roch",
+   "cat": "monument",
+   "zone": "centre",
+   "sub": "Saint-Roch",
+   "query": "Gare de Montpellier-Saint-Roch"
+  },
+  {
+   "id": "rue-foch",
+   "name": "Rue Foch",
+   "cat": "rue",
+   "zone": "centre",
+   "sub": "Écusson",
+   "query": "Rue Foch, Montpellier",
+   "best": [
+    "sunset"
+   ]
+  },
+  {
+   "id": "place-albert-1er",
+   "name": "Place Albert 1er & le Peyrou",
+   "cat": "place",
+   "zone": "centre",
+   "sub": "Écusson",
+   "query": "Place Albert 1er, Montpellier"
+  },
+  {
+   "id": "parc-guirlande",
+   "name": "Parc de la Guirlande",
+   "cat": "parc",
+   "zone": "centre",
+   "sub": "Figuerolles",
+   "query": "Parc de la Guirlande, Montpellier",
+   "best": [
+    "automne"
+   ]
+  },
+  {
+   "id": "place-nombre-dor",
+   "name": "Place du Nombre d'Or",
+   "cat": "place",
+   "zone": "centre",
+   "sub": "Antigone",
+   "query": "Place du Nombre d'Or, Montpellier",
+   "best": [
+    "jour"
+   ],
+   "tip": "Le néo-classique de Ricardo Bofill : symétrie parfaite, cadre bien centré."
+  },
+  {
+   "id": "place-millenaire",
+   "name": "Place du Millénaire",
+   "cat": "place",
+   "zone": "centre",
+   "sub": "Antigone",
+   "query": "Place du Millénaire, Montpellier"
+  },
+  {
+   "id": "esplanade-europe",
+   "name": "Esplanade de l'Europe",
+   "cat": "place",
+   "zone": "centre",
+   "sub": "Antigone",
+   "query": "Esplanade de l'Europe, Montpellier",
+   "best": [
+    "sunset"
+   ],
+   "tip": "L'axe Antigone finit ici, face au Lez : le soleil descend pile dans la perspective."
+  },
+  {
+   "id": "mediatheque-zola",
+   "name": "Médiathèque Émile Zola",
+   "cat": "monument",
+   "zone": "centre",
+   "sub": "Antigone",
+   "query": "Médiathèque Émile Zola, Montpellier"
+  },
+  {
+   "id": "piscine-antigone",
+   "name": "Piscine olympique d'Antigone (Angelotti)",
+   "cat": "monument",
+   "zone": "centre",
+   "sub": "Antigone",
+   "query": "Piscine Antigone, Montpellier"
+  },
+  {
+   "id": "place-zeus",
+   "name": "Place de Zeus & bassin",
+   "cat": "place",
+   "zone": "centre",
+   "sub": "Antigone",
+   "query": "Place de Zeus, Montpellier",
+   "best": [
+    "nuit"
+   ]
+  },
+  {
+   "id": "place-beaux-arts",
+   "name": "Place des Beaux-Arts",
+   "cat": "place",
+   "zone": "centre",
+   "sub": "Beaux-Arts",
+   "query": "Place des Beaux-Arts, Montpellier",
+   "best": [
+    "jour"
+   ],
+   "tip": "Le quartier village de Montpellier : terrasses, façades ocre, marché le dimanche."
+  },
+  {
+   "id": "quartier-boutonnet",
+   "name": "Quartier Boutonnet",
+   "cat": "quartier",
+   "zone": "centre",
+   "sub": "Boutonnet",
+   "query": "Boutonnet, Montpellier"
+  },
+  {
+   "id": "quartier-figuerolles",
+   "name": "Quartier Figuerolles",
+   "cat": "quartier",
+   "zone": "centre",
+   "sub": "Figuerolles",
+   "query": "Figuerolles, Montpellier",
+   "best": [
+    "jour"
+   ]
+  },
+  {
+   "id": "la-panacee",
+   "name": "MO.CO Panacée",
+   "cat": "culture",
+   "zone": "centre",
+   "sub": "Écusson",
+   "query": "La Panacée, Montpellier"
+  },
+  {
+   "id": "moco",
+   "name": "MO.CO Hôtel des Collections",
+   "cat": "culture",
+   "zone": "centre",
+   "sub": "Boutonnet",
+   "query": "MO.CO Hôtel des collections, Montpellier"
+  },
+  {
+   "id": "chateau-levat",
+   "name": "Château Levat (MO.CO)",
+   "cat": "monument",
+   "zone": "centre",
+   "sub": "Les Aubes",
+   "query": "Château Levat, Montpellier"
+  },
+  {
+   "id": "berges-du-lez",
+   "name": "Les berges du Lez",
+   "cat": "eau",
+   "zone": "hopitaux-facultes",
+   "sub": "Lavalette",
+   "query": "Berges du Lez, Montpellier",
+   "best": [
+    "sunrise",
+    "automne"
+   ]
+  },
+  {
+   "id": "verdanson",
+   "name": "Le Verdanson",
+   "cat": "eau",
+   "zone": "centre",
+   "sub": "Boutonnet",
+   "query": "Verdanson, Montpellier",
+   "best": [
+    "jour"
+   ],
+   "tip": "Ruisseau canalisé couvert de fresques : le plus long spot street art de la ville."
+  },
+  {
+   "id": "cimetiere-saint-lazare",
+   "name": "Cimetière Saint-Lazare",
+   "cat": "insolite",
+   "zone": "hopitaux-facultes",
+   "sub": "Saint-Lazare",
+   "query": "Cimetière Saint-Lazare, Montpellier",
+   "best": [
+    "automne"
+   ]
+  },
+  {
+   "id": "halle-tropisme",
+   "name": "Halle Tropisme",
+   "cat": "culture",
+   "zone": "croix-d-argent",
+   "sub": "Nouveau Saint-Roch",
+   "query": "Halle Tropisme, Montpellier",
+   "best": [
+    "nuit"
+   ]
+  },
+  {
+   "id": "marche-du-lez",
+   "name": "Le Marché du Lez",
+   "cat": "culture",
+   "zone": "port-marianne",
+   "sub": "Cambacérès",
+   "query": "Marché du Lez, Montpellier",
+   "best": [
+    "sunset",
+    "nuit"
+   ]
+  },
+  {
+   "id": "hotel-de-ville",
+   "name": "Hôtel de Ville (Jean Nouvel)",
+   "cat": "monument",
+   "zone": "pres-d-arenes",
+   "sub": "Rive gauche",
+   "query": "Hôtel de Ville de Montpellier",
+   "best": [
+    "nuit"
+   ],
+   "tip": "Le cube bleu se reflète dans le bassin : cadre-le depuis la rive opposée du Lez."
+  },
+  {
+   "id": "bassin-jacques-coeur",
+   "name": "Bassin Jacques Cœur",
+   "cat": "eau",
+   "zone": "port-marianne",
+   "sub": "Port Marianne",
+   "query": "Bassin Jacques Cœur, Montpellier",
+   "best": [
+    "sunset",
+    "nuit"
+   ]
+  },
+  {
+   "id": "arbre-blanc",
+   "name": "L'Arbre Blanc",
+   "cat": "monument",
+   "zone": "port-marianne",
+   "sub": "Richter",
+   "query": "L'Arbre Blanc, Montpellier",
+   "best": [
+    "sunset",
+    "nuit"
+   ],
+   "tip": "Le rooftop du 17e est un bar public : la meilleure vue moderne sur Montpellier.",
+   "lat": 43.606088,
+   "lon": 3.899213
+  },
+  {
+   "id": "le-nuage",
+   "name": "Le Nuage (Philippe Starck)",
+   "cat": "monument",
+   "zone": "port-marianne",
+   "sub": "Port Marianne",
+   "query": "Le Nuage, Montpellier"
+  },
+  {
+   "id": "parc-charpak",
+   "name": "Parc Georges Charpak",
+   "cat": "parc",
+   "zone": "port-marianne",
+   "sub": "Port Marianne",
+   "query": "Parc Georges Charpak, Montpellier"
+  },
+  {
+   "id": "place-christophe-colomb",
+   "name": "Place Christophe Colomb",
+   "cat": "place",
+   "zone": "port-marianne",
+   "sub": "Port Marianne",
+   "query": "Place Christophe Colomb, Montpellier"
+  },
+  {
+   "id": "odysseum",
+   "name": "Odysseum",
+   "cat": "quartier",
+   "zone": "port-marianne",
+   "sub": "Odysseum",
+   "query": "Odysseum, Montpellier"
+  },
+  {
+   "id": "planet-ocean",
+   "name": "Planet Ocean Montpellier",
+   "cat": "musee",
+   "zone": "port-marianne",
+   "sub": "Odysseum",
+   "query": "Planet Ocean Montpellier"
+  },
+  {
+   "id": "chateau-flaugergues",
+   "name": "Château de Flaugergues",
+   "cat": "monument",
+   "zone": "port-marianne",
+   "sub": "Millénaire",
+   "query": "Château de Flaugergues, Montpellier",
+   "best": [
+    "printemps"
+   ]
+  },
+  {
+   "id": "chateau-mogere",
+   "name": "Château de la Mogère",
+   "cat": "monument",
+   "zone": "port-marianne",
+   "sub": "Millénaire",
+   "query": "Château de la Mogère, Montpellier"
+  },
+  {
+   "id": "domaine-grammont",
+   "name": "Domaine de Grammont",
+   "cat": "parc",
+   "zone": "port-marianne",
+   "sub": "Grammont",
+   "query": "Domaine de Grammont, Montpellier",
+   "best": [
+    "sunrise",
+    "automne"
+   ]
+  },
+  {
+   "id": "parc-rimbaud",
+   "name": "Parc Rimbaud",
+   "cat": "parc",
+   "zone": "centre",
+   "sub": "Aiguelongue",
+   "query": "Parc Rimbaud, Montpellier",
+   "best": [
+    "automne"
+   ]
+  },
+  {
+   "id": "domaine-meric",
+   "name": "Domaine de Méric",
+   "cat": "parc",
+   "zone": "hopitaux-facultes",
+   "sub": "Aiguelongue",
+   "query": "Domaine de Méric, Montpellier",
+   "best": [
+    "sunset",
+    "automne"
+   ],
+   "tip": "Le domaine peint par Bazille, au-dessus du Lez : oliviers et lumière rase."
+  },
+  {
+   "id": "zoo-lunaret",
+   "name": "Parc zoologique de Lunaret",
+   "cat": "parc",
+   "zone": "hopitaux-facultes",
+   "sub": "Malbosc",
+   "query": "Parc zoologique de Montpellier",
+   "best": [
+    "jour"
+   ]
+  },
+  {
+   "id": "serre-amazonienne",
+   "name": "Serre amazonienne",
+   "cat": "musee",
+   "zone": "hopitaux-facultes",
+   "sub": "Malbosc",
+   "query": "Serre amazonienne, Montpellier"
+  },
+  {
+   "id": "chateau-do",
+   "name": "Château d'Ô",
+   "cat": "monument",
+   "zone": "hopitaux-facultes",
+   "sub": "Château d'Ô",
+   "query": "Château d'O, Montpellier",
+   "best": [
+    "printemps"
+   ]
+  },
+  {
+   "id": "agropolis",
+   "name": "Musée Agropolis",
+   "cat": "musee",
+   "zone": "hopitaux-facultes",
+   "sub": "Hôpitaux-Facultés",
+   "query": "Agropolis Museum, Montpellier"
+  },
+  {
+   "id": "parc-montcalm",
+   "name": "Parc Montcalm",
+   "cat": "parc",
+   "zone": "croix-d-argent",
+   "sub": "Montcalm",
+   "query": "Parc Montcalm, Montpellier",
+   "best": [
+    "sunrise",
+    "automne"
+   ]
+  },
+  {
+   "id": "parc-tastavin",
+   "name": "Parc Tastavin",
+   "cat": "parc",
+   "zone": "croix-d-argent",
+   "sub": "Estanove",
+   "query": "Parc Tastavin, Montpellier"
+  },
+  {
+   "id": "pierresvives",
+   "name": "Pierresvives (Zaha Hadid)",
+   "cat": "monument",
+   "zone": "mosson",
+   "sub": "Malbosc",
+   "query": "Pierresvives, Montpellier",
+   "best": [
+    "jour"
+   ],
+   "tip": "Le béton en vagues de Zaha Hadid : cherche les contre-plongées en lumière dure."
+  },
+  {
+   "id": "parc-malbosc",
+   "name": "Parc de Malbosc",
+   "cat": "parc",
+   "zone": "mosson",
+   "sub": "Malbosc",
+   "query": "Parc de Malbosc, Montpellier"
+  },
+  {
+   "id": "stade-mosson",
+   "name": "Stade de la Mosson",
+   "cat": "monument",
+   "zone": "mosson",
+   "sub": "La Paillade",
+   "query": "Stade de la Mosson, Montpellier"
+  },
+  {
+   "id": "parc-sophie-desmarets",
+   "name": "Parc Sophie Desmarets",
+   "cat": "parc",
+   "zone": "mosson",
+   "sub": "La Paillade",
+   "query": "Parc Sophie Desmarets, Montpellier"
+  },
+  {
+   "id": "parc-font-colombe",
+   "name": "Parc Font-Colombe",
+   "cat": "parc",
+   "zone": "croix-d-argent",
+   "sub": "Alco",
+   "query": "Parc Font Colombe, Montpellier"
+  },
+  {
+   "id": "chateau-bionne",
+   "name": "Château de Bionne",
+   "cat": "monument",
+   "zone": "les-cevennes",
+   "sub": "Alco",
+   "query": "Château de Bionne, Montpellier"
+  },
+  {
+   "id": "parc-rauze",
+   "name": "Parc de la Rauze",
+   "cat": "parc",
+   "zone": "pres-d-arenes",
+   "sub": "Aiguerelles",
+   "query": "Parc de la Rauze, Montpellier",
+   "best": [
+    "printemps"
+   ]
+  },
+  {
+   "id": "eglise-sainte-therese",
+   "name": "Église Sainte-Thérèse",
+   "cat": "eglise",
+   "zone": "centre",
+   "sub": "Les Aubes",
+   "query": "Église Sainte-Thérèse, Montpellier"
+  },
+  {
+   "id": "place-salengro",
+   "name": "Place Roger Salengro",
+   "cat": "place",
+   "zone": "centre",
+   "sub": "Gares",
+   "query": "Place Roger Salengro, Montpellier"
+  },
+  {
+   "id": "jardin-champ-de-mars",
+   "name": "Jardins du Champ de Mars",
+   "cat": "parc",
+   "zone": "centre",
+   "sub": "Comédie",
+   "query": "Jardins du Champ de Mars, Montpellier"
+  },
+  {
+   "id": "rue-saint-guilhem",
+   "name": "Rue Saint-Guilhem",
+   "cat": "rue",
+   "zone": "centre",
+   "sub": "Écusson",
+   "query": "Rue Saint-Guilhem, Montpellier"
+  },
+  {
+   "id": "place-saint-come",
+   "name": "Place Saint-Côme",
+   "cat": "place",
+   "zone": "centre",
+   "sub": "Écusson",
+   "query": "Place Saint-Côme, Montpellier"
+  },
+  {
+   "id": "quartier-aubes",
+   "name": "Quartier Les Aubes",
+   "cat": "quartier",
+   "zone": "centre",
+   "sub": "Les Aubes",
+   "query": "Les Aubes, Montpellier"
+  },
+  {
+   "id": "pont-juvenal",
+   "name": "Pont Juvénal & le Lez",
+   "cat": "pont",
+   "zone": "port-marianne",
+   "sub": "Port Marianne",
+   "query": "Pont Juvénal, Montpellier",
+   "best": [
+    "sunset"
+   ]
+  }
+ ]
+}

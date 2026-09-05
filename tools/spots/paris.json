@@ -1,0 +1,1391 @@
+{
+ "city": "paris",
+ "note": "Liste curatée. `query` sert au géocodage Nominatim, `zone` à la vérification (arrondissement attendu).",
+ "spots": [
+  {
+   "id": "louvre",
+   "name": "Musée du Louvre & Pyramide",
+   "cat": "musee",
+   "zone": "01",
+   "query": "Pyramide du Louvre, Paris",
+   "best": [
+    "nuit",
+    "sunset"
+   ],
+   "tip": "La pyramide se reflète dans les bassins : viens au bleu du soir, juste après le coucher."
+  },
+  {
+   "id": "tuileries",
+   "name": "Jardin des Tuileries",
+   "cat": "parc",
+   "zone": "01",
+   "query": "Jardin des Tuileries, Paris",
+   "best": [
+    "sunset",
+    "automne"
+   ],
+   "tip": "L'axe historique plein ouest : le soleil se couche pile dans l'allée centrale."
+  },
+  {
+   "id": "palais-royal",
+   "name": "Colonnes de Buren, Palais-Royal",
+   "cat": "monument",
+   "zone": "01",
+   "query": "Colonnes de Buren, Paris",
+   "best": [
+    "jour",
+    "pluie"
+   ],
+   "tip": "Après la pluie, les colonnes se reflètent dans les flaques."
+  },
+  {
+   "id": "place-vendome",
+   "name": "Place Vendôme",
+   "cat": "place",
+   "zone": "01",
+   "query": "Place Vendôme, Paris",
+   "best": [
+    "nuit"
+   ]
+  },
+  {
+   "id": "pont-neuf",
+   "name": "Pont Neuf",
+   "cat": "pont",
+   "zone": "01",
+   "query": "Pont Neuf, Paris",
+   "best": [
+    "sunrise",
+    "sunset"
+   ]
+  },
+  {
+   "id": "vert-galant",
+   "name": "Square du Vert-Galant",
+   "cat": "vue",
+   "zone": "01",
+   "query": "Square du Vert-Galant, Paris",
+   "best": [
+    "sunset"
+   ],
+   "tip": "La pointe de l'île de la Cité, au ras de l'eau : le meilleur coucher de soleil sur la Seine."
+  },
+  {
+   "id": "sainte-chapelle",
+   "name": "Sainte-Chapelle",
+   "cat": "eglise",
+   "zone": "01",
+   "query": "Sainte-Chapelle, Paris",
+   "best": [
+    "jour"
+   ],
+   "tip": "Vitraux plein sud : lumière maximale entre 11h et 15h."
+  },
+  {
+   "id": "conciergerie",
+   "name": "La Conciergerie",
+   "cat": "monument",
+   "zone": "01",
+   "query": "Conciergerie, Paris",
+   "best": [
+    "nuit"
+   ]
+  },
+  {
+   "id": "saint-eustache",
+   "name": "Église Saint-Eustache",
+   "cat": "eglise",
+   "zone": "01",
+   "query": "Église Saint-Eustache, Paris"
+  },
+  {
+   "id": "bourse-commerce",
+   "name": "Bourse de Commerce – Pinault Collection",
+   "cat": "musee",
+   "zone": "01",
+   "query": "Bourse de Commerce, Paris",
+   "best": [
+    "jour"
+   ]
+  },
+  {
+   "id": "place-dauphine",
+   "name": "Place Dauphine",
+   "cat": "place",
+   "zone": "01",
+   "query": "Place Dauphine, Paris",
+   "best": [
+    "automne"
+   ]
+  },
+  {
+   "id": "vero-dodat",
+   "name": "Galerie Véro-Dodat",
+   "cat": "passage",
+   "zone": "01",
+   "query": "Galerie Véro-Dodat, Paris",
+   "best": [
+    "pluie"
+   ]
+  },
+  {
+   "id": "galerie-vivienne",
+   "name": "Galerie Vivienne",
+   "cat": "passage",
+   "zone": "02",
+   "query": "Galerie Vivienne, Paris",
+   "best": [
+    "pluie"
+   ],
+   "tip": "Mosaïques au sol + verrière : le jour de pluie idéal."
+  },
+  {
+   "id": "passage-panoramas",
+   "name": "Passage des Panoramas",
+   "cat": "passage",
+   "zone": "02",
+   "query": "Passage des Panoramas, Paris",
+   "best": [
+    "pluie",
+    "nuit"
+   ]
+  },
+  {
+   "id": "passage-grand-cerf",
+   "name": "Passage du Grand-Cerf",
+   "cat": "passage",
+   "zone": "02",
+   "query": "Passage du Grand Cerf, Paris",
+   "best": [
+    "pluie"
+   ]
+  },
+  {
+   "id": "montorgueil",
+   "name": "Rue Montorgueil",
+   "cat": "rue",
+   "zone": "01",
+   "query": "Rue Montorgueil, Paris",
+   "best": [
+    "jour"
+   ]
+  },
+  {
+   "id": "richelieu",
+   "name": "BnF Richelieu – salle Labrouste",
+   "cat": "insolite",
+   "zone": "02",
+   "query": "Bibliothèque nationale de France Richelieu, Paris",
+   "best": [
+    "jour"
+   ]
+  },
+  {
+   "id": "place-victoires",
+   "name": "Place des Victoires",
+   "cat": "place",
+   "zone": "01",
+   "query": "Place des Victoires, Paris"
+  },
+  {
+   "id": "musee-picasso",
+   "name": "Musée Picasso",
+   "cat": "musee",
+   "zone": "03",
+   "query": "Musée Picasso, Paris"
+  },
+  {
+   "id": "carnavalet",
+   "name": "Musée Carnavalet",
+   "cat": "musee",
+   "zone": "03",
+   "query": "Musée Carnavalet, Paris"
+  },
+  {
+   "id": "enfants-rouges",
+   "name": "Marché des Enfants Rouges",
+   "cat": "marche",
+   "zone": "03",
+   "query": "Marché des Enfants Rouges, Paris",
+   "best": [
+    "jour"
+   ]
+  },
+  {
+   "id": "rue-bretagne",
+   "name": "Rue de Bretagne",
+   "cat": "rue",
+   "zone": "03",
+   "query": "Rue de Bretagne, Paris"
+  },
+  {
+   "id": "archives-soubise",
+   "name": "Hôtel de Soubise – Archives nationales",
+   "cat": "monument",
+   "zone": "03",
+   "query": "Hôtel de Soubise, Paris"
+  },
+  {
+   "id": "square-temple",
+   "name": "Square du Temple – Elie Wiesel",
+   "cat": "parc",
+   "zone": "03",
+   "query": "Square du Temple - Elie Wiesel, Paris",
+   "best": [
+    "automne"
+   ]
+  },
+  {
+   "id": "notre-dame",
+   "name": "Notre-Dame de Paris",
+   "cat": "eglise",
+   "zone": "04",
+   "query": "Cathédrale Notre-Dame de Paris",
+   "best": [
+    "sunrise",
+    "nuit"
+   ],
+   "tip": "Depuis le square Jean-XXIII à l'arrière : l'abside et les arcs-boutants au lever du jour."
+  },
+  {
+   "id": "place-vosges",
+   "name": "Place des Vosges",
+   "cat": "place",
+   "zone": "04",
+   "query": "Place des Vosges, Paris",
+   "best": [
+    "automne",
+    "jour"
+   ]
+  },
+  {
+   "id": "hotel-de-ville",
+   "name": "Hôtel de Ville",
+   "cat": "monument",
+   "zone": "04",
+   "query": "Hôtel de Ville, Paris",
+   "best": [
+    "nuit"
+   ]
+  },
+  {
+   "id": "pompidou",
+   "name": "Centre Pompidou",
+   "cat": "musee",
+   "zone": "04",
+   "query": "Centre Pompidou, Paris",
+   "best": [
+    "nuit",
+    "vue"
+   ]
+  },
+  {
+   "id": "ile-saint-louis",
+   "name": "Île Saint-Louis",
+   "cat": "quartier",
+   "zone": "04",
+   "query": "Île Saint-Louis, Paris",
+   "best": [
+    "sunset"
+   ]
+  },
+  {
+   "id": "rue-rosiers",
+   "name": "Rue des Rosiers",
+   "cat": "rue",
+   "zone": "04",
+   "query": "Rue des Rosiers, Paris"
+  },
+  {
+   "id": "tour-saint-jacques",
+   "name": "Tour Saint-Jacques",
+   "cat": "monument",
+   "zone": "04",
+   "query": "Tour Saint-Jacques, Paris"
+  },
+  {
+   "id": "village-saint-paul",
+   "name": "Village Saint-Paul",
+   "cat": "insolite",
+   "zone": "04",
+   "query": "Village Saint-Paul, Paris"
+  },
+  {
+   "id": "pont-marie",
+   "name": "Pont Marie & quai de Bourbon",
+   "cat": "pont",
+   "zone": "04",
+   "query": "Pont Marie, Paris",
+   "best": [
+    "sunset"
+   ]
+  },
+  {
+   "id": "saint-gervais",
+   "name": "Église Saint-Gervais-Saint-Protais",
+   "cat": "eglise",
+   "zone": "04",
+   "query": "Église Saint-Gervais-Saint-Protais, Paris"
+  },
+  {
+   "id": "pantheon",
+   "name": "Panthéon",
+   "cat": "monument",
+   "zone": "05",
+   "query": "Panthéon, Place du Panthéon, Paris",
+   "best": [
+    "nuit"
+   ],
+   "tip": "La rue Soufflot cadre le dôme : place-toi au niveau du Luxembourg."
+  },
+  {
+   "id": "jardin-plantes",
+   "name": "Jardin des Plantes",
+   "cat": "parc",
+   "zone": "05",
+   "query": "Jardin des Plantes, Paris",
+   "best": [
+    "printemps",
+    "automne"
+   ]
+  },
+  {
+   "id": "grande-mosquee",
+   "name": "Grande Mosquée de Paris",
+   "cat": "monument",
+   "zone": "05",
+   "query": "Grande Mosquée de Paris"
+  },
+  {
+   "id": "arenes-lutece",
+   "name": "Arènes de Lutèce",
+   "cat": "insolite",
+   "zone": "05",
+   "query": "Arènes de Lutèce, Paris"
+  },
+  {
+   "id": "mouffetard",
+   "name": "Rue Mouffetard",
+   "cat": "rue",
+   "zone": "05",
+   "query": "Rue Mouffetard, Paris",
+   "best": [
+    "jour"
+   ]
+  },
+  {
+   "id": "ima",
+   "name": "Institut du monde arabe – terrasse",
+   "cat": "vue",
+   "zone": "05",
+   "query": "Institut du monde arabe, Paris",
+   "best": [
+    "sunset"
+   ],
+   "tip": "Terrasse du 9e, accès libre : vue plongeante sur l'abside de Notre-Dame."
+  },
+  {
+   "id": "saint-etienne-mont",
+   "name": "Saint-Étienne-du-Mont",
+   "cat": "eglise",
+   "zone": "05",
+   "query": "Église Saint-Étienne-du-Mont, Paris"
+  },
+  {
+   "id": "shakespeare",
+   "name": "Shakespeare and Company",
+   "cat": "insolite",
+   "zone": "05",
+   "query": "Shakespeare and Company, Paris"
+  },
+  {
+   "id": "cluny",
+   "name": "Musée de Cluny",
+   "cat": "musee",
+   "zone": "05",
+   "query": "Musée de Cluny, Paris"
+  },
+  {
+   "id": "contrescarpe",
+   "name": "Place de la Contrescarpe",
+   "cat": "place",
+   "zone": "05",
+   "query": "Place de la Contrescarpe, Paris"
+  },
+  {
+   "id": "luxembourg",
+   "name": "Jardin du Luxembourg",
+   "cat": "parc",
+   "zone": "06",
+   "query": "Jardin du Luxembourg, Paris",
+   "best": [
+    "automne",
+    "sunset"
+   ]
+  },
+  {
+   "id": "saint-germain-pres",
+   "name": "Église Saint-Germain-des-Prés",
+   "cat": "eglise",
+   "zone": "06",
+   "query": "Église Saint-Germain-des-Prés, Paris"
+  },
+  {
+   "id": "saint-sulpice",
+   "name": "Église & place Saint-Sulpice",
+   "cat": "eglise",
+   "zone": "06",
+   "query": "Église Saint-Sulpice, Paris"
+  },
+  {
+   "id": "pont-des-arts",
+   "name": "Pont des Arts",
+   "cat": "pont",
+   "zone": "01",
+   "query": "Pont des Arts, Paris",
+   "best": [
+    "sunset"
+   ],
+   "tip": "Le classique : le soleil descend derrière le Pont Neuf, plein axe."
+  },
+  {
+   "id": "cour-commerce",
+   "name": "Cour du Commerce Saint-André",
+   "cat": "passage",
+   "zone": "06",
+   "query": "Cour du Commerce Saint-André, Paris"
+  },
+  {
+   "id": "rue-buci",
+   "name": "Rue de Buci",
+   "cat": "rue",
+   "zone": "06",
+   "query": "Rue de Buci, Paris"
+  },
+  {
+   "id": "institut-de-france",
+   "name": "Institut de France",
+   "cat": "monument",
+   "zone": "06",
+   "query": "Institut de France, Paris"
+  },
+  {
+   "id": "fontaine-medicis",
+   "name": "Fontaine Médicis",
+   "cat": "insolite",
+   "zone": "06",
+   "query": "Fontaine Médicis, Paris",
+   "best": [
+    "automne"
+   ]
+  },
+  {
+   "id": "tour-eiffel",
+   "name": "Tour Eiffel",
+   "cat": "monument",
+   "zone": "07",
+   "query": "Tour Eiffel, Paris",
+   "best": [
+    "nuit",
+    "sunrise"
+   ],
+   "tip": "Scintillement toutes les heures pile, 5 minutes, jusqu'à 1h du matin."
+  },
+  {
+   "id": "champ-de-mars",
+   "name": "Champ-de-Mars",
+   "cat": "parc",
+   "zone": "07",
+   "query": "Champ de Mars, Paris",
+   "best": [
+    "sunset"
+   ]
+  },
+  {
+   "id": "orsay",
+   "name": "Musée d'Orsay – horloge",
+   "cat": "musee",
+   "zone": "07",
+   "query": "Musée d'Orsay, Paris",
+   "best": [
+    "jour"
+   ],
+   "tip": "L'horloge du 5e étage en contre-jour sur le Sacré-Cœur."
+  },
+  {
+   "id": "rodin",
+   "name": "Musée Rodin & son jardin",
+   "cat": "musee",
+   "zone": "07",
+   "query": "Musée Rodin, Paris",
+   "best": [
+    "printemps"
+   ]
+  },
+  {
+   "id": "invalides",
+   "name": "Hôtel des Invalides",
+   "cat": "monument",
+   "zone": "07",
+   "query": "Hôtel des Invalides, Paris",
+   "best": [
+    "sunset"
+   ]
+  },
+  {
+   "id": "pont-alexandre-iii",
+   "name": "Pont Alexandre III",
+   "cat": "pont",
+   "zone": "07",
+   "query": "Pont Alexandre III, Paris",
+   "best": [
+    "nuit",
+    "sunrise"
+   ]
+  },
+  {
+   "id": "rue-cler",
+   "name": "Rue Cler",
+   "cat": "rue",
+   "zone": "07",
+   "query": "Rue Cler, Paris"
+  },
+  {
+   "id": "square-rapp",
+   "name": "Avenue de Camoëns & square Rapp",
+   "cat": "vue",
+   "zone": "07",
+   "query": "Square Rapp, Paris",
+   "best": [
+    "sunrise"
+   ],
+   "tip": "Deux points de vue quasi secrets sur la Tour Eiffel, sans la foule du Trocadéro."
+  },
+  {
+   "id": "quai-branly",
+   "name": "Musée du quai Branly – Jacques Chirac",
+   "cat": "musee",
+   "zone": "07",
+   "query": "Musée du quai Branly, Paris"
+  },
+  {
+   "id": "arc-triomphe",
+   "name": "Arc de Triomphe",
+   "cat": "monument",
+   "zone": "16",
+   "query": "Arc de Triomphe, Paris",
+   "best": [
+    "sunset",
+    "nuit"
+   ],
+   "tip": "Depuis la terrasse : les 12 avenues en étoile, au bleu du soir."
+  },
+  {
+   "id": "champs-elysees",
+   "name": "Avenue des Champs-Élysées",
+   "cat": "rue",
+   "zone": "08",
+   "query": "Avenue des Champs-Élysées, Paris",
+   "best": [
+    "nuit"
+   ],
+   "lat": 48.8698,
+   "lon": 2.3075
+  },
+  {
+   "id": "concorde",
+   "name": "Place de la Concorde",
+   "cat": "place",
+   "zone": "08",
+   "query": "Place de la Concorde, Paris",
+   "best": [
+    "sunset"
+   ]
+  },
+  {
+   "id": "grand-palais",
+   "name": "Grand Palais",
+   "cat": "monument",
+   "zone": "08",
+   "query": "Grand Palais, Paris"
+  },
+  {
+   "id": "petit-palais",
+   "name": "Petit Palais",
+   "cat": "musee",
+   "zone": "08",
+   "query": "Petit Palais, Paris",
+   "best": [
+    "jour"
+   ]
+  },
+  {
+   "id": "parc-monceau",
+   "name": "Parc Monceau",
+   "cat": "parc",
+   "zone": "08",
+   "query": "Parc Monceau, Paris",
+   "best": [
+    "automne",
+    "printemps"
+   ]
+  },
+  {
+   "id": "madeleine",
+   "name": "Église de la Madeleine",
+   "cat": "eglise",
+   "zone": "08",
+   "query": "Église de la Madeleine, Paris"
+  },
+  {
+   "id": "nevski",
+   "name": "Cathédrale Saint-Alexandre-Nevski",
+   "cat": "eglise",
+   "zone": "08",
+   "query": "Cathédrale Saint-Alexandre-Nevsky, Paris"
+  },
+  {
+   "id": "opera-garnier",
+   "name": "Opéra Garnier",
+   "cat": "monument",
+   "zone": "09",
+   "query": "Opéra Garnier, Paris",
+   "best": [
+    "nuit"
+   ]
+  },
+  {
+   "id": "galeries-lafayette",
+   "name": "Galeries Lafayette – coupole & rooftop",
+   "cat": "vue",
+   "zone": "09",
+   "query": "Galeries Lafayette Haussmann, Paris",
+   "best": [
+    "sunset"
+   ],
+   "tip": "Le toit-terrasse est en accès libre : Opéra au premier plan, Tour Eiffel au fond."
+  },
+  {
+   "id": "vie-romantique",
+   "name": "Musée de la Vie romantique",
+   "cat": "musee",
+   "zone": "09",
+   "query": "Musée de la Vie romantique, Paris",
+   "best": [
+    "printemps"
+   ]
+  },
+  {
+   "id": "rue-martyrs",
+   "name": "Rue des Martyrs",
+   "cat": "rue",
+   "zone": "09",
+   "query": "Rue des Martyrs, Paris"
+  },
+  {
+   "id": "passage-jouffroy",
+   "name": "Passage Jouffroy",
+   "cat": "passage",
+   "zone": "09",
+   "query": "Passage Jouffroy, Paris",
+   "best": [
+    "pluie"
+   ]
+  },
+  {
+   "id": "place-saint-georges",
+   "name": "Place Saint-Georges",
+   "cat": "place",
+   "zone": "09",
+   "query": "Place Saint-Georges, Paris"
+  },
+  {
+   "id": "gustave-moreau",
+   "name": "Musée national Gustave Moreau",
+   "cat": "musee",
+   "zone": "09",
+   "query": "Musée Gustave Moreau, Paris"
+  },
+  {
+   "id": "canal-saint-martin",
+   "name": "Canal Saint-Martin",
+   "cat": "eau",
+   "zone": "10",
+   "query": "Canal Saint-Martin, Paris",
+   "best": [
+    "sunset",
+    "automne"
+   ],
+   "tip": "Les passerelles métalliques + les écluses : viens en fin d'après-midi côté quai de Valmy."
+  },
+  {
+   "id": "rue-sainte-marthe",
+   "name": "Rue Sainte-Marthe",
+   "cat": "rue",
+   "zone": "10",
+   "query": "Rue Sainte-Marthe, Paris",
+   "best": [
+    "jour"
+   ]
+  },
+  {
+   "id": "passage-brady",
+   "name": "Passage Brady",
+   "cat": "passage",
+   "zone": "10",
+   "query": "Passage Brady, Paris"
+  },
+  {
+   "id": "gare-du-nord",
+   "name": "Gare du Nord",
+   "cat": "monument",
+   "zone": "10",
+   "query": "Gare du Nord, Paris"
+  },
+  {
+   "id": "hopital-saint-louis",
+   "name": "Cour de l'hôpital Saint-Louis",
+   "cat": "insolite",
+   "zone": "10",
+   "query": "Hôpital Saint-Louis, Paris"
+  },
+  {
+   "id": "marche-saint-quentin",
+   "name": "Marché couvert Saint-Quentin",
+   "cat": "marche",
+   "zone": "10",
+   "query": "Marché couvert Saint-Quentin, Paris"
+  },
+  {
+   "id": "bastille",
+   "name": "Place de la Bastille",
+   "cat": "place",
+   "zone": "04",
+   "query": "Place de la Bastille, Paris",
+   "best": [
+    "nuit"
+   ]
+  },
+  {
+   "id": "oberkampf",
+   "name": "Rue Oberkampf & ses fresques",
+   "cat": "street-art",
+   "zone": "11",
+   "query": "Rue Oberkampf, Paris",
+   "best": [
+    "jour"
+   ],
+   "tip": "Le mur du Mur d'Oberkampf change de fresque toutes les deux semaines."
+  },
+  {
+   "id": "cirque-hiver",
+   "name": "Cirque d'Hiver",
+   "cat": "monument",
+   "zone": "11",
+   "query": "Cirque d'Hiver, Paris"
+  },
+  {
+   "id": "republique",
+   "name": "Place de la République",
+   "cat": "place",
+   "zone": "11",
+   "query": "Place de la République, Paris"
+  },
+  {
+   "id": "rue-saint-maur",
+   "name": "Rue Saint-Maur",
+   "cat": "rue",
+   "zone": "11",
+   "query": "Rue Saint-Maur, Paris"
+  },
+  {
+   "id": "coulee-verte",
+   "name": "Coulée verte René-Dumont",
+   "cat": "parc",
+   "zone": "12",
+   "query": "Coulée verte René-Dumont, Paris",
+   "best": [
+    "printemps",
+    "automne"
+   ],
+   "tip": "Promenade plantée sur l'ancien viaduc : 4,5 km au-dessus de la ville."
+  },
+  {
+   "id": "viaduc-des-arts",
+   "name": "Viaduc des Arts",
+   "cat": "monument",
+   "zone": "12",
+   "query": "Viaduc des Arts, Paris"
+  },
+  {
+   "id": "bois-vincennes",
+   "name": "Bois de Vincennes & lac Daumesnil",
+   "cat": "parc",
+   "zone": "12",
+   "query": "Lac Daumesnil, Paris",
+   "best": [
+    "sunrise",
+    "automne"
+   ]
+  },
+  {
+   "id": "parc-floral",
+   "name": "Parc floral de Paris",
+   "cat": "parc",
+   "zone": "12",
+   "query": "Parc floral de Paris",
+   "best": [
+    "printemps"
+   ]
+  },
+  {
+   "id": "marche-aligre",
+   "name": "Marché d'Aligre",
+   "cat": "marche",
+   "zone": "12",
+   "query": "Marché d'Aligre, Paris",
+   "best": [
+    "jour"
+   ]
+  },
+  {
+   "id": "rue-cremieux",
+   "name": "Rue Crémieux",
+   "cat": "rue",
+   "zone": "12",
+   "query": "Rue Crémieux, Paris",
+   "best": [
+    "jour"
+   ],
+   "tip": "Rue pavée aux façades colorées — riverains excédés, sois discret et matinal."
+  },
+  {
+   "id": "train-bleu",
+   "name": "Le Train Bleu – Gare de Lyon",
+   "cat": "insolite",
+   "zone": "12",
+   "query": "Le Train Bleu, Paris"
+  },
+  {
+   "id": "porte-doree",
+   "name": "Palais de la Porte Dorée",
+   "cat": "musee",
+   "zone": "12",
+   "query": "Palais de la Porte Dorée, Paris"
+  },
+  {
+   "id": "butte-aux-cailles",
+   "name": "Butte-aux-Cailles",
+   "cat": "quartier",
+   "zone": "13",
+   "query": "Butte aux Cailles, Paris",
+   "best": [
+    "nuit",
+    "jour"
+   ]
+  },
+  {
+   "id": "street-art-13",
+   "name": "Street art du boulevard Vincent-Auriol",
+   "cat": "street-art",
+   "zone": "13",
+   "query": "Boulevard Vincent Auriol, Paris",
+   "best": [
+    "jour"
+   ],
+   "tip": "Une trentaine de fresques monumentales le long du métro aérien, ligne 6."
+  },
+  {
+   "id": "bnf",
+   "name": "BnF François-Mitterrand",
+   "cat": "monument",
+   "zone": "13",
+   "query": "Bibliothèque nationale de France François-Mitterrand, Paris",
+   "best": [
+    "sunset"
+   ]
+  },
+  {
+   "id": "gobelins",
+   "name": "Manufacture des Gobelins",
+   "cat": "monument",
+   "zone": "13",
+   "query": "Manufacture des Gobelins, Paris"
+  },
+  {
+   "id": "petite-alsace",
+   "name": "La Petite Alsace & la Petite Russie",
+   "cat": "insolite",
+   "zone": "13",
+   "query": "Petite Alsace, Paris"
+  },
+  {
+   "id": "les-frigos",
+   "name": "Les Frigos",
+   "cat": "street-art",
+   "zone": "13",
+   "query": "Les Frigos, Paris"
+  },
+  {
+   "id": "avenue-choisy",
+   "name": "Quartier asiatique – avenue de Choisy",
+   "cat": "quartier",
+   "zone": "13",
+   "query": "Avenue de Choisy, Paris"
+  },
+  {
+   "id": "piscine-baker",
+   "name": "Piscine Joséphine Baker",
+   "cat": "insolite",
+   "zone": "13",
+   "query": "Piscine Joséphine Baker, Paris"
+  },
+  {
+   "id": "cite-florale",
+   "name": "Cité florale",
+   "cat": "insolite",
+   "zone": "13",
+   "query": "Cité Florale, Paris",
+   "best": [
+    "printemps"
+   ]
+  },
+  {
+   "id": "catacombes",
+   "name": "Catacombes de Paris",
+   "cat": "insolite",
+   "zone": "14",
+   "query": "Catacombes de Paris"
+  },
+  {
+   "id": "montsouris",
+   "name": "Parc Montsouris",
+   "cat": "parc",
+   "zone": "14",
+   "query": "Parc Montsouris, Paris",
+   "best": [
+    "automne",
+    "sunrise"
+   ]
+  },
+  {
+   "id": "cimetiere-montparnasse",
+   "name": "Cimetière du Montparnasse",
+   "cat": "insolite",
+   "zone": "14",
+   "query": "Cimetière du Montparnasse, Paris",
+   "best": [
+    "automne"
+   ]
+  },
+  {
+   "id": "cite-universitaire",
+   "name": "Cité internationale universitaire",
+   "cat": "monument",
+   "zone": "14",
+   "query": "Cité internationale universitaire de Paris"
+  },
+  {
+   "id": "observatoire",
+   "name": "Observatoire de Paris",
+   "cat": "monument",
+   "zone": "14",
+   "query": "Observatoire de Paris"
+  },
+  {
+   "id": "rue-daguerre",
+   "name": "Rue Daguerre",
+   "cat": "rue",
+   "zone": "14",
+   "query": "Rue Daguerre, Paris"
+  },
+  {
+   "id": "petite-ceinture-14",
+   "name": "Petite Ceinture du 14e",
+   "cat": "insolite",
+   "zone": "14",
+   "query": "Petite Ceinture du 14e, Paris",
+   "best": [
+    "automne"
+   ]
+  },
+  {
+   "id": "tour-montparnasse",
+   "name": "Tour Montparnasse – observatoire",
+   "cat": "vue",
+   "zone": "15",
+   "query": "Tour Montparnasse, Paris",
+   "best": [
+    "sunset",
+    "nuit"
+   ],
+   "tip": "La seule vue de Paris qui inclut… tout Paris sans la Tour Montparnasse."
+  },
+  {
+   "id": "andre-citroen",
+   "name": "Parc André-Citroën",
+   "cat": "parc",
+   "zone": "15",
+   "query": "Parc André-Citroën, Paris",
+   "best": [
+    "sunset"
+   ]
+  },
+  {
+   "id": "ile-aux-cygnes",
+   "name": "Île aux Cygnes & Statue de la Liberté",
+   "cat": "vue",
+   "zone": "15",
+   "query": "Île aux Cygnes, Paris",
+   "best": [
+    "sunrise",
+    "sunset"
+   ],
+   "tip": "L'allée des Cygnes cadre la Tour Eiffel derrière la Statue de la Liberté."
+  },
+  {
+   "id": "rue-du-commerce",
+   "name": "Rue du Commerce",
+   "cat": "rue",
+   "zone": "15",
+   "query": "Rue du Commerce, Paris"
+  },
+  {
+   "id": "georges-brassens",
+   "name": "Parc Georges-Brassens",
+   "cat": "parc",
+   "zone": "15",
+   "query": "Parc Georges-Brassens, Paris"
+  },
+  {
+   "id": "la-ruche",
+   "name": "La Ruche",
+   "cat": "insolite",
+   "zone": "15",
+   "query": "La Ruche, Passage de Dantzig, Paris"
+  },
+  {
+   "id": "trocadero",
+   "name": "Trocadéro – palais de Chaillot",
+   "cat": "vue",
+   "zone": "16",
+   "query": "Place du Trocadéro, Paris",
+   "best": [
+    "sunrise"
+   ],
+   "tip": "Arrive avant 7h : l'esplanade est vide et la lumière frappe la Tour de face."
+  },
+  {
+   "id": "palais-tokyo",
+   "name": "Palais de Tokyo",
+   "cat": "musee",
+   "zone": "16",
+   "query": "Palais de Tokyo, Paris"
+  },
+  {
+   "id": "guimet",
+   "name": "Musée Guimet",
+   "cat": "musee",
+   "zone": "16",
+   "query": "Musée Guimet, Paris"
+  },
+  {
+   "id": "fondation-lv",
+   "name": "Fondation Louis Vuitton",
+   "cat": "musee",
+   "zone": "16",
+   "query": "Fondation Louis Vuitton, Paris",
+   "best": [
+    "sunset"
+   ]
+  },
+  {
+   "id": "bois-boulogne",
+   "name": "Bois de Boulogne – lac Inférieur",
+   "cat": "parc",
+   "zone": "16",
+   "query": "Lac Inférieur, Paris",
+   "best": [
+    "sunrise",
+    "automne"
+   ]
+  },
+  {
+   "id": "jardin-acclimatation",
+   "name": "Jardin d'Acclimatation",
+   "cat": "parc",
+   "zone": "16",
+   "query": "Jardin d'Acclimatation, Paris"
+  },
+  {
+   "id": "marmottan",
+   "name": "Musée Marmottan Monet",
+   "cat": "musee",
+   "zone": "16",
+   "query": "Musée Marmottan Monet, Paris"
+  },
+  {
+   "id": "maison-radio",
+   "name": "Maison de la Radio",
+   "cat": "monument",
+   "zone": "16",
+   "query": "Maison de la Radio, Paris"
+  },
+  {
+   "id": "cimetiere-passy",
+   "name": "Cimetière de Passy",
+   "cat": "insolite",
+   "zone": "16",
+   "query": "Cimetière de Passy, Paris"
+  },
+  {
+   "id": "batignolles",
+   "name": "Square des Batignolles",
+   "cat": "parc",
+   "zone": "17",
+   "query": "Square des Batignolles, Paris",
+   "best": [
+    "automne"
+   ]
+  },
+  {
+   "id": "martin-luther-king",
+   "name": "Parc Clichy-Batignolles – Martin-Luther-King",
+   "cat": "parc",
+   "zone": "17",
+   "query": "Parc Clichy-Batignolles - Martin Luther King, Paris"
+  },
+  {
+   "id": "cite-des-fleurs",
+   "name": "Cité des Fleurs",
+   "cat": "insolite",
+   "zone": "17",
+   "query": "Cité des Fleurs, Paris",
+   "best": [
+    "printemps"
+   ]
+  },
+  {
+   "id": "rue-de-levis",
+   "name": "Rue de Lévis",
+   "cat": "marche",
+   "zone": "17",
+   "query": "Rue de Lévis, Paris"
+  },
+  {
+   "id": "sacre-coeur",
+   "name": "Basilique du Sacré-Cœur",
+   "cat": "eglise",
+   "zone": "18",
+   "query": "Basilique du Sacré-Cœur, Paris",
+   "best": [
+    "sunrise",
+    "sunset"
+   ],
+   "tip": "Le parvis regarde plein sud : au coucher, monte plutôt au square Louise-Michel."
+  },
+  {
+   "id": "place-du-tertre",
+   "name": "Place du Tertre",
+   "cat": "place",
+   "zone": "18",
+   "query": "Place du Tertre, Paris"
+  },
+  {
+   "id": "rue-abreuvoir",
+   "name": "Rue de l'Abreuvoir",
+   "cat": "rue",
+   "zone": "18",
+   "query": "Rue de l'Abreuvoir, Paris",
+   "best": [
+    "sunrise"
+   ],
+   "tip": "La rue la plus photographiée de Montmartre : viens à 7h ou n'y viens pas."
+  },
+  {
+   "id": "mur-des-je-taime",
+   "name": "Le mur des Je t'aime",
+   "cat": "insolite",
+   "zone": "18",
+   "query": "Square Jehan Rictus, Paris"
+  },
+  {
+   "id": "moulin-galette",
+   "name": "Moulin de la Galette",
+   "cat": "monument",
+   "zone": "18",
+   "query": "Moulin de la Galette, Paris"
+  },
+  {
+   "id": "clos-montmartre",
+   "name": "Vignes du Clos Montmartre",
+   "cat": "insolite",
+   "zone": "18",
+   "query": "Clos Montmartre, Paris",
+   "best": [
+    "automne"
+   ]
+  },
+  {
+   "id": "rue-lepic",
+   "name": "Rue Lepic",
+   "cat": "rue",
+   "zone": "18",
+   "query": "Rue Lepic, Paris"
+  },
+  {
+   "id": "marche-saint-pierre",
+   "name": "Marché Saint-Pierre & halle Saint-Pierre",
+   "cat": "marche",
+   "zone": "18",
+   "query": "Halle Saint-Pierre, Paris"
+  },
+  {
+   "id": "cimetiere-montmartre",
+   "name": "Cimetière de Montmartre",
+   "cat": "insolite",
+   "zone": "18",
+   "query": "Cimetière de Montmartre, Paris",
+   "best": [
+    "automne"
+   ]
+  },
+  {
+   "id": "la-recyclerie",
+   "name": "La REcyclerie – Porte de Clignancourt",
+   "cat": "insolite",
+   "zone": "18",
+   "query": "La REcyclerie, Paris"
+  },
+  {
+   "id": "buttes-chaumont",
+   "name": "Parc des Buttes-Chaumont",
+   "cat": "parc",
+   "zone": "19",
+   "query": "Parc des Buttes-Chaumont, Paris",
+   "best": [
+    "sunset",
+    "automne"
+   ],
+   "tip": "Le temple de la Sibylle au coucher, depuis le pont suspendu."
+  },
+  {
+   "id": "bassin-villette",
+   "name": "Bassin de la Villette",
+   "cat": "eau",
+   "zone": "19",
+   "query": "Bassin de la Villette, Paris",
+   "best": [
+    "sunset"
+   ]
+  },
+  {
+   "id": "parc-villette",
+   "name": "Parc de la Villette",
+   "cat": "parc",
+   "zone": "19",
+   "query": "Parc de la Villette, Paris"
+  },
+  {
+   "id": "philharmonie",
+   "name": "Philharmonie de Paris",
+   "cat": "monument",
+   "zone": "19",
+   "query": "Philharmonie de Paris"
+  },
+  {
+   "id": "cite-sciences",
+   "name": "Cité des sciences & la Géode",
+   "cat": "musee",
+   "zone": "19",
+   "query": "Cité des sciences et de l'industrie, Paris"
+  },
+  {
+   "id": "mouzaia",
+   "name": "Quartier de la Mouzaïa",
+   "cat": "quartier",
+   "zone": "19",
+   "query": "Rue de Mouzaïa, Paris",
+   "best": [
+    "printemps"
+   ]
+  },
+  {
+   "id": "canal-ourcq",
+   "name": "Canal de l'Ourcq",
+   "cat": "eau",
+   "zone": "19",
+   "query": "Canal de l'Ourcq, Paris"
+  },
+  {
+   "id": "centquatre",
+   "name": "Le CENTQUATRE-PARIS",
+   "cat": "culture",
+   "zone": "19",
+   "query": "Le Centquatre, Paris"
+  },
+  {
+   "id": "pere-lachaise",
+   "name": "Cimetière du Père-Lachaise",
+   "cat": "insolite",
+   "zone": "20",
+   "query": "Cimetière du Père-Lachaise, Paris",
+   "best": [
+    "automne"
+   ],
+   "tip": "Brume matinale d'automne dans les allées pavées : l'ambiance imbattable."
+  },
+  {
+   "id": "parc-belleville",
+   "name": "Parc de Belleville",
+   "cat": "vue",
+   "zone": "20",
+   "query": "Parc de Belleville, Paris",
+   "best": [
+    "sunset"
+   ],
+   "tip": "Le belvédère regarde plein ouest : tout Paris s'embrase, Tour Eiffel comprise."
+  },
+  {
+   "id": "rue-denoyez",
+   "name": "Rue Dénoyez",
+   "cat": "street-art",
+   "zone": "20",
+   "query": "Rue Dénoyez, Paris",
+   "best": [
+    "jour"
+   ]
+  },
+  {
+   "id": "menilmontant",
+   "name": "Rue de Ménilmontant",
+   "cat": "rue",
+   "zone": "20",
+   "query": "Rue de Ménilmontant, Paris"
+  },
+  {
+   "id": "campagne-a-paris",
+   "name": "La Campagne à Paris",
+   "cat": "insolite",
+   "zone": "20",
+   "query": "La Campagne à Paris, Paris",
+   "best": [
+    "printemps"
+   ]
+  },
+  {
+   "id": "carre-baudouin",
+   "name": "Pavillon Carré de Baudouin",
+   "cat": "culture",
+   "zone": "20",
+   "query": "Pavillon Carré de Baudouin, Paris"
+  },
+  {
+   "id": "cite-aubry",
+   "name": "Villa de l'Ermitage & cité Aubry",
+   "cat": "insolite",
+   "zone": "20",
+   "query": "Villa de l'Ermitage, Paris"
+  }
+ ]
+}

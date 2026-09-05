@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CityWalker — Paris &amp; Montpellier en photos</title>
+<meta name="description" content="Deux cartes sobres, Paris et Montpellier : épingle les lieux que tu as déjà photographiés, note l'ambiance, ajoute tes photos et suis ton pourcentage de découverte.">
+<meta name="theme-color" content="#f6f4f0" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#121312" media="(prefers-color-scheme: dark)">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='13' r='11' fill='none' stroke='%232f5d8a' stroke-width='3'/%3E%3Ccircle cx='16' cy='13' r='3.5' fill='%232f5d8a'/%3E%3Cpath d='M16 24v6' stroke='%232f5d8a' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="assets/app.css">
+</head>
+<body>
+
+<a class="skip-link" href="#liste-lieux">Aller à la liste des lieux</a>
+
+<div id="app" class="app" data-view="carte" aria-busy="true">
+
+  <header class="topbar">
+    <div class="brand">
+      <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+        <circle cx="16" cy="13" r="10.5" fill="none" stroke="currentColor" stroke-width="2.4"/>
+        <circle cx="16" cy="13" r="3.2" fill="currentColor"/>
+        <path d="M16 23.5v6.5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+      </svg>
+      <span class="brand-name">CityWalker</span>
+    </div>
+
+    <nav class="city-tabs" aria-label="Choisir la ville">
+      <button type="button" class="city-tab" data-city="paris" aria-pressed="false">
+        <span class="city-tab-name">Paris</span>
+        <span class="city-tab-pct" data-pct-for="paris">—</span>
+      </button>
+      <button type="button" class="city-tab" data-city="montpellier" aria-pressed="false">
+        <span class="city-tab-name">Montpellier</span>
+        <span class="city-tab-pct" data-pct-for="montpellier">—</span>
+      </button>
+    </nav>
+
+    <div class="topbar-actions">
+      <button type="button" class="btn btn-ghost" id="btn-share" aria-haspopup="dialog">
+        <span class="btn-ico" aria-hidden="true">↗</span><span class="btn-label">Partager</span>
+      </button>
+      <button type="button" class="btn btn-icon" id="btn-theme" aria-label="Changer le thème" title="Thème clair / sombre">
+        <span aria-hidden="true">◐</span>
+      </button>
+      <button type="button" class="btn btn-icon" id="btn-settings" aria-label="Réglages" aria-haspopup="dialog" title="Réglages">
+        <span aria-hidden="true">⚙</span>
+      </button>
+    </div>
+  </header>
+
+  <div id="shared-banner" class="shared-banner" hidden role="status">
+    <span class="shared-banner-text"></span>
+    <span class="shared-banner-actions">
+      <button type="button" class="btn btn-small" id="btn-merge-shared">Fusionner avec ma carte</button>
+      <button type="button" class="btn btn-small btn-ghost" id="btn-leave-shared">Revenir à ma carte</button>
+    </span>
+  </div>
+
+  <main class="layout">
+
+    <section class="map-panel" aria-label="Carte">
+      <div class="map-stage" id="map-stage">
+        <svg id="map" class="map" role="img" tabindex="0"
+             aria-label="Carte interactive de la ville" preserveAspectRatio="xMidYMid meet"></svg>
+
+        <div class="map-hud">
+          <div class="map-title">
+            <strong class="map-city-name">—</strong>
+            <span class="map-city-sub"></span>
+          </div>
+          <div class="map-zoom" role="group" aria-label="Zoom">
+            <button type="button" class="btn btn-icon" id="btn-zoom-in" aria-label="Zoomer" title="Zoomer">+</button>
+            <button type="button" class="btn btn-icon" id="btn-zoom-out" aria-label="Dézoomer" title="Dézoomer">−</button>
+            <button type="button" class="btn btn-icon" id="btn-zoom-reset" aria-label="Recentrer la carte" title="Recentrer">⟲</button>
+          </div>
+        </div>
+
+        <div class="map-tooltip" id="map-tooltip" hidden aria-hidden="true"></div>
+
+        <div class="map-legend" id="map-legend">
+          <span class="legend-item"><span class="legend-dot legend-dot-done"></span>photographié</span>
+          <span class="legend-item"><span class="legend-dot legend-dot-todo"></span>à faire</span>
+          <span class="legend-hint">glisse pour déplacer · molette ou pincement pour zoomer</span>
+        </div>
+      </div>
+    </section>
+
+    <aside class="side" aria-label="Panneau latéral">
+      <div class="side-tabs" role="tablist" aria-label="Sections">
+        <button type="button" role="tab" class="side-tab" id="tab-btn-lieux"
+                aria-controls="tab-lieux" aria-selected="true" data-tab="lieux">Lieux</button>
+        <button type="button" role="tab" class="side-tab" id="tab-btn-progress"
+                aria-controls="tab-progress" aria-selected="false" data-tab="progress">Progression</button>
+      </div>
+
+      <div class="side-body">
+        <section id="tab-lieux" class="tab-panel" role="tabpanel" aria-labelledby="tab-btn-lieux" tabindex="0">
+          <div class="filters">
+            <div class="search-wrap">
+              <input type="search" id="search" class="search" placeholder="Chercher un lieu, un quartier…"
+                     autocomplete="off" spellcheck="false" aria-label="Chercher un lieu">
+            </div>
+            <div class="chip-row" id="filter-state" role="group" aria-label="Filtrer par état">
+              <button type="button" class="chip is-on" data-state="tous">Tous</button>
+              <button type="button" class="chip" data-state="todo">À faire</button>
+              <button type="button" class="chip" data-state="done">Photographiés</button>
+            </div>
+            <details class="more-filters">
+              <summary>Filtres avancés <span class="filter-count" id="filter-count"></span></summary>
+              <div class="more-filters-body">
+                <label class="field">
+                  <span class="field-label" id="label-zone">Quartier</span>
+                  <select id="filter-zone" aria-labelledby="label-zone"></select>
+                </label>
+                <label class="field">
+                  <span class="field-label" id="label-cat">Catégorie</span>
+                  <select id="filter-cat" aria-labelledby="label-cat"></select>
+                </label>
+                <fieldset class="field">
+                  <legend class="field-label">Ambiance capturée</legend>
+                  <div class="chip-row chip-row-wrap" id="filter-tags"></div>
+                </fieldset>
+                <button type="button" class="btn btn-small btn-ghost" id="btn-clear-filters">Tout réinitialiser</button>
+              </div>
+            </details>
+          </div>
+
+          <p class="list-summary" id="list-summary" role="status"></p>
+          <div class="list" id="liste-lieux"></div>
+        </section>
+
+        <section id="tab-progress" class="tab-panel" role="tabpanel" aria-labelledby="tab-btn-progress" tabindex="0" hidden>
+          <div id="progress-body"></div>
+        </section>
+      </div>
+    </aside>
+  </main>
+
+  <nav class="mobile-bar" aria-label="Navigation">
+    <button type="button" class="mobile-tab" data-view="carte" aria-pressed="true">Carte</button>
+    <button type="button" class="mobile-tab" data-view="liste" aria-pressed="false">Lieux</button>
+    <button type="button" class="mobile-tab" data-view="progress" aria-pressed="false">Progression</button>
+  </nav>
+
+  <div class="sheet-backdrop" id="sheet-backdrop" hidden></div>
+  <section class="sheet" id="sheet" hidden aria-labelledby="sheet-title" role="dialog" aria-modal="false">
+    <div class="sheet-grip" aria-hidden="true"></div>
+    <div class="sheet-inner" id="sheet-inner"></div>
+  </section>
+
+  <dialog class="modal" id="modal">
+    <form method="dialog" class="modal-close-form">
+      <button class="modal-close" value="close" aria-label="Fermer">✕</button>
+    </form>
+    <div class="modal-inner" id="modal-inner"></div>
+  </dialog>
+
+  <div class="toasts" id="toasts" role="status" aria-live="polite"></div>
+
+  <div class="boot" id="boot">
+    <div class="boot-inner">
+      <div class="boot-spin" aria-hidden="true"></div>
+      <p>Chargement des cartes…</p>
+      <p class="boot-error" id="boot-error" hidden></p>
+    </div>
+  </div>
+</div>
+
+<script src="assets/js/util.js"></script>
+<script src="assets/js/model.js"></script>
+<script src="assets/js/store.js"></script>
+<script src="assets/js/exif.js"></script>
+<script src="assets/js/photos.js"></script>
+<script src="assets/js/share.js"></script>
+<script src="assets/js/map.js"></script>
+<script src="assets/js/ui.js"></script>
+<script src="assets/js/main.js"></script>
+</body>
+</html>

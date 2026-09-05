@@ -1,0 +1,11 @@
+{
+  "name": "citywalker",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Cartes photo de Paris et Montpellier : épingler les lieux photographiés et suivre sa progression.",
+  "scripts": {
+    "test": "node tests/smoke.mjs",
+    "serve": "python3 -m http.server 8000"
+  },
+  "devDependencies": { "playwright": "1.49.1" }
+}
