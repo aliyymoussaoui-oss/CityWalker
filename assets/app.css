@@ -451,6 +451,15 @@ a { color: var(--accent); }
 .modal-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 .link-row { display: flex; gap: 7px; }
 .link-out { font-size: 12px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+.import-bar { height: 4px; background: var(--surface-2); border-radius: 2px; overflow: hidden; }
+.import-bar[hidden] { display: none; }
+.import-bar span { display: block; height: 100%; width: 0; background: var(--accent); transition: width .2s; }
+.import-results { display: flex; flex-direction: column; gap: 10px; }
+.import-list { max-height: 46vh; overflow: auto; display: flex; flex-direction: column; gap: 2px; border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 6px; }
+.import-row { padding: 5px 6px; border-radius: 6px; }
+.import-row:hover { background: var(--surface-2); }
+.import-row .check { align-items: flex-start; gap: 9px; }
+.import-row.is-new strong::after { content: ' · nouveau'; color: var(--accent); font-weight: 400; font-size: 11.5px; }
 .sep { border: 0; border-top: 1px solid var(--line); margin: 6px 0; width: 100%; }
 
 /* ------------------------------------------------------------------ toasts */

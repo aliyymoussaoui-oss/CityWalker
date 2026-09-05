@@ -1,0 +1,41 @@
+# Publie le site sur GitHub Pages à chaque poussée sur `public`.
+#
+# À activer une seule fois : Settings → Pages → Source: GitHub Actions.
+# Le dépôt doit être public (Settings → General → Change visibility) pour que
+# l'adresse obtenue soit accessible sans compte.
+name: Publier sur GitHub Pages
+
+on:
+  push:
+    branches: [public]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Vérifier que le site est complet
+        run: |
+          test -f index.html
+          test -f data/paris.json
+          test -f data/montpellier.json
+          test -f manifest.webmanifest
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+      - id: deployment
+        uses: actions/deploy-pages@v4

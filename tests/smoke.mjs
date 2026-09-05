@@ -9,6 +9,7 @@
 import { chromium } from 'playwright';
 import { createServer } from 'node:http';
 import { readFile, stat } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
 import { extname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -42,9 +43,13 @@ function serve() {
   });
 }
 
+// Chrome local de cette machine ; sur une machine sans lui, Playwright utilise le sien.
+const DEFAULT_CHROME = existsSync('/opt/pw-browsers/chromium-1194/chrome-linux/chrome')
+  ? '/opt/pw-browsers/chromium-1194/chrome-linux/chrome' : undefined;
+
 const { server, port } = await serve();
 const base = `http://127.0.0.1:${port}/`;
-const browser = await chromium.launch({ executablePath: process.env.CW_CHROME || '/opt/pw-browsers/chromium-1194/chrome-linux/chrome' });
+const browser = await chromium.launch({ executablePath: process.env.CW_CHROME || DEFAULT_CHROME });
 
 async function newPage(ctx) {
   const page = await ctx.newPage();
@@ -160,6 +165,31 @@ await page.waitForSelector('#app[aria-busy="false"]');
 await page.locator('.city-tab[data-city="montpellier"]').click();
 await page.waitForFunction(() => document.querySelector('.map-city-name').textContent === 'Montpellier');
 check('le lieu posé survit au rechargement', await page.locator('#map .pin.is-custom.is-done').count() === 1);
+
+console.log('\n— Import de la photothèque —');
+const fixtures = ['comedie-1.jpg', 'comedie-2.jpg', 'comedie-3.jpg', 'ailleurs-1.jpg', 'ailleurs-2.jpg', 'sans-gps.jpg']
+  .map((n) => new URL(`fixtures/${n}`, import.meta.url).pathname);
+await page.locator('#btn-import').click();
+await page.waitForSelector('#modal[open]');
+await page.setInputFiles('#modal input[type="file"]', fixtures);
+await page.waitForSelector('.import-list', { timeout: 20000 });
+const rows = await page.locator('.import-row').count();
+check('deux groupes proposés', rows === 2, `${rows} groupes`);
+const summary = await page.locator('#modal .hint').last().textContent().catch(() => '');
+const statusTxt = await page.locator('#modal-inner > p.hint').first().textContent();
+check('la place de la Comédie est reconnue', (await page.locator('.import-row', { hasText: 'Place de la Comédie' }).count()) === 1);
+check('un nouveau lieu est proposé pour les photos isolées', (await page.locator('.import-row.is-new').count()) === 1);
+check('la photo sans GPS est signalée et ignorée', /1 sans position GPS/.test(statusTxt), statusTxt);
+await page.locator('#modal .btn-primary', { hasText: 'Enregistrer' }).click();
+await page.waitForFunction(() => !document.getElementById('modal').open, null, { timeout: 30000 });
+await page.waitForTimeout(400);
+check('la Comédie est passée en photographiée', await page.locator('.spot-row.is-done', { hasText: 'Place de la Comédie' }).count() === 1);
+check('un second lieu personnel a été créé', await page.locator('#map .pin.is-custom').count() === 2, String(await page.locator('#map .pin.is-custom').count()));
+await page.locator('.spot-row', { hasText: 'Place de la Comédie' }).click();
+await page.waitForSelector('#sheet:not([hidden])');
+check('les trois photos sont attachées', await page.locator('.photo-grid .photo').count() === 3, String(await page.locator('.photo-grid .photo').count()));
+check('la date retenue est la plus ancienne des trois', (await page.locator('#sheet input[type="date"]').inputValue()) === '2025-11-02', await page.locator('#sheet input[type="date"]').inputValue());
+await page.locator('.sheet-close').click();
 
 console.log('\n— Lien de partage —');
 await page.locator('.city-tab[data-city="paris"]').click();

@@ -471,6 +471,191 @@
     CW.toast(`Au hasard : ${pick.name}.`);
   }
 
+  // ------------------------------------------------- import de photothèque
+
+  const RADIUS_CHOICES = [[120, '120 m — strict'], [250, '250 m — recommandé'], [500, '500 m — large']];
+
+  function importModal() {
+    if (readOnly()) return;
+    openModal('Importer ma photothèque', (host) => {
+      host.appendChild(el('p', { class: 'modal-lead' },
+        'Choisis tes photos : CityWalker lit leur position GPS et les replace sur les lieux où elles ont été prises. Rien ne quitte cet appareil, et rien n’est écrit avant ton accord.'));
+
+      const radiusField = el('label', { class: 'field' }, [
+        el('span', { class: 'field-label', text: 'Distance maximale pour rattacher une photo à un lieu' }),
+        el('select', {}, RADIUS_CHOICES.map(([v, t]) => el('option', { value: v, selected: v === 250 }, t))),
+      ]);
+      host.appendChild(radiusField);
+
+      const status = el('p', { class: 'hint' });
+      const bar = el('div', { class: 'import-bar', hidden: true }, el('span'));
+      const results = el('div', { class: 'import-results' });
+
+      const input = el('input', {
+        type: 'file', accept: 'image/*', multiple: true, class: 'visually-hidden',
+        onchange: (ev) => { const f = Array.from(ev.target.files || []); ev.target.value = ''; start(f); },
+      });
+      const actions = el('div', { class: 'modal-actions' }, [
+        input,
+        el('button', { type: 'button', class: 'btn btn-primary', onclick: () => input.click() }, 'Autoriser et choisir mes photos'),
+        CW.photoImport.supportsDirectory()
+          ? el('button', {
+              type: 'button', class: 'btn', onclick: async (ev) => {
+                const btn = ev.currentTarget;
+                btn.disabled = true;
+                status.textContent = 'Lecture du dossier…';
+                const files = await CW.photoImport.pickDirectory((n) => { status.textContent = `${n} photos trouvées…`; });
+                btn.disabled = false;
+                if (!files) { status.textContent = 'Accès au dossier refusé.'; return; }
+                start(files);
+              },
+            }, 'Ou choisir un dossier entier')
+          : null,
+      ]);
+      host.appendChild(actions);
+      host.appendChild(status);
+      host.appendChild(bar);
+      host.appendChild(results);
+
+      async function start(files) {
+        CW.clear(results);
+        const images = files.filter(CW.photoImport.isImage).slice(0, CW.photoImport.MAX_FILES);
+        if (!images.length) { status.textContent = 'Aucune image dans cette sélection.'; return; }
+        if (files.length > CW.photoImport.MAX_FILES) {
+          CW.toast(`Limité aux ${CW.photoImport.MAX_FILES} premières photos.`, 'info');
+        }
+        bar.hidden = false;
+        const fill = bar.firstChild;
+        status.textContent = `Lecture de ${images.length} photos…`;
+        const read = await CW.photoImport.readAll(images, (done, total) => {
+          fill.style.width = `${(done / total) * 100}%`;
+          status.textContent = `Lecture ${done} / ${total}…`;
+        });
+        bar.hidden = true;
+        const radius = Number(radiusField.querySelector('select').value) || 250;
+        const report = CW.photoImport.classify(read, app.city, allSpots(), radius);
+        renderReport(report, read);
+      }
+
+      function renderReport(report, read) {
+        CW.clear(results);
+        const total = report.groups.reduce((n, g) => n + g.items.length, 0);
+        if (!total) {
+          const other = read.find((r) => r.lat !== null && CW.photoImport.cityOf(app.cities, r.lat, r.lon) && CW.photoImport.cityOf(app.cities, r.lat, r.lon) !== app.cityId);
+          status.textContent = report.noGps === read.length
+            ? 'Aucune de ces photos ne porte de position GPS. Vérifie que la localisation est activée dans l’appareil photo de ton téléphone.'
+            : `Aucune photo ne tombe sur ${app.city.name}.`;
+          if (other) {
+            const otherCity = CW.photoImport.cityOf(app.cities, other.lat, other.lon);
+            results.appendChild(el('button', {
+              type: 'button', class: 'btn', onclick: () => { $('#modal').close(); switchCity(otherCity).then(importModal); },
+            }, `Ces photos sont plutôt à ${app.cities[otherCity].name} — basculer`));
+          }
+          return;
+        }
+
+        status.textContent = `${total} ${CW.plural(total, 'photo replacée', 'photos replacées')} sur ${report.groups.length} ${CW.plural(report.groups.length, 'lieu', 'lieux')}.`
+          + (report.noGps ? ` ${report.noGps} sans position GPS, ignorées.` : '')
+          + (report.elsewhere.length ? ` ${report.elsewhere.length} hors des lieux connus, ignorées.` : '');
+
+        const list = el('ul', { class: 'import-list' });
+        for (const g of report.groups) {
+          const label = g.kind === 'spot'
+            ? g.spot.name
+            : 'Nouveau lieu à créer';
+          const detail = g.kind === 'spot'
+            ? `${g.items.length} ${CW.plural(g.items.length, 'photo', 'photos')} · jusqu’à ${g.distance} m`
+            : `${g.items.length} photos groupées · ${g.lat.toFixed(5)}, ${g.lon.toFixed(5)}`;
+          const cb = el('input', { type: 'checkbox', checked: true });
+          g._checkbox = cb;
+          list.appendChild(el('li', { class: `import-row${g.kind === 'new' ? ' is-new' : ''}` }, [
+            el('label', { class: 'check' }, [cb, el('span', {}, [
+              el('strong', { text: label }), el('br'), el('span', { class: 'hint', text: detail }),
+            ])]),
+          ]));
+        }
+        results.appendChild(list);
+
+        results.appendChild(el('button', {
+          type: 'button', class: 'btn btn-primary', onclick: async (ev) => {
+            const btn = ev.currentTarget;
+            const chosen = report.groups.filter((g) => g._checkbox.checked);
+            if (!chosen.length) { CW.toast('Rien de sélectionné.'); return; }
+            btn.disabled = true;
+            try {
+              await applyImport(chosen, (done, all) => { btn.textContent = `Enregistrement ${done} / ${all}…`; });
+            } catch (err) {
+              CW.toast('Import interrompu : ' + ((err && err.message) || 'erreur inconnue'), 'error');
+            } finally {
+              btn.disabled = false;
+              btn.textContent = 'Enregistrer ces photos';
+              $('#modal').close();
+            }
+          },
+        }, 'Enregistrer ces photos'));
+      }
+    });
+  }
+
+  async function applyImport(groups, onProgress) {
+    const all = groups.reduce((n, g) => n + g.items.length, 0);
+    let done = 0, ok = 0, failed = 0;
+    for (const g of groups) {
+      let spotId;
+      if (g.kind === 'spot') {
+        spotId = g.spot.id;
+      } else {
+        const view = app.city.view;
+        const pr = app.city.projection;
+        const mx = (g.lon * Math.PI) / 180;
+        const my = -Math.log(Math.tan(Math.PI / 4 + (g.lat * Math.PI) / 360));
+        const x = Math.round(((mx - pr.x0) * pr.scale + pr.pad) * 10) / 10;
+        const y = Math.round(((my - pr.y0) * pr.scale + pr.pad) * 10) / 10;
+        if (!(x >= 0 && x <= view.w && y >= 0 && y <= view.h)) { done += g.items.length; continue; }
+        const first = g.items.find((i) => i.takenAt);
+        const spot = CW.normalizeCustom({
+          id: 'u' + CW.uid(),
+          name: first && first.takenAt ? `Photos du ${CW.fmtDate(CW.dateToISO(first.takenAt))}` : 'Lieu importé',
+          cat: 'insolite', zone: app.map.zoneAt(x, y) || '', x, y, lat: g.lat, lon: g.lon,
+        });
+        const p = CW.store.loadProgress(app.cityId);
+        p.custom.push(spot);
+        CW.store.saveProgress(app.cityId);
+        spotId = spot.id;
+      }
+      for (const item of g.items) {
+        try {
+          const photo = await CW.ingestPhoto(item.file);
+          const id = CW.uid();
+          await CW.store.putPhoto({
+            id, city: app.cityId, spot: spotId, w: photo.w, h: photo.h,
+            takenAt: photo.takenAt ? photo.takenAt.toISOString() : '', caption: '',
+            createdAt: photo.takenAt ? photo.takenAt.getTime() : Date.now(),
+            full: photo.full, thumb: photo.thumb,
+          });
+          const entry = CW.store.ensureEntry(app.cityId, spotId);
+          const patch = { photos: entry.photos.concat([id]), done: true };
+          const shot = photo.takenAt || item.takenAt;
+          if (shot && (!entry.date || CW.dateToISO(shot) < entry.date)) patch.date = CW.dateToISO(shot);
+          else if (!entry.date) patch.date = CW.todayISO();
+          CW.store.updateEntry(app.cityId, spotId, patch);
+          ok++;
+        } catch (_) {
+          failed++;
+        }
+        done++;
+        if (onProgress) onProgress(done, all);
+      }
+    }
+    CW.store.flushAll();
+    app.map.setSpots(allSpots());
+    refreshAll();
+    renderSheet();
+    CW.toast(failed
+      ? `${ok} ${CW.plural(ok, 'photo importée', 'photos importées')}, ${failed} illisibles.`
+      : `${ok} ${CW.plural(ok, 'photo importée', 'photos importées')}.`, failed ? 'error' : 'info', 6000);
+  }
+
   // -------------------------------------------------------------- progression
 
   function renderProgress() {
@@ -799,6 +984,7 @@
     $('#btn-theme').addEventListener('click', cycleTheme);
     $('#btn-settings').addEventListener('click', settingsModal);
     $('#btn-share').addEventListener('click', shareModal);
+    $('#btn-import').addEventListener('click', importModal);
     $('#btn-add-spot').addEventListener('click', () => toggleAddMode());
     $('#btn-random').addEventListener('click', randomSpot);
     $('#btn-zoom-in').addEventListener('click', () => app.map.zoomBy(1.5));

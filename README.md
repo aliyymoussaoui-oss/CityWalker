@@ -21,13 +21,16 @@ Une seule page, aucun compte, aucun serveur. Tout reste sur ton appareil.
 1. Choisis la ville en haut à gauche.
 2. Clique une épingle sur la carte, ou un lieu dans la liste de droite.
 3. Bouton **« Je l'ai photographié »**, puis coche les ambiances capturées.
-4. Pas dans la liste ? **＋ Poser un lieu** sur la carte, puis clique où tu veux :
+4. **Mes photos** : autorise l'accès à ta photothèque, et CityWalker replace tes
+   photos toutes seules sur les lieux où elles ont été prises, en lisant leur
+   position GPS. Rien ne quitte l'appareil, et rien n'est écrit sans ton accord.
+5. Pas dans la liste ? **＋ Poser un lieu** sur la carte, puis clique où tu veux :
    le quartier et les coordonnées sont déduits tout seuls. **🎲 Au hasard** tire
    un lieu qu'il te reste à faire.
-5. Ajoute tes photos : elles sont redimensionnées et rangées dans le navigateur.
+6. Ajoute tes photos à la main : elles sont redimensionnées et rangées dans le navigateur.
    Si la photo porte une date EXIF, elle remplit la date toute seule ; si elle
    porte des coordonnées GPS, l'application signale le lieu le plus proche.
-6. L'onglet **Progression** donne le pourcentage global, le détail par quartier,
+7. L'onglet **Progression** donne le pourcentage global, le détail par quartier,
    par catégorie et par ambiance, plus une liste de prochains lieux à faire.
 
 ### Partager une carte
@@ -87,6 +90,7 @@ assets/js/model.js    ambiances, catégories, calcul de progression
 assets/js/store.js    localStorage (progression) + IndexedDB (photos)
 assets/js/exif.js     lecteur EXIF minimal : date de prise de vue et GPS
 assets/js/photos.js   décodage, redimensionnement, vignette
+assets/js/import.js   import de photothèque : lecture GPS, regroupement, rapport
 assets/js/share.js    lien de partage, export/import, fusion
 assets/js/map.js      carte SVG : rendu, pan/zoom, épingles
 assets/js/ui.js       petits composants (anneau, barre, puce d'ambiance)
@@ -125,11 +129,12 @@ node tests/smoke.mjs     # 31 vérifications sur le site
 node tests/single.mjs    # le fichier unique, ouvert en file://
 ```
 
-42 vérifications de bout en bout : rendu des deux cartes, cochage d'un lieu,
+50 vérifications de bout en bout : rendu des deux cartes, cochage d'un lieu,
 ambiances, filtres, recherche sans accent, persistance après rechargement,
 changement de ville, zoom, pose d'un lieu à la main, tirage au hasard, lien de
-partage, mode lecture seule, fusion. Le test échoue au moindre message d'erreur
-en console.
+partage, mode lecture seule, fusion, et un import de photothèque complet sur de
+vraies photos porteuses d'EXIF GPS fabriquées par `tools/make_fixtures.mjs`. Le
+test échoue au moindre message d'erreur en console.
 
 ## Suite
 

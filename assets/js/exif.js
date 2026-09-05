@@ -126,11 +126,18 @@
     const empty = { takenAt: null, lat: null, lon: null };
     try {
       if (!file || !(file.type === 'image/jpeg' || /\.jpe?g$/i.test(file.name || ''))) return empty;
-      const head = file.slice(0, 256 * 1024);
-      const buf = await CW.readFileAsArrayBuffer(head);
-      const view = new DataView(buf);
-      const tiff = findTiff(view);
-      if (tiff < 0) return empty;
+      // Presque tous les JPEG portent l'APP1 dans les premiers kilo-octets : on lit
+      // petit d'abord, et on n'élargit que si nécessaire. Sur un import de milliers
+      // de photos, cela divise la lecture disque par quatre.
+      let view = null, tiff = -1;
+      for (const size of [64 * 1024, 256 * 1024]) {
+        if (size > file.size && view) break;
+        const buf = await CW.readFileAsArrayBuffer(file.slice(0, size));
+        view = new DataView(buf);
+        tiff = findTiff(view);
+        if (tiff >= 0 || size >= file.size) break;
+      }
+      if (!view || tiff < 0) return empty;
       const hdr = parseTiff(view, tiff);
       if (!hdr) return empty;
       const { little } = hdr;
