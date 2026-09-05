@@ -9,6 +9,10 @@
 <meta name="theme-color" content="#121312" media="(prefers-color-scheme: dark)">
 <meta name="color-scheme" content="light dark">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='13' r='11' fill='none' stroke='%232f5d8a' stroke-width='3'/%3E%3Ccircle cx='16' cy='13' r='3.5' fill='%232f5d8a'/%3E%3Cpath d='M16 24v6' stroke='%232f5d8a' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="assets/icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="CityWalker">
 <link rel="stylesheet" href="assets/app.css">
 </head>
 <body>
@@ -71,6 +75,12 @@
             <strong class="map-city-name">—</strong>
             <span class="map-city-sub"></span>
           </div>
+          <div class="map-tools" role="group" aria-label="Outils de carte">
+            <button type="button" class="btn btn-small" id="btn-add-spot" aria-pressed="false"
+                    title="Poser une épingle où tu veux sur la carte">＋ Poser un lieu</button>
+            <button type="button" class="btn btn-small" id="btn-random"
+                    title="Choisir au hasard un lieu qu'il te reste à photographier">🎲 Au hasard</button>
+          </div>
           <div class="map-zoom" role="group" aria-label="Zoom">
             <button type="button" class="btn btn-icon" id="btn-zoom-in" aria-label="Zoomer" title="Zoomer">+</button>
             <button type="button" class="btn btn-icon" id="btn-zoom-out" aria-label="Dézoomer" title="Dézoomer">−</button>
@@ -79,6 +89,10 @@
         </div>
 
         <div class="map-tooltip" id="map-tooltip" hidden aria-hidden="true"></div>
+
+        <p class="add-hint" id="add-hint" hidden role="status">
+          Clique n'importe où sur la carte pour y poser ton lieu. <kbd>Échap</kbd> pour annuler.
+        </p>
 
         <div class="map-legend" id="map-legend">
           <span class="legend-item"><span class="legend-dot legend-dot-done"></span>photographié</span>

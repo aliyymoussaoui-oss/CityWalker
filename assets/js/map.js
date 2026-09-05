@@ -15,6 +15,8 @@
       this.getEntry = () => null;
       this.onSelect = () => {};
       this.onZone = () => {};
+      this.onAddPoint = () => {};
+      this.addMode = false;
       this.k = 1; this.tx = 0; this.ty = 0;
       this.selected = null;
       this.pins = new Map();
@@ -24,7 +26,7 @@
       this._bind();
     }
 
-    load(city) {
+    load(city, spots) {
       this.city = city;
       this.selected = null;
       this.pins.clear();
@@ -71,23 +73,75 @@
 
       const pins = CW.svg('g', { class: 'layer-pins' });
       this.pinLayer = pins;
-      for (const s of city.spots) {
-        const g = CW.svg('g', { class: 'pin', transform: `translate(${s.x} ${s.y})`, 'data-id': s.id, tabindex: -1, role: 'button', 'aria-label': s.name });
+      scene.appendChild(pins);
+      svg.appendChild(scene);
+      this.setSpots(spots || city.spots);
+      this.reset(false);
+    }
+
+    /** (Re)construit la couche d'épingles — liste curatée plus lieux personnels. */
+    setSpots(spots) {
+      CW.clear(this.pinLayer);
+      this.pins.clear();
+      for (const s of spots) {
+        const g = CW.svg('g', {
+          class: `pin${s.custom ? ' is-custom' : ''}`, transform: `translate(${s.x} ${s.y})`,
+          'data-id': s.id, tabindex: -1, role: 'button', 'aria-label': s.name,
+        });
         const inner = CW.svg('g', { class: 'pin-inner' });
         inner.appendChild(CW.svg('path', { d: PIN_D, class: 'pin-body' }));
         inner.appendChild(CW.svg('circle', { cx: 0, cy: -14.5, r: 3.2, class: 'pin-dot' }));
         inner.appendChild(CW.svg('text', { x: 12, y: -11, class: 'pin-label', text: s.name }));
         g.appendChild(inner);
-        g.addEventListener('click', (e) => { e.stopPropagation(); if (!this._moved) this.onSelect(s.id); });
+        g.addEventListener('click', (e) => { e.stopPropagation(); if (!this._moved && !this.addMode) this.onSelect(s.id); });
         g.addEventListener('pointerenter', () => this._tip(s, g));
         g.addEventListener('pointerleave', () => this._hideTip());
-        pins.appendChild(g);
+        this.pinLayer.appendChild(g);
         this.pins.set(s.id, { g, inner, spot: s });
       }
-      scene.appendChild(pins);
-      svg.appendChild(scene);
+      this._apply();
       this.refresh();
-      this.reset(false);
+    }
+
+    /** viewBox -> latitude/longitude (inverse de la projection du build). */
+    unproject(x, y) {
+      const pr = this.city.projection;
+      const mx = (x - pr.pad) / pr.scale + pr.x0;
+      const my = (y - pr.pad) / pr.scale + pr.y0;
+      const lon = (mx * 180) / Math.PI;
+      const lat = ((2 * Math.atan(Math.exp(-my)) - Math.PI / 2) * 180) / Math.PI;
+      return { lat: Math.round(lat * 1e6) / 1e6, lon: Math.round(lon * 1e6) / 1e6 };
+    }
+
+    /** Quartier contenant un point du viewBox, via le tracé SVG lui-même. */
+    zoneAt(x, y) {
+      const paths = this.svg.querySelectorAll('.zone');
+      for (const path of paths) {
+        try {
+          if (path.isPointInFill && path.isPointInFill(new DOMPoint(x, y))) return path.dataset.zone;
+        } catch (_) { /* isPointInFill absent : on retombe sur le centroïde */ }
+      }
+      let best = null, bestD = Infinity;
+      for (const z of this.city.zones) {
+        const d = Math.hypot(z.cx - x, z.cy - y);
+        if (d < bestD) { bestD = d; best = z.id; }
+      }
+      return best;
+    }
+
+    /** Le point est-il à l'intérieur de la commune ? */
+    insideCity(x, y) {
+      const outline = this.svg.querySelector('.outline');
+      try {
+        if (outline && outline.isPointInFill) return outline.isPointInFill(new DOMPoint(x, y));
+      } catch (_) { /* rien */ }
+      return true;
+    }
+
+    setAddMode(on) {
+      this.addMode = !!on;
+      this.svg.classList.toggle('is-adding', this.addMode);
+      this._hideTip();
     }
 
     /** Met à jour l'état visuel des épingles (fait / à faire / sélection). */
@@ -294,7 +348,16 @@
         else if (e.key === '-') { this.zoomBy(1 / 1.4); e.preventDefault(); }
         else if (e.key === '0') { this.reset(true); e.preventDefault(); }
       });
-      svg.addEventListener('click', () => { if (!this._moved) this.onSelect(null); });
+      svg.addEventListener('click', (e) => {
+        if (this._moved || !this.city) return;
+        if (this.addMode) {
+          const p = this._toVB(e.clientX, e.clientY);
+          const scene = { x: (p.x - this.tx) / this.k, y: (p.y - this.ty) / this.k };
+          this.onAddPoint(scene.x, scene.y);
+          return;
+        }
+        this.onSelect(null);
+      });
       window.addEventListener('resize', () => this._hideTip());
     }
   }

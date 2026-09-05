@@ -68,7 +68,28 @@
 
   /** Structure de progression vide pour une ville. */
   CW.emptyProgress = function emptyProgress(cityId) {
-    return { v: CW.VERSION, city: cityId, owner: '', updatedAt: 0, spots: {} };
+    return { v: CW.VERSION, city: cityId, owner: '', updatedAt: 0, spots: {}, custom: [] };
+  };
+
+  /** Un lieu posé à la main sur la carte, hors de la liste curatée. */
+  CW.normalizeCustom = function normalizeCustom(raw) {
+    if (!raw || typeof raw !== 'object') return null;
+    const num = (v) => (Number.isFinite(v) ? v : null);
+    const x = num(raw.x), y = num(raw.y);
+    const lat = num(raw.lat), lon = num(raw.lon);
+    if (x === null || y === null) return null;
+    const id = typeof raw.id === 'string' && /^[a-z0-9-]{1,40}$/i.test(raw.id) ? raw.id : null;
+    if (!id) return null;
+    return {
+      id,
+      name: (typeof raw.name === 'string' && raw.name.trim() ? raw.name.trim() : 'Lieu sans nom').slice(0, 80),
+      cat: CW.CATS[raw.cat] ? raw.cat : 'insolite',
+      zone: typeof raw.zone === 'string' ? raw.zone.slice(0, 40) : '',
+      x, y,
+      lat: lat === null ? 0 : lat,
+      lon: lon === null ? 0 : lon,
+      custom: true,
+    };
   };
 
   /** Entrée vide pour un lieu. */
@@ -97,6 +118,13 @@
       for (const id of Object.keys(raw.spots)) {
         if (typeof id !== 'string' || id.length > 64) continue;
         p.spots[id] = CW.normalizeEntry(raw.spots[id]);
+      }
+    }
+    if (Array.isArray(raw.custom)) {
+      const seen = new Set();
+      for (const c of raw.custom.slice(0, 500)) {
+        const clean = CW.normalizeCustom(c);
+        if (clean && !seen.has(clean.id)) { seen.add(clean.id); p.custom.push(clean); }
       }
     }
     return p;
@@ -133,11 +161,21 @@
         for (const t of e.tags || []) if (t in byTag) byTag[t]++;
       }
     }
+    let customTotal = 0, customDone = 0;
+    for (const c of progress.custom || []) {
+      customTotal++;
+      const e = entries[c.id];
+      if (CW.isDone(e)) {
+        customDone++;
+        photos += e.photos ? e.photos.length : 0;
+        for (const t of e.tags || []) if (t in byTag) byTag[t]++;
+      }
+    }
     const pct = total ? Math.round((done / total) * 1000) / 10 : 0;
     const zonesVisited = Object.values(byZone).filter((z) => z.done > 0).length;
     const zonesComplete = Object.values(byZone).filter((z) => z.total > 0 && z.done === z.total).length;
     return {
-      total, done, pct, photos, byZone, byCat, byTag,
+      total, done, pct, photos, byZone, byCat, byTag, customTotal, customDone,
       zonesVisited, zonesTotal: city.zones.length, zonesComplete,
       level: CW.levelFor(pct),
       next: CW.LEVELS.find((l) => l.min > pct) || null,

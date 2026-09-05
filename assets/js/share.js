@@ -52,7 +52,9 @@
       if (opts && opts.notes && e.note) row.push(e.note);
       s[id] = row;
     }
-    return { v: 1, c: cityId, o: (progress.owner || (opts && opts.owner) || '').slice(0, 40), t: progress.updatedAt || Date.now(), s };
+    // Les lieux posés à la main voyagent aussi : c'est souvent le plus intéressant.
+    const x = (progress.custom || []).map((c) => [c.id, c.name, c.cat, c.x, c.y, c.lat, c.lon, c.zone || '']);
+    return { v: 1, c: cityId, o: (progress.owner || (opts && opts.owner) || '').slice(0, 40), t: progress.updatedAt || Date.now(), s, x };
   }
 
   /** Construit le fragment `#p=...` à coller après l'URL de l'application. */
@@ -92,6 +94,13 @@
       entry.note = typeof row[4] === 'string' ? row[4].slice(0, 2000) : '';
       progress.spots[id] = entry;
     }
+    if (Array.isArray(payload.x)) {
+      for (const row of payload.x.slice(0, 500)) {
+        if (!Array.isArray(row)) continue;
+        const c = CW.normalizeCustom({ id: row[0], name: row[1], cat: row[2], x: row[3], y: row[4], lat: row[5], lon: row[6], zone: row[7] });
+        if (c) progress.custom.push(c);
+      }
+    }
     return { city: payload.c, owner: progress.owner, updatedAt: progress.updatedAt, progress };
   };
 
@@ -125,6 +134,12 @@
       m.rating = Math.max(m.rating || 0, t.rating || 0);
       if (JSON.stringify(m) !== before) changed++;
       out.spots[id] = m;
+    }
+    const known = new Set(out.custom.map((c) => c.id));
+    for (const c of theirs.custom || []) {
+      if (known.has(c.id)) continue;
+      const clean = CW.normalizeCustom(c);
+      if (clean) { out.custom.push(clean); known.add(clean.id); changed++; }
     }
     if (!out.owner && theirs.owner) out.owner = theirs.owner;
     return { progress: out, changed };

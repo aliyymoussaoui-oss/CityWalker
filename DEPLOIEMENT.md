@@ -12,7 +12,16 @@ Il y a deux formes livrées :
 | Fichier | Usage |
 | --- | --- |
 | `index.html` + `assets/` + `data/` | le site complet, à publier sur un hébergement |
-| `dist/citywalker.html` | l'application entière en **un seul fichier** (237 Ko), qui s'ouvre même par double-clic |
+| `dist/citywalker.html` | l'application entière en **un seul fichier** (250 Ko), qui s'ouvre même par double-clic |
+| `dist/site/` | le même fichier nommé `index.html` : un dossier prêt à déposer tel quel |
+
+## Le plus rapide : glisser un dossier
+
+[app.netlify.com/drop](https://app.netlify.com/drop) : glisse le dossier
+`dist/site/` dans la page. Une URL publique apparaît en quelques secondes, sans
+compte. C'est la voie la plus courte pour avoir un lien à envoyer aujourd'hui.
+Elle ne donne ni installation en application ni mode hors ligne — pour ça, il
+faut publier le site complet, ci-dessous.
 
 Régénérer le fichier unique après une modification :
 

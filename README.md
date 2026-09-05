@@ -9,6 +9,9 @@ Une seule page, aucun compte, aucun serveur. Tout reste sur ton appareil.
 
 - **155 lieux à Paris**, répartis sur les 20 arrondissements.
 - **85 lieux à Montpellier**, répartis sur les 7 grands quartiers.
+- **Autant de lieux à toi que tu veux**, posés n'importe où sur la carte. Ils
+  sont comptés à part, pour que le pourcentage de la ville reste honnête.
+- Installable comme une application depuis le navigateur, utilisable hors ligne.
 - Cartes vectorielles dessinées à partir des données officielles : silhouette de
   la commune, limites de quartiers, cours d'eau, parcs. Aucune tuile à charger,
   la carte fonctionne hors ligne une fois la page ouverte.
@@ -18,10 +21,13 @@ Une seule page, aucun compte, aucun serveur. Tout reste sur ton appareil.
 1. Choisis la ville en haut à gauche.
 2. Clique une épingle sur la carte, ou un lieu dans la liste de droite.
 3. Bouton **« Je l'ai photographié »**, puis coche les ambiances capturées.
-4. Ajoute tes photos : elles sont redimensionnées et rangées dans le navigateur.
+4. Pas dans la liste ? **＋ Poser un lieu** sur la carte, puis clique où tu veux :
+   le quartier et les coordonnées sont déduits tout seuls. **🎲 Au hasard** tire
+   un lieu qu'il te reste à faire.
+5. Ajoute tes photos : elles sont redimensionnées et rangées dans le navigateur.
    Si la photo porte une date EXIF, elle remplit la date toute seule ; si elle
    porte des coordonnées GPS, l'application signale le lieu le plus proche.
-5. L'onglet **Progression** donne le pourcentage global, le détail par quartier,
+6. L'onglet **Progression** donne le pourcentage global, le détail par quartier,
    par catégorie et par ambiance, plus une liste de prochains lieux à faire.
 
 ### Partager une carte
@@ -90,6 +96,8 @@ tools/                pipeline de génération des données
 tools/build_single.py fabrique dist/citywalker.html et dist/artifact.html
 tests/smoke.mjs       tests de bout en bout (Chromium headless)
 tests/single.mjs      vérifie le fichier unique hors serveur
+manifest.webmanifest  installation en application
+sw.js                 cache hors ligne
 DEPLOIEMENT.md        mise en ligne, hébergeur par hébergeur
 ```
 
@@ -117,19 +125,18 @@ node tests/smoke.mjs     # 31 vérifications sur le site
 node tests/single.mjs    # le fichier unique, ouvert en file://
 ```
 
-31 vérifications de bout en bout : rendu des deux cartes, cochage d'un lieu,
+42 vérifications de bout en bout : rendu des deux cartes, cochage d'un lieu,
 ambiances, filtres, recherche sans accent, persistance après rechargement,
-changement de ville, zoom, lien de partage, mode lecture seule, fusion. Le test
-échoue au moindre message d'erreur en console.
+changement de ville, zoom, pose d'un lieu à la main, tirage au hasard, lien de
+partage, mode lecture seule, fusion. Le test échoue au moindre message d'erreur
+en console.
 
-## Suite envisagée (v2)
+## Suite
 
-- **Communes alentours** : Vincennes, Boulogne, Saint-Ouen côté Paris ;
-  Palavas-les-Flots, Maguelone, Pic Saint-Loup côté Montpellier. La carte est
-  aujourd'hui bornée à la commune, l'ajout demande d'élargir la projection et
-  d'ajouter une couche de communes voisines.
-- Vue « pellicule » : toutes les photos d'une ville sur une même page.
-- Export d'une image de la carte à publier.
+- **[ROADMAP.md](ROADMAP.md)** — communes alentours, autres villes, et le chemin
+  vers une application mobile (la PWA est déjà là, Capacitor ensuite).
+- **[ETUDE-COMMERCIALE.md](ETUDE-COMMERCIALE.md)** — ce que ça peut rapporter,
+  ce que ça ne rapportera pas, et dans quel ordre le tester.
 
 ## Données
 

@@ -189,6 +189,9 @@ a { color: var(--accent); }
 .pin:hover .pin-body { stroke-width: 2.2; }
 .pin.is-selected .pin-body { fill: var(--danger); stroke: color-mix(in srgb, var(--danger) 60%, #000); stroke-width: 2.2; }
 .pin.is-selected .pin-dot { fill: #fff; }
+.pin.is-custom .pin-body { stroke-dasharray: 3 2.2; }
+.pin.is-custom.is-done .pin-body { stroke-dasharray: none; stroke: var(--danger); fill: var(--danger); }
+.pin.is-custom .pin-dot { r: 2.6; }
 .pin.is-dim { opacity: .22; }
 .pin.is-dim:hover { opacity: .6; }
 .pin-label {
@@ -210,8 +213,25 @@ a { color: var(--accent); }
 }
 .map-city-name { display: block; font-size: 15px; letter-spacing: -.01em; }
 .map-city-sub { display: block; font-size: 11.5px; color: var(--ink-soft); }
+.map-tools { display: flex; flex-direction: column; gap: 5px; pointer-events: auto; align-items: flex-end; margin-left: auto; }
+.map-tools .btn { background: color-mix(in srgb, var(--surface) 92%, transparent); backdrop-filter: blur(6px); white-space: nowrap; }
+.map-tools .btn.is-on { background: var(--accent); border-color: var(--accent); color: #fff; }
 .map-zoom { display: flex; flex-direction: column; gap: 5px; pointer-events: auto; }
 .map-zoom .btn { background: color-mix(in srgb, var(--surface) 92%, transparent); backdrop-filter: blur(6px); }
+
+.add-hint {
+  position: absolute; left: 50%; top: 14px; transform: translateX(-50%);
+  background: var(--accent); color: #fff; padding: 7px 14px; border-radius: 999px;
+  font-size: 12.5px; box-shadow: var(--shadow); z-index: 6; text-align: center;
+  max-width: calc(100% - 24px);
+}
+.add-hint[hidden] { display: none; }
+.add-hint kbd {
+  font: inherit; background: rgba(255, 255, 255, .22); border-radius: 4px; padding: 0 5px;
+}
+.map.is-adding { cursor: crosshair; }
+.map.is-adding .pin { pointer-events: none; }
+.map.is-adding .zone:hover { fill: color-mix(in srgb, var(--accent) 10%, transparent); cursor: crosshair; }
 
 .map-tooltip {
   position: absolute; transform: translate(-50%, -100%);
@@ -351,7 +371,9 @@ a { color: var(--accent); }
 
 .sheet-backdrop { position: fixed; inset: 0; background: rgba(0, 0, 0, .35); z-index: 20; }
 .sheet {
-  position: absolute; right: 396px; bottom: 16px; width: 380px; max-height: calc(100% - 32px);
+  /* La hauteur est bornée pour ne jamais recouvrir les outils de carte en haut :
+     poser un lieu ou tirer au hasard reste possible, fiche ouverte. */
+  position: absolute; right: 396px; bottom: 16px; width: 380px; max-height: calc(100% - 152px);
   overflow: auto; overscroll-behavior: contain; background: var(--surface);
   border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow);
   z-index: 21; padding: 14px 16px 18px;
@@ -390,6 +412,7 @@ a { color: var(--accent); }
 .tag-chip.is-static { cursor: default; }
 .tag-emoji { font-size: 13px; line-height: 1; }
 .mini-tag { font-size: 10.5px; }
+.sheet-delete { margin-top: 14px; }
 .sheet-hint, .hint { font-size: 11.5px; color: var(--ink-faint); margin-top: 7px; }
 .sheet-ro { font-size: 13px; margin: 10px 0; font-weight: 540; }
 .sheet-date { font-size: 12px; color: var(--ink-soft); margin-top: 6px; }
@@ -475,6 +498,8 @@ a { color: var(--accent); }
   .btn-label { display: none; }
   .btn-ghost { padding: 7px 9px; }
   .map-legend { font-size: 11px; gap: 10px; }
+  .map-tools .btn { padding: 5px 8px; font-size: 12px; }
+  .map-hud { inset: 8px 8px auto 8px; gap: 6px; }
   .legend-hint { display: none; }
   .field-grid { grid-template-columns: 1fr; }
   .prog-tags { grid-template-columns: 1fr; }

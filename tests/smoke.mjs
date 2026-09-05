@@ -123,6 +123,44 @@ await page.locator('#btn-zoom-reset').click();
 await page.waitForTimeout(420);
 check('le recentrage revient à l’échelle 1', /scale\(1\)/.test(await page.locator('#map .scene').getAttribute('transform')));
 
+console.log('\n— Lieu posé à la main —');
+await page.locator('.city-tab[data-city="montpellier"]').click();
+await page.waitForFunction(() => document.querySelector('.map-city-name').textContent === 'Montpellier');
+await page.locator('#btn-add-spot').click();
+check('le mode « poser un lieu » s’annonce', await page.locator('#add-hint').isVisible());
+const box = await page.locator('#map').boundingBox();
+await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+await page.waitForSelector('#sheet:not([hidden])');
+check('l’indication disparaît après la pose', await page.locator('#add-hint').isHidden());
+check('une épingle personnelle est née', await page.locator('#map .pin.is-custom').count() === 1);
+await page.fill('#sheet .custom-name', 'Le muret derrière la gare');
+await page.waitForTimeout(550);
+check('le nom est enregistré', (await page.locator('#map .pin.is-custom').getAttribute('aria-label')) === 'Le muret derrière la gare');
+const customGroup = await page.locator('.group', { hasText: 'Mes lieux' }).count();
+check('le lieu apparaît sous « Mes lieux »', customGroup === 1);
+const geo = await page.locator('#sheet .hint').first().textContent();
+check('les coordonnées sont plausibles à Montpellier', /Posé à 43\.\d+, 3\.\d+/.test(geo), geo);
+await page.locator('.done-toggle').click();
+await page.waitForSelector('.done-toggle.is-on');
+await page.locator('.side-tab[data-tab="progress"]').click();
+const customLine = await page.locator('.prog-sub', { hasText: 'lieu à toi' }).textContent();
+check('les lieux perso sont comptés hors pourcentage', /1\/1 lieu à toi/.test(customLine), customLine);
+check('le pourcentage de la ville reste à 0', (await page.locator('[data-pct-for="montpellier"]').textContent()).trim() === '0 %');
+await page.locator('.side-tab[data-tab="lieux"]').click();
+
+console.log('\n— Au hasard —');
+await page.locator('#btn-random').click();
+await page.waitForSelector('#sheet:not([hidden])');
+check('un lieu au hasard est sélectionné', (await page.locator('.sheet-title').textContent()).length > 0);
+await page.locator('.sheet-close').click();
+
+console.log('\n— Persistance du lieu posé —');
+await page.reload({ waitUntil: 'load' });
+await page.waitForSelector('#app[aria-busy="false"]');
+await page.locator('.city-tab[data-city="montpellier"]').click();
+await page.waitForFunction(() => document.querySelector('.map-city-name').textContent === 'Montpellier');
+check('le lieu posé survit au rechargement', await page.locator('#map .pin.is-custom.is-done').count() === 1);
+
 console.log('\n— Lien de partage —');
 await page.locator('.city-tab[data-city="paris"]').click();
 await page.waitForFunction(() => document.querySelector('.map-city-name').textContent === 'Paris');
@@ -148,6 +186,9 @@ check('le lieu partagé est le bon', (await page2.locator('.sheet-title').textCo
 await page2.locator('#btn-merge-shared').click();
 await page2.waitForFunction(() => document.getElementById('shared-banner').hidden);
 check('la fusion recopie la progression', await page2.locator('#map .pin.is-done').count() === 1);
+await page2.locator('.city-tab[data-city="montpellier"]').click();
+await page2.waitForFunction(() => document.querySelector('.map-city-name').textContent === 'Montpellier');
+check('le lieu posé n’a pas fui vers l’autre ville', await page2.locator('#map .pin.is-custom').count() === 0);
 
 console.log('\n— Accessibilité de base —');
 check('la carte est focusable au clavier', await page.locator('#map[tabindex="0"]').count() === 1);

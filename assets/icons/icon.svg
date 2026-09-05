@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="CityWalker">
+  <rect width="512" height="512" rx="112" fill="#f5f3ef"/>
+  <circle cx="256" cy="212" r="128" fill="none" stroke="#2f5d8a" stroke-width="34"/>
+  <circle cx="256" cy="212" r="44" fill="#2f5d8a"/>
+  <path d="M256 350v104" stroke="#2f5d8a" stroke-width="34" stroke-linecap="round"/>
+</svg>

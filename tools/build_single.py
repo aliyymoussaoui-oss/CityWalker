@@ -30,6 +30,10 @@ def build():
         scripts.append(f"/* ---- {name}.js ---- */\n{src}")
     bundle = "\n".join(scripts).replace("</script", "<\\/script")
 
+    # Le manifeste et l'icône ne servent qu'au site servi en HTTP : un fichier
+    # unique n'a rien à installer, on retire ces références externes.
+    html = re.sub(r'\n<link rel="manifest"[^>]*>', "", html)
+    html = re.sub(r'\n<link rel="apple-touch-icon"[^>]*>', "", html)
     html = html.replace('<link rel="stylesheet" href="assets/app.css">',
                         f"<style>\n{css}\n</style>")
     html = re.sub(r'\n<script src="assets/js/[a-z]+\.js"></script>', "", html)
@@ -55,7 +59,13 @@ def build():
     if problems:
         raise SystemExit("Build incohérent :\n  " + "\n  ".join(problems))
 
+    # Dossier prêt à déposer sur un hébergeur : un seul index.html, rien d'autre.
+    site = DIST / "site"
+    site.mkdir(exist_ok=True)
+    (site / "index.html").write_text(text, encoding="utf-8")
+
     print(f"dist/citywalker.html — {out.stat().st_size / 1024:.0f} Ko, autonome")
+    print("dist/site/index.html — dossier à glisser tel quel sur un hébergeur")
     return out
 
 

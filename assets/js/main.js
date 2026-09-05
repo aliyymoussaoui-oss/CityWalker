@@ -14,6 +14,7 @@
     selected: null,
     filters: { q: '', state: 'tous', zone: '', cat: '', tags: [] },
     map: null,
+    addMode: false,
     visible: new Set(),
   };
   window.CityWalker = app;
@@ -23,6 +24,10 @@
   const progressOf = () => (app.shared ? app.shared.progress : CW.store.loadProgress(app.cityId));
   const entryOf = (id) => progressOf().spots[id] || null;
   const readOnly = () => !!app.shared;
+  const customSpots = () => progressOf().custom || [];
+  /** Liste curatée plus lieux posés à la main : ce que voient la carte et la liste. */
+  const allSpots = () => app.city.spots.concat(customSpots());
+  const spotById = (id) => allSpots().find((s) => s.id === id) || null;
 
   // -------------------------------------------------------------- chargement
 
@@ -76,7 +81,8 @@
     const done = CW.isDone(e);
     if (f.state === 'done' && !done) return false;
     if (f.state === 'todo' && done) return false;
-    if (f.zone && spot.zone !== f.zone) return false;
+    if (f.zone === '__custom') { if (!spot.custom) return false; }
+    else if (f.zone && (spot.custom || spot.zone !== f.zone)) return false;
     if (f.cat && spot.cat !== f.cat) return false;
     if (f.tags.length) {
       const tags = e ? e.tags || [] : [];
@@ -100,13 +106,13 @@
   function renderList() {
     const host = $('#liste-lieux');
     clear(host);
-    const visible = app.city.spots.filter(matches);
+    const visible = allSpots().filter(matches);
     app.visible = new Set(visible.map((s) => s.id));
     app.map.setFilter(activeFilterCount() || app.filters.q || app.filters.state !== 'tous' ? app.visible : null);
 
     const summary = $('#list-summary');
     const stats = CW.computeStats(app.city, progressOf());
-    summary.textContent = visible.length === app.city.spots.length
+    summary.textContent = visible.length === allSpots().length
       ? `${stats.done} / ${stats.total} lieux photographiés`
       : `${visible.length} ${CW.plural(visible.length, 'lieu affiché', 'lieux affichés')} sur ${stats.total}`;
 
@@ -121,18 +127,20 @@
 
     const byZone = new Map();
     for (const s of visible) {
-      if (!byZone.has(s.zone)) byZone.set(s.zone, []);
-      byZone.get(s.zone).push(s);
+      const key = s.custom ? '__custom' : s.zone;
+      if (!byZone.has(key)) byZone.set(key, []);
+      byZone.get(key).push(s);
     }
-    for (const z of app.city.zones) {
+    const zonesPlusCustom = app.city.zones.concat([{ id: '__custom', name: 'Mes lieux', label: 'Mes lieux' }]);
+    for (const z of zonesPlusCustom) {
       const list = byZone.get(z.id);
       if (!list) continue;
-      const zs = stats.byZone[z.id] || { done: 0, total: list.length };
+      const zs = stats.byZone[z.id] || { done: list.filter((x) => CW.isDone(entryOf(x.id))).length, total: list.length };
       const group = el('section', { class: 'group' });
       group.appendChild(el('h3', { class: 'group-head' }, [
         el('button', {
           type: 'button', class: 'group-title', title: `Zoomer sur ${z.name}`,
-          onclick: () => { app.map.focusZone(z.id); setView('carte'); },
+          onclick: () => { if (z.id !== '__custom') app.map.focusZone(z.id); setView('carte'); },
         }, [
           el('span', { class: 'group-label', text: z.label }),
           el('span', { class: 'group-name', text: z.label === z.name ? '' : z.name }),
@@ -193,7 +201,7 @@
     const sheet = $('#sheet');
     const inner = $('#sheet-inner');
     if (!app.selected) { closeSheet(); return; }
-    const s = app.city.spots.find((x) => x.id === app.selected);
+    const s = spotById(app.selected);
     if (!s) { closeSheet(); return; }
     const zone = app.city.zones.find((z) => z.id === s.zone);
     const e = app.shared ? (progressOf().spots[s.id] || CW.emptyEntry()) : CW.store.ensureEntry(app.cityId, s.id);
@@ -215,6 +223,26 @@
     ]));
 
     if (s.tip) inner.appendChild(el('p', { class: 'tip' }, [el('span', { class: 'tip-ico', 'aria-hidden': 'true', text: '◆' }), s.tip]));
+
+    if (s.custom && !readOnly()) {
+      const grid = el('div', { class: 'field-grid' });
+      grid.appendChild(el('label', { class: 'field' }, [
+        el('span', { class: 'field-label', text: 'Nom du lieu' }),
+        el('input', {
+          type: 'text', class: 'custom-name', value: s.name === 'Lieu sans nom' ? '' : s.name,
+          placeholder: 'Ex. le muret derrière la gare', maxlength: 80,
+          oninput: CW.debounce((ev) => renameCustomSpot(s, { name: ev.target.value.trim() || 'Lieu sans nom' }), 400),
+        }),
+      ]));
+      grid.appendChild(el('label', { class: 'field' }, [
+        el('span', { class: 'field-label', text: 'Catégorie' }),
+        el('select', { onchange: (ev) => { renameCustomSpot(s, { cat: ev.target.value }); renderSheet(); } },
+          Object.keys(CW.CATS).sort((a, b) => CW.catLabel(a).localeCompare(CW.catLabel(b), 'fr'))
+            .map((c) => el('option', { value: c, selected: s.cat === c }, CW.catLabel(c)))),
+      ]));
+      inner.appendChild(grid);
+      inner.appendChild(el('p', { class: 'hint', text: `Posé à ${s.lat.toFixed(5)}, ${s.lon.toFixed(5)}.` }));
+    }
 
     if (readOnly()) {
       inner.appendChild(el('p', { class: 'sheet-ro' }, done ? 'Photographié ✓' : 'Pas encore photographié'));
@@ -293,6 +321,13 @@
         type: 'button', class: 'btn btn-add', onclick: () => fileInput.click(),
       }, CW.store.photosAvailable ? '+ Ajouter des photos' : '+ Ajouter des photos (indisponible ici)'));
       renderPhotos(photoHost, s);
+
+      if (s.custom) {
+        inner.appendChild(el('button', {
+          type: 'button', class: 'btn btn-danger btn-small sheet-delete',
+          onclick: () => deleteCustomSpot(s),
+        }, 'Supprimer ce lieu'));
+      }
     }
 
     sheet.hidden = false;
@@ -362,6 +397,80 @@
     renderSheet();
   }
 
+  // ------------------------------------------------------ lieux personnels
+
+  function toggleAddMode(on) {
+    if (readOnly()) return;
+    app.addMode = on === undefined ? !app.addMode : on;
+    app.map.setAddMode(app.addMode);
+    const btn = $('#btn-add-spot');
+    btn.setAttribute('aria-pressed', app.addMode ? 'true' : 'false');
+    btn.classList.toggle('is-on', app.addMode);
+    $('#add-hint').hidden = !app.addMode;
+    if (app.addMode) { setView('carte'); closeSheet(); }
+  }
+
+  function createCustomSpot(x, y) {
+    if (readOnly()) return;
+    if (!app.map.insideCity(x, y)) {
+      CW.toast(`Ce point est hors de ${app.city.name}. Pose l'épingle à l'intérieur de la ville.`, 'error');
+      return;
+    }
+    const { lat, lon } = app.map.unproject(x, y);
+    const spot = CW.normalizeCustom({
+      id: 'u' + CW.uid(), name: '', cat: 'insolite',
+      zone: app.map.zoneAt(x, y) || '',
+      x: Math.round(x * 10) / 10, y: Math.round(y * 10) / 10, lat, lon,
+    });
+    const p = CW.store.loadProgress(app.cityId);
+    p.custom.push(spot);
+    CW.store.saveProgress(app.cityId);
+    toggleAddMode(false);
+    app.map.setSpots(allSpots());
+    refreshAll();
+    selectSpot(spot.id, false);
+    const input = $('#sheet .custom-name');
+    if (input) { input.focus(); input.select(); }
+    CW.toast('Lieu posé. Donne-lui un nom.');
+  }
+
+  function deleteCustomSpot(spot) {
+    if (!confirm(`Supprimer « ${spot.name} » et ses photos ? C'est définitif.`)) return;
+    CW.store.photosForSpot(app.cityId, spot.id)
+      .then((rows) => Promise.all(rows.map((r) => CW.store.deletePhoto(r.id))))
+      .catch(() => {})
+      .then(() => {
+        const p = CW.store.loadProgress(app.cityId);
+        p.custom = p.custom.filter((c) => c.id !== spot.id);
+        delete p.spots[spot.id];
+        CW.store.saveProgress(app.cityId);
+        closeSheet();
+        app.map.setSpots(allSpots());
+        refreshAll();
+        CW.toast('Lieu supprimé.');
+      });
+  }
+
+  function renameCustomSpot(spot, patch) {
+    const p = CW.store.loadProgress(app.cityId);
+    const target = p.custom.find((c) => c.id === spot.id);
+    if (!target) return;
+    Object.assign(target, patch);
+    CW.store.saveProgress(app.cityId);
+    app.map.setSpots(allSpots());
+    refreshAll();
+  }
+
+  /** Un lieu au hasard parmi ceux qui restent à faire. */
+  function randomSpot() {
+    const todo = allSpots().filter((s) => !CW.isDone(entryOf(s.id)));
+    if (!todo.length) { CW.toast(`Tout est photographié à ${app.city.name}. Chapeau.`); return; }
+    const pick = todo[Math.floor(Math.random() * todo.length)];
+    setView('carte');
+    selectSpot(pick.id, true);
+    CW.toast(`Au hasard : ${pick.name}.`);
+  }
+
   // -------------------------------------------------------------- progression
 
   function renderProgress() {
@@ -375,6 +484,7 @@
         el('p', { class: 'prog-level', text: stats.level.label }),
         el('p', { class: 'prog-count' }, [el('strong', { text: `${stats.done}` }), ` / ${stats.total} lieux photographiés`]),
         el('p', { class: 'prog-sub', text: `${stats.photos} ${CW.plural(stats.photos, 'photo enregistrée', 'photos enregistrées')} · ${stats.zonesVisited}/${stats.zonesTotal} ${app.city.zoneWordPlural} entamés · ${stats.zonesComplete} ${CW.plural(stats.zonesComplete, 'terminé', 'terminés')}` }),
+        stats.customTotal ? el('p', { class: 'prog-sub', text: `Plus ${stats.customDone}/${stats.customTotal} ${CW.plural(stats.customTotal, 'lieu à toi', 'lieux à toi')}, hors du pourcentage.` }) : null,
         stats.next ? el('p', { class: 'prog-next', text: `Prochain palier à ${stats.next.min} % : ${stats.next.label}.` }) : null,
       ]),
     ]));
@@ -617,7 +727,7 @@
     $('.map-city-sub').textContent = app.city.subtitle;
     app.map.getEntry = entryOf;
     app.map.showLabels = app.settings.labels;
-    app.map.load(app.city);
+    app.map.load(app.city, allSpots());
     buildFilterOptions();
     app.selected = null;
     closeSheet();
@@ -629,11 +739,12 @@
     clear(zoneSel);
     zoneSel.appendChild(el('option', { value: '' }, `Tous les ${app.city.zoneWordPlural}`));
     for (const z of app.city.zones) zoneSel.appendChild(el('option', { value: z.id }, z.label === z.name ? z.name : `${z.label} — ${z.name}`));
+    zoneSel.appendChild(el('option', { value: '__custom' }, 'Mes lieux'));
     zoneSel.value = '';
     const catSel = $('#filter-cat');
     clear(catSel);
     catSel.appendChild(el('option', { value: '' }, 'Toutes les catégories'));
-    const used = Array.from(new Set(app.city.spots.map((s) => s.cat)));
+    const used = Array.from(new Set(allSpots().map((s) => s.cat)));
     for (const c of used.sort((a, b) => CW.catLabel(a).localeCompare(CW.catLabel(b), 'fr'))) catSel.appendChild(el('option', { value: c }, CW.CATS[c] ? CW.CATS[c].plural : c));
     catSel.value = '';
     app.filters.zone = ''; app.filters.cat = '';
@@ -678,7 +789,8 @@
     app.map = new CW.CityMap($('#map'), stage);
     app.map.getEntry = entryOf;
     app.map.onSelect = (id) => (id ? selectSpot(id, false) : closeSheet());
-    app.map.onZone = (zoneId) => { app.map.focusZone(zoneId); };
+    app.map.onZone = (zoneId) => { if (!app.addMode) app.map.focusZone(zoneId); };
+    app.map.onAddPoint = (x, y) => createCustomSpot(x, y);
 
     // Événements globaux
     $$('.city-tab').forEach((b) => b.addEventListener('click', () => switchCity(b.dataset.city)));
@@ -687,6 +799,8 @@
     $('#btn-theme').addEventListener('click', cycleTheme);
     $('#btn-settings').addEventListener('click', settingsModal);
     $('#btn-share').addEventListener('click', shareModal);
+    $('#btn-add-spot').addEventListener('click', () => toggleAddMode());
+    $('#btn-random').addEventListener('click', randomSpot);
     $('#btn-zoom-in').addEventListener('click', () => app.map.zoomBy(1.5));
     $('#btn-zoom-out').addEventListener('click', () => app.map.zoomBy(1 / 1.5));
     $('#btn-zoom-reset').addEventListener('click', () => app.map.reset(true));
@@ -717,6 +831,7 @@
       leaveShared(false);
     });
     document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && app.addMode) { toggleAddMode(false); return; }
       if (e.key === 'Escape' && app.selected && !$('#modal').open) closeSheet();
       if (e.key === '/' && document.activeElement !== $('#search')) { e.preventDefault(); $('#search').focus(); }
     });
@@ -742,7 +857,19 @@
     $('#boot').hidden = true;
   }
 
+  // Installable et utilisable hors ligne. Uniquement sur un site servi en HTTPS :
+  // le fichier unique (file://) et la visionneuse d'artifact n'y ont pas droit.
+  function registerServiceWorker() {
+    if (!('serviceWorker' in navigator)) return;
+    if (location.protocol !== 'https:' && location.hostname !== 'localhost') return;
+    if (window.CW_DATA) return;                    // build « un seul fichier » : rien à mettre en cache
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js').catch(() => { /* pas d'installation possible, tant pis */ });
+    });
+  }
+
   document.addEventListener('DOMContentLoaded', () => {
+    registerServiceWorker();
     boot().catch((err) => {
       const box = $('#boot-error');
       if (box) { box.hidden = false; box.textContent = (err && err.message) || 'Erreur inconnue au chargement.'; }
