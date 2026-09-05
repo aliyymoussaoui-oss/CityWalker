@@ -58,16 +58,28 @@ glisser le dossier du projet dans la page suffit à obtenir une URL.
 
 *Add New* → *Project* → dépôt → framework *Other* → build command vide → *Deploy*.
 
+## GitHub Pages — le dépôt est déjà prêt
+
+Le dépôt est public, la branche `public` porte le site, et le workflow
+`.github/workflows/pages.yml` attend. **Il reste un seul réglage, que seule une
+personne propriétaire du dépôt peut faire** : l'API qui crée un site Pages
+n'accepte ni le jeton d'un agent ni celui d'un workflow tant que Pages n'a jamais
+été activé.
+
+1. `github.com/aliyymoussaoui-oss/CityWalker` → **Settings** → **Pages**
+2. *Build and deployment* → **Source : GitHub Actions**
+
+C'est tout. Le workflow se déclenche à la poussée suivante — ou tout de suite
+depuis l'onglet *Actions* → *Publier sur GitHub Pages* → *Run workflow*.
+
+L'adresse sera `https://aliyymoussaoui-oss.github.io/CityWalker/`.
+
+### L'ancienne méthode
+
 ## GitHub Pages
 
-`Settings → Pages → Deploy from a branch`, branche
-`claude/paris-montpellier-photo-maps-7nh7q2`, dossier `/ (root)`.
-
-Attention : **sur un dépôt privé, GitHub Pages n'est pas disponible en accès
-public** avec un compte gratuit. Il faut soit rendre le dépôt public, soit passer
-par un des hébergeurs ci-dessus. Rendre ce dépôt public n'expose rien de
-personnel : il ne contient que le code et les données cartographiques ouvertes,
-jamais de photos ni de progression.
+`Settings → Pages → Deploy from a branch`, branche `public`, dossier `/ (root)`.
+Fonctionne aussi, mais sans les vérifications du workflow.
 
 ## Vérifier après déploiement
 
