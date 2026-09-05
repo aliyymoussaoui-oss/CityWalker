@@ -1,7 +1,7 @@
 # Publie le site sur GitHub Pages à chaque poussée sur `public`.
 #
-# `enablement: true` active Pages au premier passage : aucun réglage manuel.
-# Le dépôt doit être public pour que l'adresse soit accessible sans compte.
+# Pages doit être activé une fois dans Settings → Pages → Source: GitHub Actions.
+# Seuls les fichiers du site sont publiés : ni outils, ni tests, ni fixtures.
 name: Publier sur GitHub Pages
 
 on:
@@ -26,18 +26,24 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Vérifier que le site est complet
+      - name: Rassembler le site, et lui seul
         run: |
-          test -f index.html
-          test -f data/paris.json
-          test -f data/montpellier.json
-          test -f manifest.webmanifest
+          set -eu
+          for f in index.html manifest.webmanifest sw.js data/paris.json data/montpellier.json; do
+            test -f "$f" || { echo "manquant : $f"; exit 1; }
+          done
+          mkdir -p _site
+          cp index.html manifest.webmanifest sw.js _site/
+          cp -r assets data _site/
+          touch _site/.nojekyll
+          # Rien d'autre ne doit partir en ligne : ni outils, ni tests, ni build.
+          for d in tools tests dist .github node_modules; do
+            test ! -e "_site/$d" || { echo "$d ne devrait pas être publié"; exit 1; }
+          done
+          du -sh _site
       - uses: actions/configure-pages@v5
-        with:
-          # Active GitHub Pages tout seul au premier passage.
-          enablement: true
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: .
+          path: _site
       - id: deployment
         uses: actions/deploy-pages@v4
