@@ -1,14 +1,14 @@
 # Publie le site sur GitHub Pages.
 #
 # L'environnement `github-pages` n'accepte, par défaut, que des déploiements
-# venant de la branche par défaut du dépôt : le workflow écoute donc les deux
-# branches, et c'est la poussée sur la branche par défaut qui déploie vraiment.
+# venant de la branche par défaut du dépôt. Le workflow n'écoute donc qu'elle :
+# une poussée sur `public` produirait un échec sans journal, avant le premier pas.
 # Seuls les fichiers du site sont publiés : ni outils, ni tests, ni fixtures.
 name: Publier sur GitHub Pages
 
 on:
   push:
-    branches: [public, claude/paris-montpellier-photo-maps-7nh7q2]
+    branches: [claude/paris-montpellier-photo-maps-7nh7q2]
   workflow_dispatch:
 
 permissions:
@@ -18,7 +18,9 @@ permissions:
 
 concurrency:
   group: pages
-  cancel-in-progress: true
+  # On n'interrompt pas un déploiement en cours : deux poussées rapprochées
+  # doivent se suivre, pas s'annuler l'une l'autre.
+  cancel-in-progress: false
 
 jobs:
   deploy:
