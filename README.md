@@ -67,8 +67,9 @@ En local :
 python3 -m http.server 8000   # puis http://localhost:8000
 ```
 
-Un `file://` direct ne marche pas : `fetch()` sur `data/*.json` est bloqué par le
-navigateur.
+Ouvrir `index.html` par double-clic ne marche pas : `fetch()` sur `data/*.json`
+est bloqué en `file://`. C'est justement ce que résout `dist/citywalker.html`,
+qui embarque les données.
 
 ## Développement
 
@@ -86,7 +87,10 @@ assets/js/ui.js       petits composants (anneau, barre, puce d'ambiance)
 assets/js/main.js     orchestration
 data/*.json           géométries projetées + lieux (généré, versionné)
 tools/                pipeline de génération des données
+tools/build_single.py fabrique dist/citywalker.html et dist/artifact.html
 tests/smoke.mjs       tests de bout en bout (Chromium headless)
+tests/single.mjs      vérifie le fichier unique hors serveur
+DEPLOIEMENT.md        mise en ligne, hébergeur par hébergeur
 ```
 
 Les scripts sont chargés en ordre et partagent l'objet global `CW` : pas de
@@ -109,7 +113,8 @@ un objet `{id, name, cat, zone, query}` puis relancer les trois commandes.
 
 ```sh
 npm install
-node tests/smoke.mjs
+node tests/smoke.mjs     # 31 vérifications sur le site
+node tests/single.mjs    # le fichier unique, ouvert en file://
 ```
 
 31 vérifications de bout en bout : rendu des deux cartes, cochage d'un lieu,
