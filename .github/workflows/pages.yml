@@ -1,8 +1,7 @@
 # Publie le site sur GitHub Pages à chaque poussée sur `public`.
 #
-# À activer une seule fois : Settings → Pages → Source: GitHub Actions.
-# Le dépôt doit être public (Settings → General → Change visibility) pour que
-# l'adresse obtenue soit accessible sans compte.
+# `enablement: true` active Pages au premier passage : aucun réglage manuel.
+# Le dépôt doit être public pour que l'adresse soit accessible sans compte.
 name: Publier sur GitHub Pages
 
 on:
@@ -34,6 +33,9 @@ jobs:
           test -f data/montpellier.json
           test -f manifest.webmanifest
       - uses: actions/configure-pages@v5
+        with:
+          # Active GitHub Pages tout seul au premier passage.
+          enablement: true
       - uses: actions/upload-pages-artifact@v3
         with:
           path: .

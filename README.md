@@ -5,7 +5,8 @@ tu as déjà photographiés, noter dans quelle ambiance (coucher de soleil, nuit
 pluie, brume…), y attacher tes photos, et suivre ton pourcentage de découverte
 de la ville et de ses quartiers.
 
-Une seule page, aucun compte, aucun serveur. Tout reste sur ton appareil.
+Une seule page, aucun serveur obligatoire. Tout reste sur ton appareil — et si
+tu veux retrouver ta carte ailleurs, un compte facultatif la synchronise.
 
 - **155 lieux à Paris**, répartis sur les 20 arrondissements.
 - **85 lieux à Montpellier**, répartis sur les 7 grands quartiers.
@@ -49,6 +50,14 @@ jamais rien, elle ne fait qu'ajouter.
 Concrètement pour l'usage prévu : tu remplis Paris de ton côté, Souad remplit
 Montpellier du sien, et vous vous échangez vos liens.
 
+### Synchroniser entre plusieurs appareils
+
+Facultatif, éteint par défaut. **⚙ Réglages → Compte et synchronisation** : colle
+l'URL et la clé publique d'un projet [Supabase](https://supabase.com) gratuit,
+crée un compte, et ta progression comme tes photos suivent d'un appareil à
+l'autre. La fusion ne retire jamais rien. Mise en place détaillée, schéma SQL
+compris, dans **[SYNCHRONISATION.md](SYNCHRONISATION.md)**.
+
 ### Où sont mes données
 
 Dans ton navigateur, sur cet appareil, et nulle part ailleurs :
@@ -91,6 +100,7 @@ assets/js/store.js    localStorage (progression) + IndexedDB (photos)
 assets/js/exif.js     lecteur EXIF minimal : date de prise de vue et GPS
 assets/js/photos.js   décodage, redimensionnement, vignette
 assets/js/import.js   import de photothèque : lecture GPS, regroupement, rapport
+assets/js/cloud.js    comptes et synchronisation (API REST Supabase, sans SDK)
 assets/js/share.js    lien de partage, export/import, fusion
 assets/js/map.js      carte SVG : rendu, pan/zoom, épingles
 assets/js/ui.js       petits composants (anneau, barre, puce d'ambiance)
@@ -100,6 +110,7 @@ tools/                pipeline de génération des données
 tools/build_single.py fabrique dist/citywalker.html et dist/artifact.html
 tests/smoke.mjs       tests de bout en bout (Chromium headless)
 tests/single.mjs      vérifie le fichier unique hors serveur
+tests/cloud.mjs       comptes et synchronisation, contre un faux Supabase
 manifest.webmanifest  installation en application
 sw.js                 cache hors ligne
 DEPLOIEMENT.md        mise en ligne, hébergeur par hébergeur
@@ -125,8 +136,9 @@ un objet `{id, name, cat, zone, query}` puis relancer les trois commandes.
 
 ```sh
 npm install
-node tests/smoke.mjs     # 31 vérifications sur le site
+node tests/smoke.mjs     # 50 vérifications sur le site
 node tests/single.mjs    # le fichier unique, ouvert en file://
+node tests/cloud.mjs     # 15 vérifications sur les comptes et la synchro
 ```
 
 50 vérifications de bout en bout : rendu des deux cartes, cochage d'un lieu,

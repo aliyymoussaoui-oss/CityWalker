@@ -10,6 +10,10 @@
 - **Tirage au hasard** parmi les lieux qui restent à faire.
 - Progression globale, par quartier, catégorie et ambiance.
 - Lien de partage en lecture seule, fusion sans perte, export/import complet.
+- **Import de photothèque** : les photos géolocalisées sont replacées toutes
+  seules sur les lieux où elles ont été prises, et regroupées en nouveaux lieux
+  quand elles tombent loin de tout.
+- **Comptes et synchronisation** facultatifs entre appareils.
 - Installable depuis le navigateur (PWA) et utilisable hors ligne.
 
 ## v1.1 — communes alentours
@@ -62,22 +66,23 @@ Coût : 99 $/an (Apple), 25 $ une fois (Google), plus le temps de publication.
 
 ### Étape 3 — ce qui justifie vraiment le natif
 
-- **Scan de la photothèque** : parcourir les photos géolocalisées de l'appareil
-  et proposer « ces 34 photos sont sur des lieux de ta carte, on les épingle ? ».
-  C'est la fonctionnalité qui transforme l'outil : la carte se remplit toute
-  seule au premier lancement. À faire entièrement sur l'appareil, sans envoi.
+- **Scan de la photothèque en continu** : la version web demande de sélectionner
+  les photos ; une application native peut surveiller la photothèque et proposer
+  d'elle-même les nouvelles photos prises sur un lieu de la carte.
 - **Alerte de proximité** : « tu es à 120 m du parc de Belleville, jamais
   photographié, et le soleil se couche dans 25 minutes ».
 - **Éphémérides par lieu** : heure du lever et du coucher, azimut du soleil,
   calculés localement. Prolongement naturel des ambiances déjà en place.
 - **Widget** : le pourcentage de la ville sur l'écran d'accueil.
 
-### Étape 4 — comptes et synchronisation
+### Étape 4 — comptes et synchronisation (fait)
 
-À ne faire qu'une fois qu'il y a des utilisateurs qui le réclament. Tout ce qui
-existe aujourd'hui fonctionne sans serveur, donc sans coût ni fuite de données.
-Un compte apporte la synchronisation multi-appareils et le partage des photos ;
-il apporte aussi de l'hébergement à payer, de la modération et du RGPD.
+Comptes par e-mail et mot de passe, progression et photos synchronisées, fusion
+sans perte. Éteint par défaut : sans configuration, rien ne sort de l'appareil.
+Voir [SYNCHRONISATION.md](SYNCHRONISATION.md).
+
+Ce qui reste : réinitialisation du mot de passe dans l'interface, connexion par
+lien magique, et synchronisation automatique en arrière-plan plutôt qu'au bouton.
 
 ## Idées non planifiées
 

@@ -825,6 +825,98 @@
     });
   }
 
+  // ------------------------------------------------------------ compte
+
+  function accountSection(host) {
+    const wrap = el('section', { class: 'account' });
+    host.appendChild(wrap);
+
+    function render() {
+      CW.clear(wrap);
+      wrap.appendChild(el('h3', { class: 'modal-h3', text: 'Compte et synchronisation' }));
+
+      if (!CW.cloud.configured()) {
+        wrap.appendChild(el('p', { class: 'hint' },
+          'Aucune instance configurée : tout reste sur cet appareil. Pour synchroniser entre plusieurs appareils, crée un projet Supabase gratuit et colle ses deux valeurs ici (voir SYNCHRONISATION.md).'));
+        const url = el('input', { type: 'url', placeholder: 'https://xxxx.supabase.co', autocomplete: 'off' });
+        const key = el('input', { type: 'text', placeholder: 'Clé publique « anon »', autocomplete: 'off' });
+        wrap.appendChild(el('label', { class: 'field' }, [el('span', { class: 'field-label', text: 'URL du projet' }), url]));
+        wrap.appendChild(el('label', { class: 'field' }, [el('span', { class: 'field-label', text: 'Clé anon' }), key]));
+        wrap.appendChild(el('button', {
+          type: 'button', class: 'btn', onclick: () => {
+            const candidate = url.value.trim();
+            // https partout, http toléré en local pour développer.
+            const okUrl = /^https:\/\/.+/.test(candidate) || /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?/.test(candidate);
+            if (!okUrl) { CW.toast('URL invalide : elle doit commencer par https://', 'error'); return; }
+            if (key.value.trim().length < 20) { CW.toast('Clé trop courte.', 'error'); return; }
+            CW.cloud.setConfig(url.value, key.value);
+            CW.toast('Synchronisation configurée.');
+            render();
+          },
+        }, 'Enregistrer la configuration'));
+        return;
+      }
+
+      const s = CW.cloud.session();
+      if (!s) {
+        const email = el('input', { type: 'email', placeholder: 'ton@adresse.fr', autocomplete: 'email' });
+        const pass = el('input', { type: 'password', placeholder: 'Mot de passe (8 caractères minimum)', autocomplete: 'current-password' });
+        wrap.appendChild(el('label', { class: 'field' }, [el('span', { class: 'field-label', text: 'Adresse e-mail' }), email]));
+        wrap.appendChild(el('label', { class: 'field' }, [el('span', { class: 'field-label', text: 'Mot de passe' }), pass]));
+        const busy = (btn, on) => { btn.disabled = on; };
+        const run = async (btn, fn, okMessage) => {
+          if (!email.value.trim() || pass.value.length < 8) { CW.toast('Adresse et mot de passe de 8 caractères minimum.', 'error'); return; }
+          busy(btn, true);
+          try {
+            const r = await fn(email.value.trim(), pass.value);
+            if (r && r.pending) CW.toast('Compte créé. Confirme ton adresse depuis le mail reçu, puis connecte-toi.', 'info', 8000);
+            else { CW.toast(okMessage); render(); }
+          } catch (err) {
+            CW.toast((err && err.message) || 'Échec.', 'error');
+          } finally { busy(btn, false); }
+        };
+        wrap.appendChild(el('div', { class: 'modal-actions' }, [
+          el('button', { type: 'button', class: 'btn btn-primary', onclick: (ev) => run(ev.currentTarget, CW.cloud.signIn, 'Connecté.') }, 'Se connecter'),
+          el('button', { type: 'button', class: 'btn', onclick: (ev) => run(ev.currentTarget, CW.cloud.signUp, 'Compte créé.') }, 'Créer un compte'),
+        ]));
+        wrap.appendChild(el('button', {
+          type: 'button', class: 'btn btn-small btn-ghost', onclick: () => { CW.cloud.setConfig('', ''); render(); },
+        }, 'Changer d’instance'));
+        return;
+      }
+
+      const last = CW.cloud.lastSync();
+      wrap.appendChild(el('p', { class: 'account-who' }, [el('strong', { text: s.email || 'Connecté' })]));
+      wrap.appendChild(el('p', { class: 'hint', text: last ? `Dernière synchronisation : ${new Date(last).toLocaleString('fr-FR')}.` : 'Jamais synchronisé sur cet appareil.' }));
+      const status = el('p', { class: 'hint' });
+      wrap.appendChild(el('div', { class: 'modal-actions' }, [
+        el('button', {
+          type: 'button', class: 'btn btn-primary', onclick: async (ev) => {
+            const btn = ev.currentTarget;
+            btn.disabled = true;
+            try {
+              const r = await CW.cloud.sync(CW.CITY_ORDER, (t) => { status.textContent = t; });
+              status.textContent = '';
+              CW.toast(`Synchronisé : ${r.merged} ${CW.plural(r.merged, 'lieu mis à jour', 'lieux mis à jour')}, ${r.uploaded} ${CW.plural(r.uploaded, 'photo envoyée', 'photos envoyées')}, ${r.downloaded} ${CW.plural(r.downloaded, 'photo reçue', 'photos reçues')}.`, 'info', 7000);
+              refreshAll(); renderSheet(); render();
+            } catch (err) {
+              status.textContent = '';
+              CW.toast((err && err.message) || 'Synchronisation impossible.', 'error');
+            } finally { btn.disabled = false; }
+          },
+        }, 'Synchroniser maintenant'),
+        el('button', {
+          type: 'button', class: 'btn', onclick: async () => { await CW.cloud.signOut(); CW.toast('Déconnecté.'); render(); },
+        }, 'Se déconnecter'),
+      ]));
+      wrap.appendChild(status);
+      wrap.appendChild(el('p', { class: 'hint' },
+        'La fusion ne retire jamais rien : si deux appareils divergent, l’union des deux gagne.'));
+    }
+
+    render();
+  }
+
   function settingsModal() {
     openModal('Réglages', (host) => {
       host.appendChild(el('label', { class: 'field' }, [
@@ -850,6 +942,9 @@
       CW.store.storageEstimate().then((est) => {
         info.textContent = est && est.usage ? `Espace utilisé sur cet appareil : ${CW.fmtBytes(est.usage)}.` : 'Tes données restent sur cet appareil, dans ce navigateur.';
       });
+
+      host.appendChild(el('hr', { class: 'sep' }));
+      accountSection(host);
 
       host.appendChild(el('hr', { class: 'sep' }));
       host.appendChild(el('button', {

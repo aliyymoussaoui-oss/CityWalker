@@ -460,6 +460,8 @@ a { color: var(--accent); }
 .import-row:hover { background: var(--surface-2); }
 .import-row .check { align-items: flex-start; gap: 9px; }
 .import-row.is-new strong::after { content: ' · nouveau'; color: var(--accent); font-weight: 400; font-size: 11.5px; }
+.account { display: flex; flex-direction: column; gap: 10px; }
+.account-who { font-size: 13px; }
 .sep { border: 0; border-top: 1px solid var(--line); margin: 6px 0; width: 100%; }
 
 /* ------------------------------------------------------------------ toasts */

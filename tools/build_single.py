@@ -10,7 +10,7 @@ import json, pathlib, re, sys
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 DIST = ROOT / "dist"
 
-JS_ORDER = ["util", "model", "store", "exif", "photos", "import", "share", "map", "ui", "main"]
+JS_ORDER = ["util", "model", "store", "exif", "photos", "import", "cloud", "share", "map", "ui", "main"]
 
 
 def build():
