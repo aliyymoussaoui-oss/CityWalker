@@ -43,10 +43,16 @@ L'application est déjà une PWA : installable, plein écran, hors ligne. C'est
 90 % de la valeur pour 0 € et zéro validation de store. Les étapes suivantes ne
 se justifient que par des capacités réellement natives.
 
-### Étape 1 — PWA (fait)
+### Étape 1 — PWA et interface téléphone (fait)
 
-`manifest.webmanifest`, `sw.js`, icônes. Sur Android, Chrome propose
-« Installer ». Sur iOS, *Partager → Sur l'écran d'accueil*.
+`manifest.webmanifest`, `sw.js`, icônes, et un parcours d'installation guidé
+(Menu → Installer) qui utilise l'invite native sur Android et donne les étapes
+exactes sur iOS.
+
+L'interface téléphone a été refaite : barre du haut réduite à la marque et aux
+villes, le reste dans un menu ; carte à sa proportion réelle avec, sous elle, un
+aperçu de progression et les prochains lieux à faire ; fiche en feuille du bas
+que l'on referme en la tirant ; cibles tactiles élargies sur les épingles.
 Limite iOS à connaître : le stockage d'un site web peut être purgé après
 plusieurs semaines sans visite. L'export reste donc la vraie sauvegarde tant
 qu'il n'y a pas de compte.
@@ -66,9 +72,12 @@ Coût : 99 $/an (Apple), 25 $ une fois (Google), plus le temps de publication.
 
 ### Étape 3 — ce qui justifie vraiment le natif
 
-- **Scan de la photothèque en continu** : la version web demande de sélectionner
-  les photos ; une application native peut surveiller la photothèque et proposer
-  d'elle-même les nouvelles photos prises sur un lieu de la carte.
+- **Accès complet à la photothèque.** C'est la limite dure du web : aucun
+  navigateur, iOS compris, ne donne à un site l'accès à toute la photothèque.
+  Le sélecteur système est le seul chemin — on peut y faire « Tout sélectionner »,
+  et l'import gère des milliers de photos, mais l'utilisateur doit passer par ce
+  geste. Seule une application native (étape 2) peut lire la photothèque
+  directement et surveiller les nouvelles photos.
 - **Alerte de proximité** : « tu es à 120 m du parc de Belleville, jamais
   photographié, et le soleil se couche dans 25 minutes ».
 - **Éphémérides par lieu** : heure du lever et du coucher, azimut du soleil,

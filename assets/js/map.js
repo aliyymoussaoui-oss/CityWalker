@@ -89,6 +89,8 @@
           'data-id': s.id, tabindex: -1, role: 'button', 'aria-label': s.name,
         });
         const inner = CW.svg('g', { class: 'pin-inner' });
+        // Cible tactile généreuse, invisible : le doigt est plus large que l'épingle.
+        inner.appendChild(CW.svg('circle', { cx: 0, cy: -11, r: 15, class: 'pin-hit' }));
         inner.appendChild(CW.svg('path', { d: PIN_D, class: 'pin-body' }));
         inner.appendChild(CW.svg('circle', { cx: 0, cy: -14.5, r: 3.2, class: 'pin-dot' }));
         inner.appendChild(CW.svg('text', { x: 12, y: -11, class: 'pin-label', text: s.name }));

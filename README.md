@@ -12,7 +12,8 @@ tu veux retrouver ta carte ailleurs, un compte facultatif la synchronise.
 - **85 lieux à Montpellier**, répartis sur les 7 grands quartiers.
 - **Autant de lieux à toi que tu veux**, posés n'importe où sur la carte. Ils
   sont comptés à part, pour que le pourcentage de la ville reste honnête.
-- Installable comme une application depuis le navigateur, utilisable hors ligne.
+- Installable comme une application depuis le navigateur (Menu → Installer),
+  utilisable hors ligne, pensée pour le téléphone.
 - Cartes vectorielles dessinées à partir des données officielles : silhouette de
   la commune, limites de quartiers, cours d'eau, parcs. Aucune tuile à charger,
   la carte fonctionne hors ligne une fois la page ouverte.

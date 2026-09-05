@@ -189,6 +189,42 @@
     }
   }
 
+  /** Sur mobile, la feuille se ferme en la tirant vers le bas. */
+  function bindSheetDrag() {
+    const sheet = $('#sheet');
+    let start = null;
+    const isMobile = () => window.matchMedia('(max-width: 900px)').matches;
+
+    sheet.addEventListener('pointerdown', (e) => {
+      if (!isMobile()) return;
+      const onGrip = e.target.closest('.sheet-grip, .sheet-head');
+      if (!onGrip || e.target.closest('button, input, select, textarea, a')) return;
+      start = { y: e.clientY, id: e.pointerId };
+      sheet.style.transition = 'none';
+      try { sheet.setPointerCapture(e.pointerId); } catch (_) { /* rien */ }
+    });
+    sheet.addEventListener('pointermove', (e) => {
+      if (!start || e.pointerId !== start.id) return;
+      const dy = Math.max(0, e.clientY - start.y);
+      sheet.style.transform = `translateY(${dy}px)`;
+    });
+    const end = (e) => {
+      if (!start || e.pointerId !== start.id) return;
+      const dy = Math.max(0, e.clientY - start.y);
+      start = null;
+      sheet.style.transition = '';
+      try { sheet.releasePointerCapture(e.pointerId); } catch (_) { /* rien */ }
+      if (dy > 90) {
+        sheet.style.transform = 'translateY(100%)';
+        setTimeout(() => { sheet.style.transform = ''; closeSheet(); }, 180);
+      } else {
+        sheet.style.transform = '';
+      }
+    };
+    sheet.addEventListener('pointerup', end);
+    sheet.addEventListener('pointercancel', end);
+  }
+
   function closeSheet() {
     app.selected = null;
     app.map.select(null);
@@ -331,6 +367,7 @@
     }
 
     sheet.hidden = false;
+    sheet.style.transform = '';
     if (window.matchMedia('(max-width: 900px)').matches) $('#sheet-backdrop').hidden = false;
     sheet.scrollTop = 0;
   }
@@ -480,6 +517,12 @@
     openModal('Importer ma photothèque', (host) => {
       host.appendChild(el('p', { class: 'modal-lead' },
         'Choisis tes photos : CityWalker lit leur position GPS et les replace sur les lieux où elles ont été prises. Rien ne quitte cet appareil, et rien n’est écrit avant ton accord.'));
+      const tip = isIOS()
+        ? 'Sur iPhone, le sélecteur s’ouvre sur ta photothèque : appuie sur « Tout sélectionner » en haut, ou choisis un album entier.'
+        : CW.photoImport.supportsDirectory()
+          ? 'Pour tout passer en revue d’un coup, « choisir un dossier entier » lit aussi les sous-dossiers.'
+          : 'Dans le sélecteur, Ctrl+A (ou ⌘+A) prend toutes les photos du dossier.';
+      host.appendChild(el('p', { class: 'hint', text: tip }));
 
       const radiusField = el('label', { class: 'field' }, [
         el('span', { class: 'field-label', text: 'Distance maximale pour rattacher une photo à un lieu' }),
@@ -487,7 +530,7 @@
       ]);
       host.appendChild(radiusField);
 
-      const status = el('p', { class: 'hint' });
+      const status = el('p', { class: 'hint import-status', role: 'status' });
       const bar = el('div', { class: 'import-bar', hidden: true }, el('span'));
       const results = el('div', { class: 'import-results' });
 
@@ -960,6 +1003,69 @@
     });
   }
 
+  // -------------------------------------------------- menu mobile & install
+
+  let installPrompt = null;
+  const isStandalone = () => window.matchMedia('(display-mode: standalone)').matches
+    || window.navigator.standalone === true;
+  const isIOS = () => /iP(hone|ad|od)/.test(navigator.platform || '')
+    || (/Mac/.test(navigator.platform || '') && navigator.maxTouchPoints > 1);
+
+  function installModal() {
+    openModal('Installer CityWalker', (host) => {
+      if (installPrompt) {
+        host.appendChild(el('p', { class: 'modal-lead' },
+          'Ajoute CityWalker à ton écran d’accueil : plein écran, sans barre de navigateur, et utilisable hors ligne.'));
+        host.appendChild(el('button', {
+          type: 'button', class: 'btn btn-primary', onclick: async (ev) => {
+            const btn = ev.currentTarget;
+            btn.disabled = true;
+            try {
+              installPrompt.prompt();
+              const res = await installPrompt.userChoice;
+              installPrompt = null;
+              $('#modal').close();
+              CW.toast(res && res.outcome === 'accepted' ? 'CityWalker est installée.' : 'Installation annulée.');
+            } catch (_) { btn.disabled = false; }
+          },
+        }, 'Installer maintenant'));
+        return;
+      }
+      host.appendChild(el('p', { class: 'modal-lead' },
+        'CityWalker s’installe depuis le navigateur, sans passer par un magasin d’applications.'));
+      host.appendChild(el('div', { class: 'install-steps' }, isIOS() ? [
+        el('p', {}, [el('strong', { text: 'Sur iPhone et iPad, avec Safari :' })]),
+        el('p', {}, ['1. Appuie sur le bouton ', el('kbd', { text: 'Partager' }), ' en bas de l’écran.']),
+        el('p', {}, ['2. Fais défiler, puis choisis ', el('kbd', { text: 'Sur l’écran d’accueil' }), '.']),
+        el('p', {}, ['3. Confirme avec ', el('kbd', { text: 'Ajouter' }), '.']),
+        el('p', { class: 'hint' }, 'À savoir : iOS peut effacer les données d’un site resté plusieurs semaines sans visite. Exporte ta sauvegarde de temps en temps, ou active la synchronisation.'),
+      ] : [
+        el('p', {}, [el('strong', { text: 'Sur Android, avec Chrome :' })]),
+        el('p', {}, ['Menu ', el('kbd', { text: '⋮' }), ' → ', el('kbd', { text: 'Installer l’application' }), '.']),
+        el('p', { class: 'hint' }, 'Sur ordinateur, l’icône d’installation apparaît à droite de la barre d’adresse.'),
+      ]));
+    });
+  }
+
+  function menuModal() {
+    openModal('Menu', (host) => {
+      const item = (ico, label, sub, action) => el('button', {
+        type: 'button', class: 'menu-item', onclick: () => { $('#modal').close(); setTimeout(action, 60); },
+      }, [
+        el('span', { class: 'menu-item-ico', 'aria-hidden': 'true', text: ico }),
+        el('span', {}, [label, sub ? el('span', { class: 'menu-item-sub', text: sub }) : null]),
+      ]);
+      const list = el('div', { class: 'menu-list' }, [
+        item('▤', 'Mes photos', 'Replacer mes photos sur la carte', importModal),
+        item('↗', 'Partager ma carte', 'Lien, export, import', shareModal),
+        item('⚙', 'Réglages et compte', 'Thème, synchronisation, données', settingsModal),
+        isStandalone() ? null : item('⤓', 'Installer l’application', 'Sur l’écran d’accueil, hors ligne', installModal),
+        item('◐', 'Changer de thème', null, cycleTheme),
+      ]);
+      host.appendChild(list);
+    });
+  }
+
   // ------------------------------------------------------------------- vues
 
   function setView(view) {
@@ -974,10 +1080,40 @@
     if (tab === 'progress') renderProgress();
   }
 
+  /** Aperçu sous la carte, visible seulement sur les écrans étroits. */
+  function renderMapExtra(stats) {
+    const host = $('#map-extra');
+    if (!host) return;
+    clear(host);
+    host.appendChild(el('div', { class: 'extra-head' }, [
+      ring(stats.pct, 56),
+      el('div', { class: 'extra-figures' }, [
+        el('p', { class: 'extra-pct', text: stats.level.label }),
+        el('p', { class: 'extra-sub', text: `${stats.done} / ${stats.total} lieux · ${stats.photos} ${CW.plural(stats.photos, 'photo', 'photos')}` }),
+      ]),
+      el('button', { type: 'button', class: 'btn btn-small', onclick: randomSpot, style: { marginLeft: 'auto' } }, '🎲'),
+    ]));
+    const sugg = CW.suggest(app.city, progressOf(), stats, 4);
+    if (!sugg.length) return;
+    host.appendChild(el('p', { class: 'extra-title', text: 'À faire ensuite' }));
+    const ul = el('ul', { class: 'sugg-list' });
+    for (const s of sugg) {
+      ul.appendChild(el('li', {}, el('button', {
+        type: 'button', class: 'sugg', onclick: () => selectSpot(s.id, true),
+      }, [
+        catIcon(s.cat, 'cat-ico cat-ico-sm'),
+        el('span', { class: 'sugg-name', text: s.name }),
+        s.tip ? el('span', { class: 'sugg-tip', text: s.tip }) : null,
+      ])));
+    }
+    host.appendChild(ul);
+  }
+
   function refreshAll() {
     app.map.getEntry = entryOf;
     app.map.refresh();
     renderList();
+    renderMapExtra(CW.computeStats(app.city, progressOf()));
     if ($('#tab-progress').hidden === false) renderProgress();
     updateCityTabs();
   }
@@ -1003,6 +1139,8 @@
     if (!keepShared && app.shared && app.shared.city !== id) leaveShared(true);
     app.settings = CW.store.setSettings({ lastCity: id });
     document.documentElement.style.setProperty('--accent', app.city.accent);
+    // Proportion réelle de la carte : la scène ne prend que la hauteur qu'il lui faut.
+    $('#map-stage').style.setProperty('--map-aspect', String(app.city.view.w / app.city.view.h));
     $('.map-city-name').textContent = app.city.name;
     $('.map-city-sub').textContent = app.city.subtitle;
     app.map.getEntry = entryOf;
@@ -1079,13 +1217,16 @@
     $('#btn-theme').addEventListener('click', cycleTheme);
     $('#btn-settings').addEventListener('click', settingsModal);
     $('#btn-share').addEventListener('click', shareModal);
+    $('#btn-menu').addEventListener('click', menuModal);
     $('#btn-import').addEventListener('click', importModal);
+    window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); installPrompt = e; });
     $('#btn-add-spot').addEventListener('click', () => toggleAddMode());
     $('#btn-random').addEventListener('click', randomSpot);
     $('#btn-zoom-in').addEventListener('click', () => app.map.zoomBy(1.5));
     $('#btn-zoom-out').addEventListener('click', () => app.map.zoomBy(1 / 1.5));
     $('#btn-zoom-reset').addEventListener('click', () => app.map.reset(true));
     $('#sheet-backdrop').addEventListener('click', closeSheet);
+    bindSheetDrag();
     $('#search').addEventListener('input', CW.debounce((ev) => { app.filters.q = CW.norm(ev.target.value); renderList(); }, 160));
     $('#filter-zone').addEventListener('change', (ev) => { app.filters.zone = ev.target.value; renderList(); });
     $('#filter-cat').addEventListener('change', (ev) => { app.filters.cat = ev.target.value; renderList(); });

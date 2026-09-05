@@ -90,12 +90,17 @@ a { color: var(--accent); }
 
 /* ------------------------------------------------------------------ layout */
 
+/* En flex plutôt qu'en grille : une grille numérotait ses lignes, et le bandeau
+   de partage caché décalait tout — la barre du bas héritait de l'espace libre. */
 .app {
-  display: grid;
-  grid-template-rows: var(--topbar-h) auto 1fr;
+  display: flex;
+  flex-direction: column;
   height: 100dvh;
   min-height: 100dvh;
+  overflow: hidden;
 }
+.topbar, .shared-banner, .mobile-bar { flex: 0 0 auto; }
+.layout { flex: 1 1 auto; }
 
 .topbar {
   display: flex; align-items: center; gap: 12px;
@@ -119,6 +124,7 @@ a { color: var(--accent); }
 .city-tab[aria-pressed="true"] .city-tab-pct { color: var(--accent); }
 
 .topbar-actions { display: flex; gap: 6px; align-items: center; flex: 0 0 auto; }
+#btn-menu { display: none; }
 
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 7px;
@@ -148,11 +154,13 @@ a { color: var(--accent); }
 .shared-banner[hidden] { display: none; }
 .shared-banner-actions { display: flex; gap: 6px; margin-left: auto; }
 
-.layout { display: grid; grid-template-columns: minmax(0, 1fr) 380px; min-height: 0; }
+.layout { display: grid; grid-template-columns: minmax(0, 1fr) 380px; min-height: 0; min-width: 0; }
 
 /* --------------------------------------------------------------------- map */
 
-.map-panel { position: relative; min-width: 0; min-height: 0; }
+.map-panel { position: relative; min-width: 0; min-height: 0; display: flex; flex-direction: column; }
+.map-stage { flex: 1 1 auto; }
+.map-extra { display: none; }
 .map-stage { position: relative; width: 100%; height: 100%; overflow: hidden; background: var(--paper); }
 .map { width: 100%; height: 100%; display: block; touch-action: none; cursor: grab; }
 .map:active { cursor: grabbing; }
@@ -182,6 +190,7 @@ a { color: var(--accent); }
 .map[data-zoom-tier="2"] .zone-label { opacity: .35; }
 
 .pin { cursor: pointer; }
+.pin-hit { fill: transparent; }
 .pin-body { fill: var(--surface); stroke: var(--ink-soft); stroke-width: 1.6; }
 .pin-dot { fill: var(--ink-soft); }
 .pin.is-done .pin-body { fill: var(--accent); stroke: color-mix(in srgb, var(--accent) 70%, #000); }
@@ -460,6 +469,17 @@ a { color: var(--accent); }
 .import-row:hover { background: var(--surface-2); }
 .import-row .check { align-items: flex-start; gap: 9px; }
 .import-row.is-new strong::after { content: ' · nouveau'; color: var(--accent); font-weight: 400; font-size: 11.5px; }
+.menu-list { display: flex; flex-direction: column; gap: 2px; }
+.menu-item {
+  display: flex; align-items: center; gap: 12px; width: 100%; text-align: left;
+  background: none; border: 0; padding: 13px 8px; cursor: pointer;
+  border-radius: var(--radius-sm); font-size: 15px; color: inherit;
+}
+.menu-item:hover, .menu-item:active { background: var(--surface-2); }
+.menu-item-ico { width: 22px; text-align: center; font-size: 16px; color: var(--accent); }
+.menu-item-sub { display: block; font-size: 12px; color: var(--ink-faint); }
+.install-steps { font-size: 13px; color: var(--ink-soft); line-height: 1.65; }
+.install-steps kbd { font: inherit; background: var(--surface-2); border-radius: 4px; padding: 1px 6px; }
 .account { display: flex; flex-direction: column; gap: 10px; }
 .account-who { font-size: 13px; }
 .sep { border: 0; border-top: 1px solid var(--line); margin: 6px 0; width: 100%; }
@@ -489,32 +509,89 @@ a { color: var(--accent); }
 /* ------------------------------------------------------------------ mobile */
 
 @media (max-width: 900px) {
-  .app { grid-template-rows: var(--topbar-h) auto 1fr auto; }
-  .layout { grid-template-columns: 1fr; }
-  .map-panel, .side { grid-column: 1; grid-row: 1; }
-  .layout { display: grid; grid-template-rows: 1fr; min-height: 0; }
-  .side { border-left: 0; border-top: 1px solid var(--line); }
+  :root { --topbar-h: 52px; }
+
+  .layout { grid-template-columns: 1fr; grid-template-rows: 1fr; min-height: 0; }
+  .map-panel, .side { grid-column: 1; grid-row: 1; min-height: 0; }
+  .side { border-left: 0; }
   .app[data-view="carte"] .side { display: none; }
-  .app[data-view="liste"] .map-panel, .app[data-view="progress"] .map-panel { display: none; }
-  .mobile-bar { display: flex; border-top: 1px solid var(--line); background: var(--surface); padding-bottom: env(safe-area-inset-bottom); }
-  .mobile-tab { flex: 1; background: none; border: 0; padding: 12px 6px; cursor: pointer; color: var(--ink-soft); }
-  .mobile-tab[aria-pressed="true"] { color: var(--accent); font-weight: 560; }
-  .side-tabs { display: none; }
-  .sheet {
-    position: fixed; left: 0; right: 0; bottom: 0; width: 100%; max-height: 82dvh;
-    border-radius: 16px 16px 0 0; border-bottom: 0; padding-top: 6px;
+  .app[data-view="liste"] .map-panel,
+  .app[data-view="progress"] .map-panel { display: none; }
+
+  .mobile-bar {
+    display: flex; border-top: 1px solid var(--line); background: var(--surface);
+    padding-bottom: env(safe-area-inset-bottom);
   }
-  .sheet-grip { display: block; width: 38px; height: 4px; border-radius: 2px; background: var(--line-strong); margin: 2px auto 8px; }
-  .topbar { padding: 0 8px; gap: 8px; }
+  .mobile-tab {
+    flex: 1; background: none; border: 0; padding: 11px 6px 12px; cursor: pointer;
+    color: var(--ink-soft); font-size: 12.5px; display: flex; flex-direction: column;
+    align-items: center; gap: 3px; min-height: 52px;
+  }
+  .mobile-tab[aria-pressed="true"] { color: var(--accent); font-weight: 560; }
+  .mobile-tab-ico { font-size: 16px; line-height: 1; }
+  .side-tabs { display: none; }
+
+  /* Barre du haut : la marque et les villes seulement, le reste dans un menu. */
+  .topbar { padding: 0 8px; gap: 6px; }
   .brand-name { display: none; }
+  .city-tabs { margin-left: 2px; gap: 2px; min-width: 0; }
+  .city-tab { padding: 6px 10px; min-width: 0; }
+  .city-tab-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .btn-label { display: none; }
-  .btn-ghost { padding: 7px 9px; }
-  .map-legend { font-size: 11px; gap: 10px; }
-  .map-tools .btn { padding: 5px 8px; font-size: 12px; }
-  .map-hud { inset: 8px 8px auto 8px; gap: 6px; }
+  .topbar-actions .btn:not(#btn-menu) { display: none; }
+  #btn-menu { display: inline-flex; }
+
+  /* Outils de carte : icônes seules, en colonne à droite. */
+  .map-hud { inset: 8px 8px auto 8px; align-items: flex-start; }
+  .map-title { padding: 5px 10px; }
+  .map-city-name { font-size: 14px; }
+  .map-city-sub { font-size: 11px; }
+  .map-tools { flex-direction: row; gap: 5px; align-items: flex-start; }
+  .map-tools .btn { padding: 0; width: 34px; height: 34px; font-size: 15px; }
+  .map-tools .btn-text { display: none; }
+  .map-zoom { flex-direction: row; }
+  .map-zoom .btn { width: 34px; height: 34px; }
+  #btn-zoom-reset { display: none; }
+  /* Le dé est déjà dans l'aperçu sous la carte : inutile de l'avoir deux fois. */
+  #btn-random { display: none; }
+
+  .map-legend { font-size: 11px; gap: 10px; padding: 5px 9px; bottom: 8px; left: 8px; }
+
+  /* Une carte large sur un écran haut laisse d'énormes bandes vides : on borne
+     la scène à sa proportion réelle et on donne le reste à un aperçu utile. */
+  .map-stage { flex: 0 0 auto; height: min(58dvh, calc((100vw - 0px) / var(--map-aspect, 1.6) + 16px)); min-height: 38dvh; }
+  .map-extra {
+    display: flex; flex-direction: column; gap: 10px; flex: 1 1 auto; min-height: 0;
+    overflow: auto; overscroll-behavior: contain; padding: 12px 14px 16px;
+    border-top: 1px solid var(--line); background: var(--surface);
+  }
+  .extra-head { display: flex; align-items: center; gap: 12px; }
+  .extra-figures { min-width: 0; }
+  .extra-pct { font-size: 15px; font-weight: 600; }
+  .extra-sub { font-size: 12px; color: var(--ink-soft); }
+  .extra-title { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-faint); }
   .legend-hint { display: none; }
+
+  /* Fiche : feuille du bas, glissable, avec la zone sûre du téléphone. */
+  .sheet {
+    position: fixed; left: 0; right: 0; bottom: 0; top: auto; width: 100%;
+    max-height: 86dvh; border-radius: 18px 18px 0 0; border-bottom: 0;
+    padding: 4px 16px calc(18px + env(safe-area-inset-bottom));
+    transition: transform .22s ease-out;
+  }
+  .sheet-grip {
+    display: block; width: 40px; height: 4px; border-radius: 2px;
+    background: var(--line-strong); margin: 6px auto 10px; cursor: grab;
+  }
+  .sheet-head { position: sticky; top: 0; background: var(--surface); padding-bottom: 6px; z-index: 1; }
+  .done-toggle { padding: 14px; font-size: 15px; }
+  .tag-chip { padding: 7px 12px 7px 10px; font-size: 13px; }
   .field-grid { grid-template-columns: 1fr; }
   .prog-tags { grid-template-columns: 1fr; }
+  .modal-inner { padding: 18px 16px calc(18px + env(safe-area-inset-bottom)); }
+  .modal { max-height: 88dvh; }
+  .import-list { max-height: 38vh; }
+  .spot-btn { padding: 11px 4px; }
 }
 
 @media (max-width: 420px) {

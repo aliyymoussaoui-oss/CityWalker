@@ -43,6 +43,9 @@
     </nav>
 
     <div class="topbar-actions">
+      <button type="button" class="btn btn-icon" id="btn-menu" aria-label="Menu" aria-haspopup="dialog">
+        <span aria-hidden="true">☰</span>
+      </button>
       <button type="button" class="btn btn-ghost" id="btn-import" aria-haspopup="dialog"
               title="Replacer automatiquement tes photos sur la carte">
         <span class="btn-ico" aria-hidden="true">▤</span><span class="btn-label">Mes photos</span>
@@ -81,9 +84,9 @@
           </div>
           <div class="map-tools" role="group" aria-label="Outils de carte">
             <button type="button" class="btn btn-small" id="btn-add-spot" aria-pressed="false"
-                    title="Poser une épingle où tu veux sur la carte">＋ Poser un lieu</button>
+                    title="Poser une épingle où tu veux sur la carte">＋<span class="btn-text"> Poser un lieu</span></button>
             <button type="button" class="btn btn-small" id="btn-random"
-                    title="Choisir au hasard un lieu qu'il te reste à photographier">🎲 Au hasard</button>
+                    title="Choisir au hasard un lieu qu'il te reste à photographier">🎲<span class="btn-text"> Au hasard</span></button>
           </div>
           <div class="map-zoom" role="group" aria-label="Zoom">
             <button type="button" class="btn btn-icon" id="btn-zoom-in" aria-label="Zoomer" title="Zoomer">+</button>
@@ -104,6 +107,8 @@
           <span class="legend-hint">glisse pour déplacer · molette ou pincement pour zoomer</span>
         </div>
       </div>
+
+      <div class="map-extra" id="map-extra" aria-label="Aperçu"></div>
     </section>
 
     <aside class="side" aria-label="Panneau latéral">
@@ -158,9 +163,12 @@
   </main>
 
   <nav class="mobile-bar" aria-label="Navigation">
-    <button type="button" class="mobile-tab" data-view="carte" aria-pressed="true">Carte</button>
-    <button type="button" class="mobile-tab" data-view="liste" aria-pressed="false">Lieux</button>
-    <button type="button" class="mobile-tab" data-view="progress" aria-pressed="false">Progression</button>
+    <button type="button" class="mobile-tab" data-view="carte" aria-pressed="true">
+      <span class="mobile-tab-ico" aria-hidden="true">◉</span>Carte</button>
+    <button type="button" class="mobile-tab" data-view="liste" aria-pressed="false">
+      <span class="mobile-tab-ico" aria-hidden="true">≡</span>Lieux</button>
+    <button type="button" class="mobile-tab" data-view="progress" aria-pressed="false">
+      <span class="mobile-tab-ico" aria-hidden="true">◐</span>Progression</button>
   </nav>
 
   <div class="sheet-backdrop" id="sheet-backdrop" hidden></div>

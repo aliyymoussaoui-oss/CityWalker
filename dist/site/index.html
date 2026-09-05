@@ -104,12 +104,17 @@ a { color: var(--accent); }
 
 /* ------------------------------------------------------------------ layout */
 
+/* En flex plutôt qu'en grille : une grille numérotait ses lignes, et le bandeau
+   de partage caché décalait tout — la barre du bas héritait de l'espace libre. */
 .app {
-  display: grid;
-  grid-template-rows: var(--topbar-h) auto 1fr;
+  display: flex;
+  flex-direction: column;
   height: 100dvh;
   min-height: 100dvh;
+  overflow: hidden;
 }
+.topbar, .shared-banner, .mobile-bar { flex: 0 0 auto; }
+.layout { flex: 1 1 auto; }
 
 .topbar {
   display: flex; align-items: center; gap: 12px;
@@ -133,6 +138,7 @@ a { color: var(--accent); }
 .city-tab[aria-pressed="true"] .city-tab-pct { color: var(--accent); }
 
 .topbar-actions { display: flex; gap: 6px; align-items: center; flex: 0 0 auto; }
+#btn-menu { display: none; }
 
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 7px;
@@ -162,11 +168,13 @@ a { color: var(--accent); }
 .shared-banner[hidden] { display: none; }
 .shared-banner-actions { display: flex; gap: 6px; margin-left: auto; }
 
-.layout { display: grid; grid-template-columns: minmax(0, 1fr) 380px; min-height: 0; }
+.layout { display: grid; grid-template-columns: minmax(0, 1fr) 380px; min-height: 0; min-width: 0; }
 
 /* --------------------------------------------------------------------- map */
 
-.map-panel { position: relative; min-width: 0; min-height: 0; }
+.map-panel { position: relative; min-width: 0; min-height: 0; display: flex; flex-direction: column; }
+.map-stage { flex: 1 1 auto; }
+.map-extra { display: none; }
 .map-stage { position: relative; width: 100%; height: 100%; overflow: hidden; background: var(--paper); }
 .map { width: 100%; height: 100%; display: block; touch-action: none; cursor: grab; }
 .map:active { cursor: grabbing; }
@@ -196,6 +204,7 @@ a { color: var(--accent); }
 .map[data-zoom-tier="2"] .zone-label { opacity: .35; }
 
 .pin { cursor: pointer; }
+.pin-hit { fill: transparent; }
 .pin-body { fill: var(--surface); stroke: var(--ink-soft); stroke-width: 1.6; }
 .pin-dot { fill: var(--ink-soft); }
 .pin.is-done .pin-body { fill: var(--accent); stroke: color-mix(in srgb, var(--accent) 70%, #000); }
@@ -474,6 +483,17 @@ a { color: var(--accent); }
 .import-row:hover { background: var(--surface-2); }
 .import-row .check { align-items: flex-start; gap: 9px; }
 .import-row.is-new strong::after { content: ' · nouveau'; color: var(--accent); font-weight: 400; font-size: 11.5px; }
+.menu-list { display: flex; flex-direction: column; gap: 2px; }
+.menu-item {
+  display: flex; align-items: center; gap: 12px; width: 100%; text-align: left;
+  background: none; border: 0; padding: 13px 8px; cursor: pointer;
+  border-radius: var(--radius-sm); font-size: 15px; color: inherit;
+}
+.menu-item:hover, .menu-item:active { background: var(--surface-2); }
+.menu-item-ico { width: 22px; text-align: center; font-size: 16px; color: var(--accent); }
+.menu-item-sub { display: block; font-size: 12px; color: var(--ink-faint); }
+.install-steps { font-size: 13px; color: var(--ink-soft); line-height: 1.65; }
+.install-steps kbd { font: inherit; background: var(--surface-2); border-radius: 4px; padding: 1px 6px; }
 .account { display: flex; flex-direction: column; gap: 10px; }
 .account-who { font-size: 13px; }
 .sep { border: 0; border-top: 1px solid var(--line); margin: 6px 0; width: 100%; }
@@ -503,32 +523,89 @@ a { color: var(--accent); }
 /* ------------------------------------------------------------------ mobile */
 
 @media (max-width: 900px) {
-  .app { grid-template-rows: var(--topbar-h) auto 1fr auto; }
-  .layout { grid-template-columns: 1fr; }
-  .map-panel, .side { grid-column: 1; grid-row: 1; }
-  .layout { display: grid; grid-template-rows: 1fr; min-height: 0; }
-  .side { border-left: 0; border-top: 1px solid var(--line); }
+  :root { --topbar-h: 52px; }
+
+  .layout { grid-template-columns: 1fr; grid-template-rows: 1fr; min-height: 0; }
+  .map-panel, .side { grid-column: 1; grid-row: 1; min-height: 0; }
+  .side { border-left: 0; }
   .app[data-view="carte"] .side { display: none; }
-  .app[data-view="liste"] .map-panel, .app[data-view="progress"] .map-panel { display: none; }
-  .mobile-bar { display: flex; border-top: 1px solid var(--line); background: var(--surface); padding-bottom: env(safe-area-inset-bottom); }
-  .mobile-tab { flex: 1; background: none; border: 0; padding: 12px 6px; cursor: pointer; color: var(--ink-soft); }
-  .mobile-tab[aria-pressed="true"] { color: var(--accent); font-weight: 560; }
-  .side-tabs { display: none; }
-  .sheet {
-    position: fixed; left: 0; right: 0; bottom: 0; width: 100%; max-height: 82dvh;
-    border-radius: 16px 16px 0 0; border-bottom: 0; padding-top: 6px;
+  .app[data-view="liste"] .map-panel,
+  .app[data-view="progress"] .map-panel { display: none; }
+
+  .mobile-bar {
+    display: flex; border-top: 1px solid var(--line); background: var(--surface);
+    padding-bottom: env(safe-area-inset-bottom);
   }
-  .sheet-grip { display: block; width: 38px; height: 4px; border-radius: 2px; background: var(--line-strong); margin: 2px auto 8px; }
-  .topbar { padding: 0 8px; gap: 8px; }
+  .mobile-tab {
+    flex: 1; background: none; border: 0; padding: 11px 6px 12px; cursor: pointer;
+    color: var(--ink-soft); font-size: 12.5px; display: flex; flex-direction: column;
+    align-items: center; gap: 3px; min-height: 52px;
+  }
+  .mobile-tab[aria-pressed="true"] { color: var(--accent); font-weight: 560; }
+  .mobile-tab-ico { font-size: 16px; line-height: 1; }
+  .side-tabs { display: none; }
+
+  /* Barre du haut : la marque et les villes seulement, le reste dans un menu. */
+  .topbar { padding: 0 8px; gap: 6px; }
   .brand-name { display: none; }
+  .city-tabs { margin-left: 2px; gap: 2px; min-width: 0; }
+  .city-tab { padding: 6px 10px; min-width: 0; }
+  .city-tab-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .btn-label { display: none; }
-  .btn-ghost { padding: 7px 9px; }
-  .map-legend { font-size: 11px; gap: 10px; }
-  .map-tools .btn { padding: 5px 8px; font-size: 12px; }
-  .map-hud { inset: 8px 8px auto 8px; gap: 6px; }
+  .topbar-actions .btn:not(#btn-menu) { display: none; }
+  #btn-menu { display: inline-flex; }
+
+  /* Outils de carte : icônes seules, en colonne à droite. */
+  .map-hud { inset: 8px 8px auto 8px; align-items: flex-start; }
+  .map-title { padding: 5px 10px; }
+  .map-city-name { font-size: 14px; }
+  .map-city-sub { font-size: 11px; }
+  .map-tools { flex-direction: row; gap: 5px; align-items: flex-start; }
+  .map-tools .btn { padding: 0; width: 34px; height: 34px; font-size: 15px; }
+  .map-tools .btn-text { display: none; }
+  .map-zoom { flex-direction: row; }
+  .map-zoom .btn { width: 34px; height: 34px; }
+  #btn-zoom-reset { display: none; }
+  /* Le dé est déjà dans l'aperçu sous la carte : inutile de l'avoir deux fois. */
+  #btn-random { display: none; }
+
+  .map-legend { font-size: 11px; gap: 10px; padding: 5px 9px; bottom: 8px; left: 8px; }
+
+  /* Une carte large sur un écran haut laisse d'énormes bandes vides : on borne
+     la scène à sa proportion réelle et on donne le reste à un aperçu utile. */
+  .map-stage { flex: 0 0 auto; height: min(58dvh, calc((100vw - 0px) / var(--map-aspect, 1.6) + 16px)); min-height: 38dvh; }
+  .map-extra {
+    display: flex; flex-direction: column; gap: 10px; flex: 1 1 auto; min-height: 0;
+    overflow: auto; overscroll-behavior: contain; padding: 12px 14px 16px;
+    border-top: 1px solid var(--line); background: var(--surface);
+  }
+  .extra-head { display: flex; align-items: center; gap: 12px; }
+  .extra-figures { min-width: 0; }
+  .extra-pct { font-size: 15px; font-weight: 600; }
+  .extra-sub { font-size: 12px; color: var(--ink-soft); }
+  .extra-title { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-faint); }
   .legend-hint { display: none; }
+
+  /* Fiche : feuille du bas, glissable, avec la zone sûre du téléphone. */
+  .sheet {
+    position: fixed; left: 0; right: 0; bottom: 0; top: auto; width: 100%;
+    max-height: 86dvh; border-radius: 18px 18px 0 0; border-bottom: 0;
+    padding: 4px 16px calc(18px + env(safe-area-inset-bottom));
+    transition: transform .22s ease-out;
+  }
+  .sheet-grip {
+    display: block; width: 40px; height: 4px; border-radius: 2px;
+    background: var(--line-strong); margin: 6px auto 10px; cursor: grab;
+  }
+  .sheet-head { position: sticky; top: 0; background: var(--surface); padding-bottom: 6px; z-index: 1; }
+  .done-toggle { padding: 14px; font-size: 15px; }
+  .tag-chip { padding: 7px 12px 7px 10px; font-size: 13px; }
   .field-grid { grid-template-columns: 1fr; }
   .prog-tags { grid-template-columns: 1fr; }
+  .modal-inner { padding: 18px 16px calc(18px + env(safe-area-inset-bottom)); }
+  .modal { max-height: 88dvh; }
+  .import-list { max-height: 38vh; }
+  .spot-btn { padding: 11px 4px; }
 }
 
 @media (max-width: 420px) {
@@ -570,6 +647,9 @@ a { color: var(--accent); }
     </nav>
 
     <div class="topbar-actions">
+      <button type="button" class="btn btn-icon" id="btn-menu" aria-label="Menu" aria-haspopup="dialog">
+        <span aria-hidden="true">☰</span>
+      </button>
       <button type="button" class="btn btn-ghost" id="btn-import" aria-haspopup="dialog"
               title="Replacer automatiquement tes photos sur la carte">
         <span class="btn-ico" aria-hidden="true">▤</span><span class="btn-label">Mes photos</span>
@@ -608,9 +688,9 @@ a { color: var(--accent); }
           </div>
           <div class="map-tools" role="group" aria-label="Outils de carte">
             <button type="button" class="btn btn-small" id="btn-add-spot" aria-pressed="false"
-                    title="Poser une épingle où tu veux sur la carte">＋ Poser un lieu</button>
+                    title="Poser une épingle où tu veux sur la carte">＋<span class="btn-text"> Poser un lieu</span></button>
             <button type="button" class="btn btn-small" id="btn-random"
-                    title="Choisir au hasard un lieu qu'il te reste à photographier">🎲 Au hasard</button>
+                    title="Choisir au hasard un lieu qu'il te reste à photographier">🎲<span class="btn-text"> Au hasard</span></button>
           </div>
           <div class="map-zoom" role="group" aria-label="Zoom">
             <button type="button" class="btn btn-icon" id="btn-zoom-in" aria-label="Zoomer" title="Zoomer">+</button>
@@ -631,6 +711,8 @@ a { color: var(--accent); }
           <span class="legend-hint">glisse pour déplacer · molette ou pincement pour zoomer</span>
         </div>
       </div>
+
+      <div class="map-extra" id="map-extra" aria-label="Aperçu"></div>
     </section>
 
     <aside class="side" aria-label="Panneau latéral">
@@ -685,9 +767,12 @@ a { color: var(--accent); }
   </main>
 
   <nav class="mobile-bar" aria-label="Navigation">
-    <button type="button" class="mobile-tab" data-view="carte" aria-pressed="true">Carte</button>
-    <button type="button" class="mobile-tab" data-view="liste" aria-pressed="false">Lieux</button>
-    <button type="button" class="mobile-tab" data-view="progress" aria-pressed="false">Progression</button>
+    <button type="button" class="mobile-tab" data-view="carte" aria-pressed="true">
+      <span class="mobile-tab-ico" aria-hidden="true">◉</span>Carte</button>
+    <button type="button" class="mobile-tab" data-view="liste" aria-pressed="false">
+      <span class="mobile-tab-ico" aria-hidden="true">≡</span>Lieux</button>
+    <button type="button" class="mobile-tab" data-view="progress" aria-pressed="false">
+      <span class="mobile-tab-ico" aria-hidden="true">◐</span>Progression</button>
   </nav>
 
   <div class="sheet-backdrop" id="sheet-backdrop" hidden></div>
@@ -2504,6 +2589,8 @@ a { color: var(--accent); }
           'data-id': s.id, tabindex: -1, role: 'button', 'aria-label': s.name,
         });
         const inner = CW.svg('g', { class: 'pin-inner' });
+        // Cible tactile généreuse, invisible : le doigt est plus large que l'épingle.
+        inner.appendChild(CW.svg('circle', { cx: 0, cy: -11, r: 15, class: 'pin-hit' }));
         inner.appendChild(CW.svg('path', { d: PIN_D, class: 'pin-body' }));
         inner.appendChild(CW.svg('circle', { cx: 0, cy: -14.5, r: 3.2, class: 'pin-dot' }));
         inner.appendChild(CW.svg('text', { x: 12, y: -11, class: 'pin-label', text: s.name }));
@@ -3016,6 +3103,42 @@ a { color: var(--accent); }
     }
   }
 
+  /** Sur mobile, la feuille se ferme en la tirant vers le bas. */
+  function bindSheetDrag() {
+    const sheet = $('#sheet');
+    let start = null;
+    const isMobile = () => window.matchMedia('(max-width: 900px)').matches;
+
+    sheet.addEventListener('pointerdown', (e) => {
+      if (!isMobile()) return;
+      const onGrip = e.target.closest('.sheet-grip, .sheet-head');
+      if (!onGrip || e.target.closest('button, input, select, textarea, a')) return;
+      start = { y: e.clientY, id: e.pointerId };
+      sheet.style.transition = 'none';
+      try { sheet.setPointerCapture(e.pointerId); } catch (_) { /* rien */ }
+    });
+    sheet.addEventListener('pointermove', (e) => {
+      if (!start || e.pointerId !== start.id) return;
+      const dy = Math.max(0, e.clientY - start.y);
+      sheet.style.transform = `translateY(${dy}px)`;
+    });
+    const end = (e) => {
+      if (!start || e.pointerId !== start.id) return;
+      const dy = Math.max(0, e.clientY - start.y);
+      start = null;
+      sheet.style.transition = '';
+      try { sheet.releasePointerCapture(e.pointerId); } catch (_) { /* rien */ }
+      if (dy > 90) {
+        sheet.style.transform = 'translateY(100%)';
+        setTimeout(() => { sheet.style.transform = ''; closeSheet(); }, 180);
+      } else {
+        sheet.style.transform = '';
+      }
+    };
+    sheet.addEventListener('pointerup', end);
+    sheet.addEventListener('pointercancel', end);
+  }
+
   function closeSheet() {
     app.selected = null;
     app.map.select(null);
@@ -3158,6 +3281,7 @@ a { color: var(--accent); }
     }
 
     sheet.hidden = false;
+    sheet.style.transform = '';
     if (window.matchMedia('(max-width: 900px)').matches) $('#sheet-backdrop').hidden = false;
     sheet.scrollTop = 0;
   }
@@ -3307,6 +3431,12 @@ a { color: var(--accent); }
     openModal('Importer ma photothèque', (host) => {
       host.appendChild(el('p', { class: 'modal-lead' },
         'Choisis tes photos : CityWalker lit leur position GPS et les replace sur les lieux où elles ont été prises. Rien ne quitte cet appareil, et rien n’est écrit avant ton accord.'));
+      const tip = isIOS()
+        ? 'Sur iPhone, le sélecteur s’ouvre sur ta photothèque : appuie sur « Tout sélectionner » en haut, ou choisis un album entier.'
+        : CW.photoImport.supportsDirectory()
+          ? 'Pour tout passer en revue d’un coup, « choisir un dossier entier » lit aussi les sous-dossiers.'
+          : 'Dans le sélecteur, Ctrl+A (ou ⌘+A) prend toutes les photos du dossier.';
+      host.appendChild(el('p', { class: 'hint', text: tip }));
 
       const radiusField = el('label', { class: 'field' }, [
         el('span', { class: 'field-label', text: 'Distance maximale pour rattacher une photo à un lieu' }),
@@ -3314,7 +3444,7 @@ a { color: var(--accent); }
       ]);
       host.appendChild(radiusField);
 
-      const status = el('p', { class: 'hint' });
+      const status = el('p', { class: 'hint import-status', role: 'status' });
       const bar = el('div', { class: 'import-bar', hidden: true }, el('span'));
       const results = el('div', { class: 'import-results' });
 
@@ -3787,6 +3917,69 @@ a { color: var(--accent); }
     });
   }
 
+  // -------------------------------------------------- menu mobile & install
+
+  let installPrompt = null;
+  const isStandalone = () => window.matchMedia('(display-mode: standalone)').matches
+    || window.navigator.standalone === true;
+  const isIOS = () => /iP(hone|ad|od)/.test(navigator.platform || '')
+    || (/Mac/.test(navigator.platform || '') && navigator.maxTouchPoints > 1);
+
+  function installModal() {
+    openModal('Installer CityWalker', (host) => {
+      if (installPrompt) {
+        host.appendChild(el('p', { class: 'modal-lead' },
+          'Ajoute CityWalker à ton écran d’accueil : plein écran, sans barre de navigateur, et utilisable hors ligne.'));
+        host.appendChild(el('button', {
+          type: 'button', class: 'btn btn-primary', onclick: async (ev) => {
+            const btn = ev.currentTarget;
+            btn.disabled = true;
+            try {
+              installPrompt.prompt();
+              const res = await installPrompt.userChoice;
+              installPrompt = null;
+              $('#modal').close();
+              CW.toast(res && res.outcome === 'accepted' ? 'CityWalker est installée.' : 'Installation annulée.');
+            } catch (_) { btn.disabled = false; }
+          },
+        }, 'Installer maintenant'));
+        return;
+      }
+      host.appendChild(el('p', { class: 'modal-lead' },
+        'CityWalker s’installe depuis le navigateur, sans passer par un magasin d’applications.'));
+      host.appendChild(el('div', { class: 'install-steps' }, isIOS() ? [
+        el('p', {}, [el('strong', { text: 'Sur iPhone et iPad, avec Safari :' })]),
+        el('p', {}, ['1. Appuie sur le bouton ', el('kbd', { text: 'Partager' }), ' en bas de l’écran.']),
+        el('p', {}, ['2. Fais défiler, puis choisis ', el('kbd', { text: 'Sur l’écran d’accueil' }), '.']),
+        el('p', {}, ['3. Confirme avec ', el('kbd', { text: 'Ajouter' }), '.']),
+        el('p', { class: 'hint' }, 'À savoir : iOS peut effacer les données d’un site resté plusieurs semaines sans visite. Exporte ta sauvegarde de temps en temps, ou active la synchronisation.'),
+      ] : [
+        el('p', {}, [el('strong', { text: 'Sur Android, avec Chrome :' })]),
+        el('p', {}, ['Menu ', el('kbd', { text: '⋮' }), ' → ', el('kbd', { text: 'Installer l’application' }), '.']),
+        el('p', { class: 'hint' }, 'Sur ordinateur, l’icône d’installation apparaît à droite de la barre d’adresse.'),
+      ]));
+    });
+  }
+
+  function menuModal() {
+    openModal('Menu', (host) => {
+      const item = (ico, label, sub, action) => el('button', {
+        type: 'button', class: 'menu-item', onclick: () => { $('#modal').close(); setTimeout(action, 60); },
+      }, [
+        el('span', { class: 'menu-item-ico', 'aria-hidden': 'true', text: ico }),
+        el('span', {}, [label, sub ? el('span', { class: 'menu-item-sub', text: sub }) : null]),
+      ]);
+      const list = el('div', { class: 'menu-list' }, [
+        item('▤', 'Mes photos', 'Replacer mes photos sur la carte', importModal),
+        item('↗', 'Partager ma carte', 'Lien, export, import', shareModal),
+        item('⚙', 'Réglages et compte', 'Thème, synchronisation, données', settingsModal),
+        isStandalone() ? null : item('⤓', 'Installer l’application', 'Sur l’écran d’accueil, hors ligne', installModal),
+        item('◐', 'Changer de thème', null, cycleTheme),
+      ]);
+      host.appendChild(list);
+    });
+  }
+
   // ------------------------------------------------------------------- vues
 
   function setView(view) {
@@ -3801,10 +3994,40 @@ a { color: var(--accent); }
     if (tab === 'progress') renderProgress();
   }
 
+  /** Aperçu sous la carte, visible seulement sur les écrans étroits. */
+  function renderMapExtra(stats) {
+    const host = $('#map-extra');
+    if (!host) return;
+    clear(host);
+    host.appendChild(el('div', { class: 'extra-head' }, [
+      ring(stats.pct, 56),
+      el('div', { class: 'extra-figures' }, [
+        el('p', { class: 'extra-pct', text: stats.level.label }),
+        el('p', { class: 'extra-sub', text: `${stats.done} / ${stats.total} lieux · ${stats.photos} ${CW.plural(stats.photos, 'photo', 'photos')}` }),
+      ]),
+      el('button', { type: 'button', class: 'btn btn-small', onclick: randomSpot, style: { marginLeft: 'auto' } }, '🎲'),
+    ]));
+    const sugg = CW.suggest(app.city, progressOf(), stats, 4);
+    if (!sugg.length) return;
+    host.appendChild(el('p', { class: 'extra-title', text: 'À faire ensuite' }));
+    const ul = el('ul', { class: 'sugg-list' });
+    for (const s of sugg) {
+      ul.appendChild(el('li', {}, el('button', {
+        type: 'button', class: 'sugg', onclick: () => selectSpot(s.id, true),
+      }, [
+        catIcon(s.cat, 'cat-ico cat-ico-sm'),
+        el('span', { class: 'sugg-name', text: s.name }),
+        s.tip ? el('span', { class: 'sugg-tip', text: s.tip }) : null,
+      ])));
+    }
+    host.appendChild(ul);
+  }
+
   function refreshAll() {
     app.map.getEntry = entryOf;
     app.map.refresh();
     renderList();
+    renderMapExtra(CW.computeStats(app.city, progressOf()));
     if ($('#tab-progress').hidden === false) renderProgress();
     updateCityTabs();
   }
@@ -3830,6 +4053,8 @@ a { color: var(--accent); }
     if (!keepShared && app.shared && app.shared.city !== id) leaveShared(true);
     app.settings = CW.store.setSettings({ lastCity: id });
     document.documentElement.style.setProperty('--accent', app.city.accent);
+    // Proportion réelle de la carte : la scène ne prend que la hauteur qu'il lui faut.
+    $('#map-stage').style.setProperty('--map-aspect', String(app.city.view.w / app.city.view.h));
     $('.map-city-name').textContent = app.city.name;
     $('.map-city-sub').textContent = app.city.subtitle;
     app.map.getEntry = entryOf;
@@ -3906,13 +4131,16 @@ a { color: var(--accent); }
     $('#btn-theme').addEventListener('click', cycleTheme);
     $('#btn-settings').addEventListener('click', settingsModal);
     $('#btn-share').addEventListener('click', shareModal);
+    $('#btn-menu').addEventListener('click', menuModal);
     $('#btn-import').addEventListener('click', importModal);
+    window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); installPrompt = e; });
     $('#btn-add-spot').addEventListener('click', () => toggleAddMode());
     $('#btn-random').addEventListener('click', randomSpot);
     $('#btn-zoom-in').addEventListener('click', () => app.map.zoomBy(1.5));
     $('#btn-zoom-out').addEventListener('click', () => app.map.zoomBy(1 / 1.5));
     $('#btn-zoom-reset').addEventListener('click', () => app.map.reset(true));
     $('#sheet-backdrop').addEventListener('click', closeSheet);
+    bindSheetDrag();
     $('#search').addEventListener('input', CW.debounce((ev) => { app.filters.q = CW.norm(ev.target.value); renderList(); }, 160));
     $('#filter-zone').addEventListener('change', (ev) => { app.filters.zone = ev.target.value; renderList(); });
     $('#filter-cat').addEventListener('change', (ev) => { app.filters.cat = ev.target.value; renderList(); });
