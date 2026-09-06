@@ -33,6 +33,14 @@ Il n'y a volontairement pas de polygone pour ces communes : le fond détaillé
 les montre bien mieux qu'un tracé de plus, et le pourcentage de la ville reste
 celui de la commune.
 
+## v1.3 — vue France
+
+Une carte de France en entrée, les villes couvertes en épingles, un clic ouvre
+la ville. Même mécanique que les cartes existantes : silhouette de l'Hexagone
+depuis OpenStreetMap, projection Mercator, et le fond détaillé par-dessus.
+La couche de tuiles fonctionne déjà à tous les niveaux de zoom, il n'y a que la
+géométrie de la France et la navigation entre les deux échelles à écrire.
+
 ## v1.2 — autres villes (pipeline prêt, curation à faire)
 
 Le pipeline est désormais générique : une ville se déclare par un bloc dans

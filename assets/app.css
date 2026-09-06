@@ -10,6 +10,7 @@
   --line: #e6dbc7;
   --line-strong: #cfc2a9;
   --land: #efe7d6;
+  --beyond: #f2ece0;
   --water: #bed1d9;
   --water-line: #92aeba;
   --green: #d3e0bb;
@@ -35,6 +36,7 @@
     --line: #2e302c;
     --line-strong: #45473f;
     --land: #21231f;
+    --beyond: #1b1a17;
     --water: #1d323b;
     --water-line: #395764;
     --green: #202e1c;
@@ -52,6 +54,7 @@
   --line: #2e302c;
   --line-strong: #45473f;
   --land: #21231f;
+  --beyond: #1b1a17;
   --water: #1d323b;
   --water-line: #395764;
   --green: #202e1c;
@@ -173,7 +176,7 @@ a { color: var(--accent); }
 .map.has-tiles .zone { stroke: color-mix(in srgb, var(--accent) 50%, transparent); stroke-width: 1.2; }
 .map.has-tiles .outline { stroke: var(--accent); stroke-width: 2.4; }
 .map.has-tiles .zone-label, .map.has-tiles .sub-label { paint-order: stroke; stroke: var(--paper); stroke-width: 3px; }
-.beyond { fill: color-mix(in srgb, var(--land) 18%, var(--paper)); }
+.beyond { fill: var(--beyond); }
 .map.has-tiles .beyond { fill: none; }
 .land { fill: var(--land); }
 .layer-green path { fill: var(--green); stroke: none; }
