@@ -63,7 +63,12 @@ async function newPage(ctx) {
   const errors = [];
   page.on('console', (m) => { if (m.type() === 'error') errors.push(`console: ${m.text()}`); });
   page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`));
-  page.on('requestfailed', (r) => errors.push(`requête échouée: ${r.url()}`));
+  page.on('requestfailed', (r) => {
+    // Le fond détaillé dépend du réseau : son indisponibilité est un cas géré,
+    // pas un défaut. L'application retombe sur la carte vectorielle.
+    if (/basemaps\.cartocdn\.com/.test(r.url())) return;
+    errors.push(`requête échouée: ${r.url()}`);
+  });
   page.errors = errors;
   return page;
 }
@@ -249,9 +254,8 @@ await t.addInitScript(() => {
 });
 await t.goto(base, { waitUntil: 'load' });
 await t.waitForSelector('#app[aria-busy="false"]');
-check('aucune tuile avant activation', await t.locator('#map .tile').count() === 0);
-await t.locator('#btn-tiles').click();
 await t.waitForTimeout(600);
+check('le fond détaillé est là dès l’ouverture', await t.locator('#map .tile').count() > 0);
 const tileCount = await t.locator('#map .tile').count();
 check('les tuiles sont posées', tileCount > 0 && tileCount <= 260, `${tileCount} tuiles`);
 check('la carte signale son fond', await t.locator('#map.has-tiles').count() === 1);
@@ -278,7 +282,10 @@ const tileGeo = await t.evaluate(() => {
 check('la tuile sous la Tour Eiffel est la bonne', tileGeo && tileGeo.i === tileGeo.ei && tileGeo.j === tileGeo.ej, JSON.stringify(tileGeo));
 await t.locator('#btn-tiles').click();
 await t.waitForTimeout(200);
-check('la désactivation retire les tuiles', await t.locator('#map .tile:visible').count() === 0);
+check('le bouton revient à la carte sobre', await t.locator('#map .tile:visible').count() === 0);
+await t.locator('#btn-tiles').click();
+await t.waitForTimeout(400);
+check('et le rallume', await t.locator('#map .tile').count() > 0);
 
 await t.locator('.layer-chip[data-pins="mine"]').click();
 await t.waitForTimeout(200);

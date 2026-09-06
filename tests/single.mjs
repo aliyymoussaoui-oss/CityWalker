@@ -9,8 +9,9 @@ const p = await (await b.newContext({ viewport: { width: 1280, height: 800 } }))
 const errs = [];
 p.on('console', m => m.type() === 'error' && errs.push(m.text()));
 p.on('pageerror', e => errs.push(e.message));
-p.on('requestfailed', r => errs.push('req ' + r.url()));
-await p.goto(file);
+p.on('requestfailed', r => { if (!/basemaps\.cartocdn\.com/.test(r.url())) errs.push('req ' + r.url()); });
+// `load` attendrait les tuiles ; l'application démarre sur DOMContentLoaded.
+await p.goto(file, { waitUntil: 'domcontentloaded' });
 await p.waitForSelector('#app[aria-busy="false"]', { timeout: 20000 });
 const pins = await p.locator('#map .pin').count();
 await p.locator('.spot-row').first().click();

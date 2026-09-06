@@ -19,9 +19,9 @@ tu veux retrouver ta carte ailleurs, un compte facultatif la synchronise.
 - Cartes vectorielles dessinées à partir des données officielles : silhouette de
   la commune, limites de quartiers, cours d'eau, parcs. Rien à charger, la carte
   fonctionne hors ligne une fois la page ouverte.
-- Un **fond détaillé** facultatif ajoute les rues et leurs noms, en trois styles
-  — Chaleureux, Sobre, Sombre — et montre aussi les communes alentours. S'il ne
-  charge pas, la carte sobre reprend la main toute seule.
+- **Rues, noms de rues et communes alentours** dès l'ouverture, en trois styles
+  — Chaleureux, Sobre, Sombre. Hors ligne ou réseau filtré, la carte vectorielle
+  reprend la main toute seule : rien à régler, rien à comprendre.
 - Trois couches au choix : tout, les lieux touristiques seuls, tes lieux seuls.
 
 ## Comment ça marche
@@ -150,7 +150,7 @@ node tests/single.mjs    # le fichier unique, ouvert en file://
 node tests/cloud.mjs     # 15 vérifications sur les comptes et la synchro
 ```
 
-64 vérifications de bout en bout : rendu des deux cartes, cochage d'un lieu,
+65 vérifications de bout en bout : rendu des deux cartes, cochage d'un lieu,
 ambiances, filtres, recherche sans accent, persistance après rechargement,
 changement de ville, zoom, pose d'un lieu à la main, tirage au hasard, lien de
 partage, mode lecture seule, fusion, et un import de photothèque complet sur de
