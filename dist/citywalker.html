@@ -184,8 +184,11 @@ a { color: var(--accent); }
 /* Sous les tuiles, le fond sobre reste visible en attendant, puis s'efface. */
 .map.has-tiles .layer-base { opacity: .18; }
 .map.has-tiles .layer-green path, .map.has-tiles .layer-water path { opacity: 0; }
-.map.has-tiles .zone { stroke: color-mix(in srgb, var(--accent) 55%, transparent); stroke-width: 1.4; }
+.map.has-tiles .zone { stroke: color-mix(in srgb, var(--accent) 50%, transparent); stroke-width: 1.2; }
+.map.has-tiles .outline { stroke: var(--accent); stroke-width: 2.4; }
 .map.has-tiles .zone-label, .map.has-tiles .sub-label { paint-order: stroke; stroke: var(--paper); stroke-width: 3px; }
+.beyond { fill: color-mix(in srgb, var(--land) 18%, var(--paper)); }
+.map.has-tiles .beyond { fill: none; }
 .land { fill: var(--land); }
 .layer-green path { fill: var(--green); stroke: none; }
 .layer-water path { fill: var(--water); stroke: var(--water-line); stroke-width: .9; vector-effect: non-scaling-stroke; }
@@ -194,7 +197,7 @@ a { color: var(--accent); }
   vector-effect: non-scaling-stroke; transition: fill .15s;
 }
 .zone:hover { fill: color-mix(in srgb, var(--accent) 7%, transparent); cursor: zoom-in; }
-.outline { fill: none; stroke: var(--ink-faint); stroke-width: 1.6; vector-effect: non-scaling-stroke; pointer-events: none; }
+.outline { fill: none; stroke: var(--ink-soft); stroke-width: 2.2; vector-effect: non-scaling-stroke; pointer-events: none; }
 
 .zone-label {
   fill: var(--ink-faint); font-size: 13px; font-weight: 600; text-anchor: middle;
@@ -2846,7 +2849,9 @@ window.CW_CONFIG = {
 
       const scene = CW.svg('g', { class: 'scene' });
       this.scene = scene;
-      const tiles = CW.svg('g', { class: 'layer-tiles', 'clip-path': 'url(#cw-clip)' });
+      // Pas de découpe ici : les communes voisines doivent rester visibles,
+      // sinon les lieux « Alentours » flottent sur du vide.
+      const tiles = CW.svg('g', { class: 'layer-tiles' });
       scene.appendChild(tiles);
       if (!this.tiles) {
         this.tiles = new CW.TileLayer(tiles);
@@ -2855,6 +2860,11 @@ window.CW_CONFIG = {
         this.tiles.group = tiles;
       }
       this.tiles.setCity(city);
+      // Teinte discrète au-delà de la commune : sans fond détaillé, les
+      // alentours restent lisibles au lieu d'être une page blanche.
+      scene.appendChild(CW.svg('rect', {
+        x: -200, y: -200, width: w + 400, height: h + 400, class: 'beyond',
+      }));
       const base = CW.svg('g', { class: 'layer-base', 'clip-path': 'url(#cw-clip)' });
       base.appendChild(CW.svg('rect', { x: -50, y: -50, width: w + 100, height: h + 100, class: 'land' }));
       const green = CW.svg('g', { class: 'layer-green' });

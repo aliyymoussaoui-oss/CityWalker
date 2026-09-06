@@ -44,7 +44,9 @@
 
       const scene = CW.svg('g', { class: 'scene' });
       this.scene = scene;
-      const tiles = CW.svg('g', { class: 'layer-tiles', 'clip-path': 'url(#cw-clip)' });
+      // Pas de découpe ici : les communes voisines doivent rester visibles,
+      // sinon les lieux « Alentours » flottent sur du vide.
+      const tiles = CW.svg('g', { class: 'layer-tiles' });
       scene.appendChild(tiles);
       if (!this.tiles) {
         this.tiles = new CW.TileLayer(tiles);
@@ -53,6 +55,11 @@
         this.tiles.group = tiles;
       }
       this.tiles.setCity(city);
+      // Teinte discrète au-delà de la commune : sans fond détaillé, les
+      // alentours restent lisibles au lieu d'être une page blanche.
+      scene.appendChild(CW.svg('rect', {
+        x: -200, y: -200, width: w + 400, height: h + 400, class: 'beyond',
+      }));
       const base = CW.svg('g', { class: 'layer-base', 'clip-path': 'url(#cw-clip)' });
       base.appendChild(CW.svg('rect', { x: -50, y: -50, width: w + 100, height: h + 100, class: 'land' }));
       const green = CW.svg('g', { class: 'layer-green' });
