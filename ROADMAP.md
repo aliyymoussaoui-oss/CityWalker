@@ -14,6 +14,8 @@
   seules sur les lieux où elles ont été prises, et regroupées en nouveaux lieux
   quand elles tombent loin de tout.
 - **Comptes et synchronisation** facultatifs entre appareils.
+- **Fond détaillé** en tuiles CARTO : rues, noms de rues et communes alentours,
+  en trois styles. Facultatif, la carte vectorielle suffit sans lui.
 - Installable depuis le navigateur (PWA) et utilisable hors ligne.
 
 ## v1.1 — communes alentours (fait)

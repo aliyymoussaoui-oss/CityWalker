@@ -19,8 +19,9 @@ tu veux retrouver ta carte ailleurs, un compte facultatif la synchronise.
 - Cartes vectorielles dessinées à partir des données officielles : silhouette de
   la commune, limites de quartiers, cours d'eau, parcs. Rien à charger, la carte
   fonctionne hors ligne une fois la page ouverte.
-- Un **fond détaillé** facultatif ajoute les rues et leurs noms, en clair ou en
-  sombre. S'il ne charge pas, la carte sobre reprend la main toute seule.
+- Un **fond détaillé** facultatif ajoute les rues et leurs noms, en trois styles
+  — Chaleureux, Sobre, Sombre — et montre aussi les communes alentours. S'il ne
+  charge pas, la carte sobre reprend la main toute seule.
 - Trois couches au choix : tout, les lieux touristiques seuls, tes lieux seuls.
 
 ## Comment ça marche
@@ -106,7 +107,9 @@ assets/js/store.js    localStorage (progression) + IndexedDB (photos)
 assets/js/exif.js     lecteur EXIF minimal : date de prise de vue et GPS
 assets/js/photos.js   décodage, redimensionnement, vignette
 assets/js/import.js   import de photothèque : lecture GPS, regroupement, rapport
+assets/js/config.js   URL Supabase, clé anon, clé CARTO (injectées au déploiement)
 assets/js/cloud.js    comptes et synchronisation (API REST Supabase, sans SDK)
+assets/js/tiles.js    fond détaillé en tuiles CARTO, placé sans bibliothèque
 assets/js/share.js    lien de partage, export/import, fusion
 assets/js/map.js      carte SVG : rendu, pan/zoom, épingles
 assets/js/ui.js       petits composants (anneau, barre, puce d'ambiance)
@@ -147,7 +150,7 @@ node tests/single.mjs    # le fichier unique, ouvert en file://
 node tests/cloud.mjs     # 15 vérifications sur les comptes et la synchro
 ```
 
-59 vérifications de bout en bout : rendu des deux cartes, cochage d'un lieu,
+64 vérifications de bout en bout : rendu des deux cartes, cochage d'un lieu,
 ambiances, filtres, recherche sans accent, persistance après rechargement,
 changement de ville, zoom, pose d'un lieu à la main, tirage au hasard, lien de
 partage, mode lecture seule, fusion, et un import de photothèque complet sur de
