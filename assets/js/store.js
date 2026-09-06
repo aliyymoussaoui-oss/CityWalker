@@ -40,7 +40,7 @@
 
   // ---------------------------------------------------------------- réglages
 
-  const DEFAULT_SETTINGS = { owner: '', theme: 'auto', lastCity: 'paris', labels: true, hint: true };
+  const DEFAULT_SETTINGS = { owner: '', theme: 'auto', lastCity: 'paris', labels: true, hint: true, autoSync: true, tiles: false };
 
   function getSettings() {
     const raw = lsGet('settings');

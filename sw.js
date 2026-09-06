@@ -12,7 +12,7 @@ const ASSETS = [
   './assets/js/util.js', './assets/js/model.js', './assets/js/store.js',
   './assets/js/exif.js', './assets/js/photos.js', './assets/js/import.js',
   './assets/js/cloud.js', './assets/js/share.js',
-  './assets/js/map.js', './assets/js/ui.js', './assets/js/main.js',
+  './assets/js/tiles.js', './assets/js/map.js', './assets/js/ui.js', './assets/js/main.js',
   './data/paris.json', './data/montpellier.json',
   './assets/icons/icon.svg',
 ];

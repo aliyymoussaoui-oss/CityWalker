@@ -168,6 +168,13 @@ a { color: var(--accent); }
 .map { width: 100%; height: 100%; display: block; touch-action: none; cursor: grab; }
 .map:active { cursor: grabbing; }
 
+.tile { opacity: 0; transition: opacity .25s; }
+.tile.is-loaded { opacity: 1; }
+/* Sous les tuiles, le fond sobre reste visible en attendant, puis s'efface. */
+.map.has-tiles .layer-base { opacity: .28; }
+.map.has-tiles .layer-green path, .map.has-tiles .layer-water path { opacity: 0; }
+.map.has-tiles .zone { stroke: color-mix(in srgb, var(--accent) 55%, transparent); stroke-width: 1.4; }
+.map.has-tiles .zone-label, .map.has-tiles .sub-label { paint-order: stroke; stroke: var(--paper); stroke-width: 3px; }
 .land { fill: var(--land); }
 .layer-green path { fill: var(--green); stroke: none; }
 .layer-water path { fill: var(--water); stroke: var(--water-line); stroke-width: .9; vector-effect: non-scaling-stroke; }
@@ -253,6 +260,19 @@ a { color: var(--accent); }
 }
 .map-tooltip .is-done { color: color-mix(in srgb, var(--paper) 70%, var(--accent)); }
 
+.map-layers {
+  position: absolute; right: 12px; bottom: 12px; display: flex; gap: 3px;
+  background: color-mix(in srgb, var(--surface) 90%, transparent);
+  backdrop-filter: blur(6px); border: 1px solid var(--line);
+  border-radius: 999px; padding: 3px; z-index: 4;
+}
+.layer-chip {
+  border: 0; background: none; border-radius: 999px; padding: 5px 11px;
+  font-size: 12px; color: var(--ink-soft); cursor: pointer; white-space: nowrap;
+}
+.layer-chip.is-on { background: var(--accent); color: #fff; }
+.legend-credit { color: var(--ink-faint); }
+.legend-credit[hidden] { display: none; }
 .map-legend {
   position: absolute; left: 12px; bottom: 12px; display: flex; gap: 14px; align-items: center;
   flex-wrap: wrap; font-size: 11.5px; color: var(--ink-soft);
@@ -472,6 +492,17 @@ a { color: var(--accent); }
 .import-row:hover { background: var(--surface-2); }
 .import-row .check { align-items: flex-start; gap: 9px; }
 .import-row.is-new strong::after { content: ' · nouveau'; color: var(--accent); font-weight: 400; font-size: 11.5px; }
+.film-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 6px; max-height: 60vh; overflow: auto; }
+.film-item { margin: 0; cursor: pointer; border-radius: var(--radius-sm); overflow: hidden; background: var(--surface-2); }
+.film-item img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; }
+.film-item figcaption {
+  font-size: 11px; color: var(--ink-soft); padding: 4px 6px; overflow: hidden;
+  text-overflow: ellipsis; white-space: nowrap;
+}
+.film-item:hover figcaption { color: var(--accent); }
+.route-list { list-style: decimal inside; display: flex; flex-direction: column; gap: 6px; padding: 0; }
+.route-list li::marker { color: var(--ink-faint); font-size: 12px; }
+.route-list .sugg { display: inline-grid; width: calc(100% - 24px); vertical-align: top; }
 .menu-list { display: flex; flex-direction: column; gap: 2px; }
 .menu-item {
   display: flex; align-items: center; gap: 12px; width: 100%; text-align: left;
@@ -558,7 +589,20 @@ a { color: var(--accent); }
   /* Le dé est déjà dans l'aperçu sous la carte : inutile de l'avoir deux fois. */
   #btn-random { display: none; }
 
-  .map-legend { font-size: 11px; gap: 10px; padding: 5px 9px; bottom: 8px; left: 8px; }
+  .map-layers {
+  position: absolute; right: 12px; bottom: 12px; display: flex; gap: 3px;
+  background: color-mix(in srgb, var(--surface) 90%, transparent);
+  backdrop-filter: blur(6px); border: 1px solid var(--line);
+  border-radius: 999px; padding: 3px; z-index: 4;
+}
+.layer-chip {
+  border: 0; background: none; border-radius: 999px; padding: 5px 11px;
+  font-size: 12px; color: var(--ink-soft); cursor: pointer; white-space: nowrap;
+}
+.layer-chip.is-on { background: var(--accent); color: #fff; }
+.legend-credit { color: var(--ink-faint); }
+.legend-credit[hidden] { display: none; }
+.map-legend { font-size: 11px; gap: 10px; padding: 5px 9px; bottom: 8px; left: 8px; }
 
   /* Une carte large sur un écran haut laisse d'énormes bandes vides : on borne
      la scène à sa proportion réelle et on donne le reste à un aperçu utile. */
@@ -673,6 +717,8 @@ a { color: var(--accent); }
             <span class="map-city-sub"></span>
           </div>
           <div class="map-tools" role="group" aria-label="Outils de carte">
+            <button type="button" class="btn btn-small" id="btn-tiles" aria-pressed="false"
+                    title="Fond détaillé : rues et noms de rues">🗺<span class="btn-text"> Rues</span></button>
             <button type="button" class="btn btn-small" id="btn-add-spot" aria-pressed="false"
                     title="Poser une épingle où tu veux sur la carte">＋<span class="btn-text"> Poser un lieu</span></button>
             <button type="button" class="btn btn-small" id="btn-random"
@@ -691,9 +737,16 @@ a { color: var(--accent); }
           Clique n'importe où sur la carte pour y poser ton lieu. <kbd>Échap</kbd> pour annuler.
         </p>
 
+        <div class="map-layers" role="group" aria-label="Lieux affichés">
+          <button type="button" class="layer-chip is-on" data-pins="tous">Tout</button>
+          <button type="button" class="layer-chip" data-pins="curated">Touristiques</button>
+          <button type="button" class="layer-chip" data-pins="mine">Mes lieux</button>
+        </div>
+
         <div class="map-legend" id="map-legend">
           <span class="legend-item"><span class="legend-dot legend-dot-done"></span>photographié</span>
           <span class="legend-item"><span class="legend-dot legend-dot-todo"></span>à faire</span>
+          <span class="legend-credit" id="map-credit" hidden></span>
           <span class="legend-hint">glisse pour déplacer · molette ou pincement pour zoomer</span>
         </div>
       </div>
@@ -1273,7 +1326,7 @@ a { color: var(--accent); }
 
   // ---------------------------------------------------------------- réglages
 
-  const DEFAULT_SETTINGS = { owner: '', theme: 'auto', lastCity: 'paris', labels: true, hint: true };
+  const DEFAULT_SETTINGS = { owner: '', theme: 'auto', lastCity: 'paris', labels: true, hint: true, autoSync: true, tiles: false };
 
   function getSettings() {
     const raw = lsGet('settings');
@@ -2100,6 +2153,33 @@ a { color: var(--accent); }
     return null;
   }
 
+  /** Envoie un mail de réinitialisation de mot de passe. */
+  async function resetPassword(email) {
+    await auth('recover', { email, redirect_to: location.href.split('#')[0] });
+  }
+
+  /** Envoie un lien de connexion sans mot de passe. */
+  async function magicLink(email) {
+    await auth('magiclink', { email, redirect_to: location.href.split('#')[0] });
+  }
+
+  /** Récupère la session déposée dans l'URL par un lien de connexion ou de récupération. */
+  function adoptSessionFromHash() {
+    const h = location.hash || '';
+    if (!/access_token=/.test(h)) return null;
+    const params = new URLSearchParams(h.replace(/^#/, ''));
+    const s = normalizeSession({
+      access_token: params.get('access_token'),
+      refresh_token: params.get('refresh_token'),
+      expires_in: params.get('expires_in'),
+      user: { id: params.get('user_id') || '', email: params.get('email') || '' },
+    });
+    if (!s) return null;
+    saveSession(s);
+    history.replaceState(null, '', location.pathname + location.search);
+    return s;
+  }
+
   async function signOut() {
     const s = loadSession();
     const cfg = loadConfig();
@@ -2249,6 +2329,7 @@ a { color: var(--accent); }
   CW.cloud = {
     loadConfig, setConfig, configured,
     session: loadSession, signUp, signIn, signOut, refresh,
+    resetPassword, magicLink, adoptSessionFromHash,
     pullCity, pushCity, listPhotos, uploadPhoto, downloadPhoto, sync, lastSync,
   };
 })();
@@ -2483,6 +2564,170 @@ a { color: var(--accent); }
   CW._share = { tagsToBits, bitsToTags, compactPayload };
 })();
 
+/* ---- tiles.js ---- */
+/* CityWalker — fond de carte détaillé (rues, noms) en tuiles raster.
+ *
+ * La carte vectorielle reste dessous et suffit à elle seule : les tuiles sont un
+ * calque facultatif, qui demande le réseau. Si elles ne chargent pas — hors
+ * ligne, réseau filtré, page embarquée — la carte sobre reste affichée telle
+ * quelle, sans erreur ni trou.
+ *
+ * Aucune bibliothèque : la projection du build est déjà du Web Mercator, donc
+ * la position d'une tuile dans le viewBox se calcule directement.
+ */
+(function () {
+  'use strict';
+  const CW = window.CW;
+
+  const TILE = 256;
+  const MAX_TILES = 260;          // garde-fou : au-delà, on baisse d'un niveau
+  const MIN_Z = 10, MAX_Z = 18;
+
+  const SOURCES = {
+    light: {
+      url: (z, x, y) => `https://basemaps.cartocdn.com/light_all/${z}/${x}/${y}.png`,
+      credit: '© OpenStreetMap · © CARTO',
+    },
+    dark: {
+      url: (z, x, y) => `https://basemaps.cartocdn.com/dark_all/${z}/${x}/${y}.png`,
+      credit: '© OpenStreetMap · © CARTO',
+    },
+  };
+
+  class TileLayer {
+    constructor(group) {
+      this.group = group;
+      this.city = null;
+      this.enabled = false;
+      this.variant = 'light';
+      this.nodes = new Map();       // clé "z/x/y" -> <image>
+      this.failures = 0;
+      this.reported = false;
+      this.onUnavailable = () => {};
+    }
+
+    setCity(city) {
+      this.city = city;
+      this.clear();
+    }
+
+    setEnabled(on) {
+      this.enabled = !!on;
+      this.group.style.display = this.enabled ? '' : 'none';
+      if (!this.enabled) this.clear();
+    }
+
+    setVariant(variant) {
+      const next = SOURCES[variant] ? variant : 'light';
+      if (next === this.variant) return;
+      this.variant = next;
+      this.clear();
+    }
+
+    clear() {
+      CW.clear(this.group);
+      this.nodes.clear();
+    }
+
+    /** viewBox -> coordonnée monde [0,1] et retour. */
+    _worldFromVB(vbX, vbY) {
+      const pr = this.city.projection;
+      const mx = (vbX - pr.pad) / pr.scale + pr.x0;
+      const my = (vbY - pr.pad) / pr.scale + pr.y0;
+      return { x: (mx / Math.PI + 1) / 2, y: (my / Math.PI + 1) / 2 };
+    }
+    _vbFromWorld(wx, wy) {
+      const pr = this.city.projection;
+      return {
+        x: ((wx * 2 - 1) * Math.PI - pr.x0) * pr.scale + pr.pad,
+        y: ((wy * 2 - 1) * Math.PI - pr.y0) * pr.scale + pr.pad,
+      };
+    }
+
+    /**
+     * Recalcule les tuiles visibles.
+     * @param {{k:number,tx:number,ty:number}} t transformation de la scène
+     * @param {number} fit facteur viewBox -> pixels écran
+     */
+    update(t, fit) {
+      if (!this.enabled || !this.city) return;
+      const view = this.city.view;
+      const pr = this.city.projection;
+
+      // Largeur du monde entier, en pixels écran, à l'échelle courante.
+      const worldPx = 2 * Math.PI * pr.scale * t.k * (fit || 1);
+      let z = Math.round(Math.log2(Math.max(1, worldPx) / TILE));
+      z = CW.clamp(z, MIN_Z, MAX_Z);
+
+      // Fenêtre visible, en coordonnées viewBox de la scène.
+      const x0 = (0 - t.tx) / t.k, x1 = (view.w - t.tx) / t.k;
+      const y0 = (0 - t.ty) / t.k, y1 = (view.h - t.ty) / t.k;
+      const a = this._worldFromVB(x0, y0);
+      const b = this._worldFromVB(x1, y1);
+
+      let n = 1 << z;
+      let i0, i1, j0, j1;
+      // Si la fenêtre demande trop de tuiles, on recule d'un niveau.
+      for (;;) {
+        i0 = Math.floor(a.x * n); i1 = Math.floor(b.x * n);
+        j0 = Math.floor(a.y * n); j1 = Math.floor(b.y * n);
+        i0 = Math.max(0, i0); j0 = Math.max(0, j0);
+        i1 = Math.min(n - 1, i1); j1 = Math.min(n - 1, j1);
+        const count = (i1 - i0 + 1) * (j1 - j0 + 1);
+        if (count <= MAX_TILES || z <= MIN_Z) break;
+        z--; n = 1 << z;
+      }
+      if (i1 < i0 || j1 < j0) return;
+
+      const wanted = new Set();
+      const src = SOURCES[this.variant];
+      for (let i = i0; i <= i1; i++) {
+        for (let j = j0; j <= j1; j++) {
+          const key = `${z}/${i}/${j}`;
+          wanted.add(key);
+          if (this.nodes.has(key)) continue;
+          const p0 = this._vbFromWorld(i / n, j / n);
+          const p1 = this._vbFromWorld((i + 1) / n, (j + 1) / n);
+          const img = CW.svg('image', {
+            x: p0.x, y: p0.y,
+            width: Math.abs(p1.x - p0.x) + 0.6,     // léger recouvrement : pas de liseré
+            height: Math.abs(p1.y - p0.y) + 0.6,
+            href: src.url(z, i, j),
+            class: 'tile',
+            preserveAspectRatio: 'none',
+          });
+          img.addEventListener('error', () => {
+            img.remove();
+            this.nodes.delete(key);
+            this.failures++;
+            // Deux échecs suffisent à conclure que la source est inaccessible.
+            if (this.failures >= 2 && !this.reported) {
+              this.reported = true;
+              this.onUnavailable();
+            }
+          });
+          img.addEventListener('load', () => { img.classList.add('is-loaded'); });
+          this.group.appendChild(img);
+          this.nodes.set(key, img);
+        }
+      }
+
+      // Les tuiles d'autres niveaux restent tant qu'elles couvrent l'écran ;
+      // on ne retire que celles franchement hors champ.
+      for (const [key, node] of this.nodes) {
+        if (wanted.has(key)) continue;
+        const [tz] = key.split('/').map(Number);
+        if (tz !== z) { node.remove(); this.nodes.delete(key); }
+        else if (!wanted.has(key)) { node.remove(); this.nodes.delete(key); }
+      }
+    }
+
+    credit() { return SOURCES[this.variant].credit; }
+  }
+
+  CW.TileLayer = TileLayer;
+})();
+
 /* ---- map.js ---- */
 /* CityWalker — carte vectorielle SVG : rendu, pan/zoom, épingles. */
 (function () {
@@ -2502,6 +2747,7 @@ a { color: var(--accent); }
       this.onSelect = () => {};
       this.onZone = () => {};
       this.onAddPoint = () => {};
+      this.onTilesUnavailable = () => {};
       this.addMode = false;
       this.k = 1; this.tx = 0; this.ty = 0;
       this.selected = null;
@@ -2529,6 +2775,15 @@ a { color: var(--accent); }
 
       const scene = CW.svg('g', { class: 'scene' });
       this.scene = scene;
+      const tiles = CW.svg('g', { class: 'layer-tiles', 'clip-path': 'url(#cw-clip)' });
+      scene.appendChild(tiles);
+      if (!this.tiles) {
+        this.tiles = new CW.TileLayer(tiles);
+        this.tiles.onUnavailable = () => this.onTilesUnavailable();
+      } else {
+        this.tiles.group = tiles;
+      }
+      this.tiles.setCity(city);
       const base = CW.svg('g', { class: 'layer-base', 'clip-path': 'url(#cw-clip)' });
       base.appendChild(CW.svg('rect', { x: -50, y: -50, width: w + 100, height: h + 100, class: 'land' }));
       const green = CW.svg('g', { class: 'layer-green' });
@@ -2626,6 +2881,15 @@ a { color: var(--accent); }
       return true;
     }
 
+    /** Fond détaillé : les tuiles remplacent visuellement le fond sobre. */
+    setTiles(on, variant) {
+      if (!this.tiles) return;
+      if (variant) this.tiles.setVariant(variant);
+      this.tiles.setEnabled(on);
+      this.svg.classList.toggle('has-tiles', !!on);
+      this._apply();
+    }
+
     setAddMode(on) {
       this.addMode = !!on;
       this.svg.classList.toggle('is-adding', this.addMode);
@@ -2677,6 +2941,10 @@ a { color: var(--accent); }
       const s = 1 / this.k;
       const pinScale = s * CW.clamp(0.75 + this.k * 0.12, 0.8, 1.15);
       for (const p of this.pins.values()) p.inner.setAttribute('transform', `scale(${pinScale})`);
+      if (this.tiles && this.tiles.enabled) {
+        const m = this._metrics();
+        this.tiles.update({ k: this.k, tx: this.tx, ty: this.ty }, m.scale);
+      }
       const tier = this.k >= (this.city.id === 'paris' ? 2.6 : 2.0) ? 2 : this.k >= 1.6 ? 1 : 0;
       this.svg.dataset.zoomTier = String(tier);
       this.svg.dataset.labels = this.showLabels ? '1' : '0';
@@ -2915,6 +3183,7 @@ a { color: var(--accent); }
     filters: { q: '', state: 'tous', zone: '', cat: '', tags: [] },
     map: null,
     addMode: false,
+    pinMode: 'tous',
     visible: new Set(),
   };
   window.CityWalker = app;
@@ -2970,6 +3239,7 @@ a { color: var(--accent); }
     const next = order[(order.indexOf(app.settings.theme) + 1) % order.length];
     app.settings = CW.store.setSettings({ theme: next });
     applyTheme();
+    if (app.map && app.map.city) applyTiles();
     CW.toast(`Thème : ${{ auto: 'automatique', light: 'clair', dark: 'sombre' }[next]}`);
   }
 
@@ -2977,6 +3247,8 @@ a { color: var(--accent); }
 
   function matches(spot) {
     const f = app.filters;
+    if (app.pinMode === 'mine' && !spot.custom) return false;
+    if (app.pinMode === 'curated' && spot.custom) return false;
     const e = entryOf(spot.id);
     const done = CW.isDone(e);
     if (f.state === 'done' && !done) return false;
@@ -3008,7 +3280,8 @@ a { color: var(--accent); }
     clear(host);
     const visible = allSpots().filter(matches);
     app.visible = new Set(visible.map((s) => s.id));
-    app.map.setFilter(activeFilterCount() || app.filters.q || app.filters.state !== 'tous' ? app.visible : null);
+    const narrowed = activeFilterCount() || app.filters.q || app.filters.state !== 'tous' || app.pinMode !== 'tous';
+    app.map.setFilter(narrowed ? app.visible : null);
 
     const summary = $('#list-summary');
     const stats = CW.computeStats(app.city, progressOf());
@@ -3724,6 +3997,19 @@ a { color: var(--accent); }
       }, 'Copier')]));
       host.appendChild(el('p', { class: 'hint' }, ['Ce lien contient ta progression et tes ambiances, pas tes photos (trop lourdes pour une URL). ', size]));
 
+      host.appendChild(el('button', {
+        type: 'button', class: 'btn', onclick: async (ev) => {
+          const btn = ev.currentTarget;
+          btn.disabled = true; btn.textContent = 'Rendu…';
+          try {
+            const blob = await exportMapImage();
+            CW.toast(`Image de la carte enregistrée (${CW.fmtBytes(blob.size)}).`);
+          } catch (err) {
+            CW.toast((err && err.message) || 'Image impossible.', 'error');
+          } finally { btn.disabled = false; btn.textContent = 'Télécharger l’image de la carte'; }
+        },
+      }, 'Télécharger l’image de la carte'));
+
       if (navigator.share) {
         host.appendChild(el('button', {
           type: 'button', class: 'btn', onclick: () => navigator.share({ title: `CityWalker — ${app.city.name}`, url: out.value }).catch(() => {}),
@@ -3822,9 +4108,24 @@ a { color: var(--accent); }
           el('button', { type: 'button', class: 'btn btn-primary', onclick: (ev) => run(ev.currentTarget, CW.cloud.signIn, 'Connecté.') }, 'Se connecter'),
           el('button', { type: 'button', class: 'btn', onclick: (ev) => run(ev.currentTarget, CW.cloud.signUp, 'Compte créé.') }, 'Créer un compte'),
         ]));
-        wrap.appendChild(el('button', {
-          type: 'button', class: 'btn btn-small btn-ghost', onclick: () => { CW.cloud.setConfig('', ''); render(); },
-        }, 'Changer d’instance'));
+        const helper = async (fn, message) => {
+          if (!email.value.trim()) { CW.toast('Renseigne d’abord ton adresse.', 'error'); return; }
+          try { await fn(email.value.trim()); CW.toast(message, 'info', 7000); }
+          catch (err) { CW.toast((err && err.message) || 'Envoi impossible.', 'error'); }
+        };
+        wrap.appendChild(el('div', { class: 'modal-actions' }, [
+          el('button', {
+            type: 'button', class: 'btn btn-small btn-ghost',
+            onclick: () => helper(CW.cloud.resetPassword, 'Mail de réinitialisation envoyé.'),
+          }, 'Mot de passe oublié'),
+          el('button', {
+            type: 'button', class: 'btn btn-small btn-ghost',
+            onclick: () => helper(CW.cloud.magicLink, 'Lien de connexion envoyé par mail.'),
+          }, 'Recevoir un lien de connexion'),
+          el('button', {
+            type: 'button', class: 'btn btn-small btn-ghost', onclick: () => { CW.cloud.setConfig('', ''); render(); },
+          }, 'Changer d’instance'),
+        ]));
         return;
       }
 
@@ -3853,6 +4154,13 @@ a { color: var(--accent); }
         }, 'Se déconnecter'),
       ]));
       wrap.appendChild(status);
+      wrap.appendChild(el('label', { class: 'check' }, [
+        el('input', {
+          type: 'checkbox', checked: app.settings.autoSync,
+          onchange: (ev) => { app.settings = CW.store.setSettings({ autoSync: ev.target.checked }); },
+        }),
+        el('span', { text: 'Synchroniser automatiquement à l’ouverture' }),
+      ]));
       wrap.appendChild(el('p', { class: 'hint' },
         'La fusion ne retire jamais rien : si deux appareils divergent, l’union des deux gagne.'));
     }
@@ -3871,6 +4179,16 @@ a { color: var(--accent); }
         el('span', { class: 'field-label', text: 'Thème' }),
         el('select', { onchange: (ev) => { app.settings = CW.store.setSettings({ theme: ev.target.value }); applyTheme(); } },
           [['auto', 'Automatique'], ['light', 'Clair'], ['dark', 'Sombre']].map(([v, t]) => el('option', { value: v, selected: app.settings.theme === v }, t))),
+      ]));
+      host.appendChild(el('label', { class: 'check' }, [
+        el('input', {
+          type: 'checkbox', checked: app.settings.tiles,
+          onchange: (ev) => {
+            app.settings = CW.store.setSettings({ tiles: ev.target.checked });
+            applyTiles();
+          },
+        }),
+        el('span', { text: 'Fond détaillé : rues et noms de rues (demande le réseau)' }),
       ]));
       host.appendChild(el('label', { class: 'check' }, [
         el('input', { type: 'checkbox', checked: app.settings.labels, onchange: (ev) => {
@@ -3900,6 +4218,191 @@ a { color: var(--accent); }
         },
       }, `Effacer ma carte de ${app.city.name}`));
       host.appendChild(el('p', { class: 'hint' }, 'Données cartographiques © OpenStreetMap (ODbL) et Ville de Paris (Open Data).'));
+    });
+  }
+
+  // ------------------------------------------------------- fond de carte
+
+  const darkNow = () => (app.settings.theme === 'dark')
+    || (app.settings.theme === 'auto' && matchMedia('(prefers-color-scheme: dark)').matches);
+
+  function applyTiles() {
+    const on = !!app.settings.tiles;
+    app.map.setTiles(on, darkNow() ? 'dark' : 'light');
+    const btn = $('#btn-tiles');
+    btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    btn.classList.toggle('is-on', on);
+    const credit = $('#map-credit');
+    credit.hidden = !on;
+    credit.textContent = on ? app.map.tiles.credit() : '';
+  }
+
+  function toggleTiles() {
+    app.settings = CW.store.setSettings({ tiles: !app.settings.tiles });
+    applyTiles();
+    CW.toast(app.settings.tiles
+      ? 'Fond détaillé activé : rues et noms de rues.'
+      : 'Retour à la carte sobre.');
+  }
+
+  function setPinMode(mode) {
+    app.pinMode = mode;
+    for (const b of $$('.layer-chip')) b.classList.toggle('is-on', b.dataset.pins === mode);
+    renderList();
+  }
+
+  // ------------------------------------------------------------ pellicule
+
+  async function filmModal() {
+    openModal(`Ma pellicule — ${app.city.name}`, async (host) => {
+      const status = el('p', { class: 'hint', text: 'Chargement…' });
+      host.appendChild(status);
+      const grid = el('div', { class: 'film-grid' });
+      host.appendChild(grid);
+      let rows = [];
+      try { rows = await CW.store.photosForCity(app.cityId); } catch (_) { rows = []; }
+      if (!rows.length) {
+        status.textContent = 'Aucune photo pour cette ville. Ajoute-les depuis une fiche, ou importe ta photothèque.';
+        return;
+      }
+      rows.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+      const names = new Map(allSpots().map((sp) => [sp.id, sp.name]));
+      status.textContent = `${rows.length} ${CW.plural(rows.length, 'photo', 'photos')}, de la plus récente à la plus ancienne.`;
+      for (const r of rows) {
+        const fig = el('figure', { class: 'film-item' }, [
+          el('img', { src: CW.store.objectURL(r, 'thumb'), alt: names.get(r.spot) || 'Photo', loading: 'lazy' }),
+          el('figcaption', { text: names.get(r.spot) || 'Lieu supprimé' }),
+        ]);
+        fig.addEventListener('click', () => {
+          $('#modal').close();
+          if (names.has(r.spot)) selectSpot(r.spot, true);
+        });
+        grid.appendChild(fig);
+      }
+    });
+  }
+
+  // -------------------------------------------------------- image de la carte
+
+  /** Styles explicites : une SVG exportée n'emporte pas la feuille de style. */
+  const EXPORT_STYLE = {
+    light: { land: '#eae5db', green: '#d6dfc4', water: '#bed1d9', waterLine: '#92aeba',
+             zone: '#c8c1b5', outline: '#9b958d', label: '#9b958d', ink: '#1b1a18',
+             paper: '#f5f3ef', pin: '#fffdf9', pinLine: '#6d6862' },
+    dark: { land: '#21231f', green: '#202e1c', water: '#1d323b', waterLine: '#395764',
+            zone: '#45473f', outline: '#7c766d', label: '#7c766d', ink: '#eae7e0',
+            paper: '#121311', pin: '#1a1b19', pinLine: '#a9a49b' },
+  };
+
+  async function exportMapImage() {
+    const dark = matchMedia('(prefers-color-scheme: dark)').matches
+      ? app.settings.theme !== 'light' : app.settings.theme === 'dark';
+    const c = EXPORT_STYLE[dark ? 'dark' : 'light'];
+    const stats = CW.computeStats(app.city, progressOf());
+    const view = app.city.view;
+    const SIZE = 1080;
+    const pad = 64;
+    const headerH = 118;
+    const scale = Math.min((SIZE - pad * 2) / view.w, (SIZE - headerH - pad * 1.6) / view.h);
+    const offX = (SIZE - view.w * scale) / 2;
+    const offY = headerH + (SIZE - headerH - pad * 0.6 - view.h * scale) / 2;
+
+    const esc = (t) => String(t).replace(/[&<>]/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[ch]));
+    const parts = [];
+    parts.push(`<rect width="${SIZE}" height="${SIZE}" fill="${c.paper}"/>`);
+    parts.push(`<text x="${pad}" y="72" font-family="sans-serif" font-size="40" font-weight="600" fill="${c.ink}">${esc(app.city.name)}</text>`);
+    parts.push(`<text x="${SIZE - pad}" y="72" text-anchor="end" font-family="sans-serif" font-size="34" fill="${app.city.accent}">${stats.pct} %</text>`);
+    parts.push(`<text x="${pad}" y="102" font-family="sans-serif" font-size="19" fill="${c.label}">${stats.done} / ${stats.total} lieux photographiés · ${esc(stats.level.label)}</text>`);
+    parts.push(`<g transform="translate(${offX} ${offY}) scale(${scale})">`);
+    parts.push(`<clipPath id="c"><path d="${app.city.outline}"/></clipPath>`);
+    parts.push(`<g clip-path="url(#c)"><rect x="-50" y="-50" width="${view.w + 100}" height="${view.h + 100}" fill="${c.land}"/>`);
+    for (const d of app.city.green) parts.push(`<path d="${d}" fill="${c.green}"/>`);
+    for (const d of app.city.water) parts.push(`<path d="${d}" fill="${c.water}" stroke="${c.waterLine}" stroke-width="${0.9 / scale}"/>`);
+    parts.push('</g>');
+    for (const z of app.city.zones) parts.push(`<path d="${z.d}" fill="none" stroke="${c.zone}" stroke-width="${1 / scale}"/>`);
+    parts.push(`<path d="${app.city.outline}" fill="none" stroke="${c.outline}" stroke-width="${1.6 / scale}"/>`);
+    const PIN = 'M0 0C-5.5-6.5-8.5-10.5-8.5-14.5A8.5 8.5 0 1 1 8.5-14.5C8.5-10.5 5.5-6.5 0 0Z';
+    const k = 1 / scale;
+    for (const sp of allSpots()) {
+      const done = CW.isDone(entryOf(sp.id));
+      parts.push(`<g transform="translate(${sp.x} ${sp.y}) scale(${k * 0.9})">`
+        + `<path d="${PIN}" fill="${done ? app.city.accent : c.pin}" stroke="${done ? app.city.accent : c.pinLine}" stroke-width="1.6"/>`
+        + `<circle cx="0" cy="-14.5" r="3.2" fill="${done ? '#fff' : c.pinLine}"/></g>`);
+    }
+    parts.push('</g>');
+    parts.push(`<text x="${SIZE / 2}" y="${SIZE - 26}" text-anchor="middle" font-family="sans-serif" font-size="16" fill="${c.label}">CityWalker · données OpenStreetMap</text>`);
+
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${SIZE}" height="${SIZE}" viewBox="0 0 ${SIZE} ${SIZE}">${parts.join('')}</svg>`;
+    const url = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+    const img = new Image();
+    await new Promise((resolve, reject) => {
+      img.onload = resolve;
+      img.onerror = () => reject(new Error('Rendu de l’image impossible.'));
+      img.src = url;
+    });
+    const canvas = document.createElement('canvas');
+    canvas.width = canvas.height = SIZE;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = c.paper;
+    ctx.fillRect(0, 0, SIZE, SIZE);
+    ctx.drawImage(img, 0, 0);
+    const blob = await new Promise((resolve, reject) =>
+      canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('Encodage impossible.'))), 'image/png'));
+    await CW.download(blob, `citywalker-${app.cityId}-${CW.todayISO()}.png`);
+    return blob;
+  }
+
+  // ---------------------------------------------------------------- itinéraire
+
+  /** Enchaîne des lieux non faits par plus proche voisin, à partir du plus prometteur. */
+  function buildRoute(count) {
+    const todo = allSpots().filter((sp) => !CW.isDone(entryOf(sp.id)));
+    if (todo.length < 2) return null;
+    const seed = todo.find((sp) => sp.tip) || todo[0];
+    const rest = todo.filter((sp) => sp !== seed);
+    const route = [seed];
+    let total = 0;
+    while (route.length < Math.min(count, todo.length)) {
+      const from = route[route.length - 1];
+      let best = null, bestD = Infinity;
+      for (const sp of rest) {
+        if (route.includes(sp)) continue;
+        const d = CW.distanceM(from.lat, from.lon, sp.lat, sp.lon);
+        if (d < bestD) { bestD = d; best = sp; }
+      }
+      if (!best) break;
+      route.push(best);
+      total += bestD;
+    }
+    return { route, total: Math.round(total) };
+  }
+
+  function routeModal() {
+    const built = buildRoute(5);
+    openModal('Une balade', (host) => {
+      if (!built) {
+        host.appendChild(el('p', { class: 'modal-lead' }, 'Il ne reste plus assez de lieux à faire pour tracer une balade.'));
+        return;
+      }
+      const km = (built.total / 1000).toFixed(1);
+      host.appendChild(el('p', { class: 'modal-lead' },
+        `${built.route.length} lieux qui ne sont pas encore faits, enchaînés au plus court : environ ${km} km à pied, soit ${Math.round(built.total / 75)} minutes de marche sans les arrêts.`));
+      const ol = el('ol', { class: 'route-list' });
+      built.route.forEach((sp, i) => {
+        const prev = i ? built.route[i - 1] : null;
+        const d = prev ? Math.round(CW.distanceM(prev.lat, prev.lon, sp.lat, sp.lon)) : 0;
+        ol.appendChild(el('li', {}, el('button', {
+          type: 'button', class: 'sugg', onclick: () => { $('#modal').close(); setView('carte'); selectSpot(sp.id, true); },
+        }, [
+          catIcon(sp.cat, 'cat-ico cat-ico-sm'),
+          el('span', { class: 'sugg-name', text: sp.name }),
+          el('span', { class: 'sugg-tip', text: prev ? `${d} m depuis le précédent` : 'Départ' }),
+        ])));
+      });
+      host.appendChild(ol);
+      host.appendChild(el('button', {
+        type: 'button', class: 'btn', onclick: () => { $('#modal').close(); routeModal(); },
+      }, 'Proposer une autre balade'));
     });
   }
 
@@ -3957,6 +4460,8 @@ a { color: var(--accent); }
       ]);
       const list = el('div', { class: 'menu-list' }, [
         item('▤', 'Mes photos', 'Replacer mes photos sur la carte', importModal),
+        item('▦', 'Ma pellicule', 'Toutes mes photos de la ville', filmModal),
+        item('⇢', 'Une balade', 'Cinq lieux à faire, enchaînés', routeModal),
         item('↗', 'Partager ma carte', 'Lien, export, import', shareModal),
         item('⚙', 'Réglages et compte', 'Thème, synchronisation, données', settingsModal),
         isStandalone() ? null : item('⤓', 'Installer l’application', 'Sur l’écran d’accueil, hors ligne', installModal),
@@ -4046,6 +4551,7 @@ a { color: var(--accent); }
     app.map.getEntry = entryOf;
     app.map.showLabels = app.settings.labels;
     app.map.load(app.city, allSpots());
+    applyTiles();
     buildFilterOptions();
     app.selected = null;
     closeSheet();
@@ -4117,6 +4623,13 @@ a { color: var(--accent); }
     $('#btn-theme').addEventListener('click', cycleTheme);
     $('#btn-settings').addEventListener('click', settingsModal);
     $('#btn-share').addEventListener('click', shareModal);
+    $('#btn-tiles').addEventListener('click', toggleTiles);
+    $$('.layer-chip').forEach((b) => b.addEventListener('click', () => setPinMode(b.dataset.pins)));
+    app.map.onTilesUnavailable = () => {
+      app.settings = CW.store.setSettings({ tiles: false });
+      applyTiles();
+      CW.toast('Le fond détaillé n’a pas pu être chargé (hors ligne ou réseau filtré). La carte sobre reste disponible.', 'error', 7000);
+    };
     $('#btn-menu').addEventListener('click', menuModal);
     $('#btn-import').addEventListener('click', importModal);
     window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); installPrompt = e; });
@@ -4171,12 +4684,26 @@ a { color: var(--accent); }
       }
     }
 
+    // Un lien de connexion ou de récupération dépose la session dans l'URL.
+    try { CW.cloud.adoptSessionFromHash(); } catch (_) { /* rien à adopter */ }
+
     await Promise.all(CW.CITY_ORDER.map(loadCity));
     if (shared) enterShared(shared);
     await switchCity(target, true);
     setView(window.matchMedia('(max-width: 900px)').matches ? 'carte' : 'carte');
     $('#app').setAttribute('aria-busy', 'false');
     $('#boot').hidden = true;
+
+    if (app.settings.autoSync && CW.cloud.configured() && CW.cloud.session() && !app.shared) {
+      CW.cloud.sync(CW.CITY_ORDER, () => {})
+        .then((r) => {
+          if (r.merged || r.downloaded) {
+            refreshAll();
+            CW.toast(`Synchronisé : ${r.merged} ${CW.plural(r.merged, 'lieu mis à jour', 'lieux mis à jour')}, ${r.downloaded} ${CW.plural(r.downloaded, 'photo reçue', 'photos reçues')}.`);
+          }
+        })
+        .catch(() => { /* silencieux au démarrage : le bouton reste disponible */ });
+    }
   }
 
   // Installable et utilisable hors ligne. Uniquement sur un site servi en HTTPS :

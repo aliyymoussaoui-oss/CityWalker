@@ -10,6 +10,7 @@ import { chromium } from 'playwright';
 import { createServer } from 'node:http';
 import { readFile, stat } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
+import { Buffer } from 'node:buffer';
 import { extname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -29,6 +30,12 @@ function serve() {
       try {
         const url = decodeURIComponent((req.url || '/').split('?')[0]);
         const rel = normalize(url === '/' ? '/index.html' : url).replace(/^(\.\.[/\\])+/, '');
+        // Fausses tuiles : un pixel PNG, pour vérifier la géométrie sans réseau.
+        if (rel.startsWith('/faketiles/') || rel.startsWith('faketiles/')) {
+          res.writeHead(200, { 'content-type': 'image/png' });
+          res.end(Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64'));
+          return;
+        }
         const file = join(ROOT, rel);
         if (!file.startsWith(ROOT)) { res.writeHead(403).end(); return; }
         await stat(file);
@@ -219,12 +226,63 @@ await page2.locator('.city-tab[data-city="montpellier"]').click();
 await page2.waitForFunction(() => document.querySelector('.map-city-name').textContent === 'Montpellier');
 check('le lieu posé n’a pas fui vers l’autre ville', await page2.locator('#map .pin.is-custom').count() === 0);
 
+console.log('\n— Fond détaillé et couches —');
+const t = await newPage(await browser.newContext({ viewport: { width: 1200, height: 800 } }));
+await t.addInitScript(() => {
+  window.CW_TILE_SOURCES = {
+    light: { url: (z, x, y) => `faketiles/${z}/${x}/${y}.png`, credit: 'tuiles de test' },
+    dark: { url: (z, x, y) => `faketiles/${z}/${x}/${y}.png`, credit: 'tuiles de test' },
+  };
+});
+await t.goto(base, { waitUntil: 'load' });
+await t.waitForSelector('#app[aria-busy="false"]');
+check('aucune tuile avant activation', await t.locator('#map .tile').count() === 0);
+await t.locator('#btn-tiles').click();
+await t.waitForTimeout(600);
+const tileCount = await t.locator('#map .tile').count();
+check('les tuiles sont posées', tileCount > 0 && tileCount <= 260, `${tileCount} tuiles`);
+check('la carte signale son fond', await t.locator('#map.has-tiles').count() === 1);
+check('le crédit des données est affiché', (await t.locator('#map-credit').textContent()).includes('test'));
+const tileGeo = await t.evaluate(() => {
+  const app = window.CityWalker;
+  const spot = app.city.spots.find((s) => s.id === 'tour-eiffel');
+  const layer = app.map.tiles;
+  for (const [key, node] of layer.nodes) {
+    const x = parseFloat(node.getAttribute('x')), y = parseFloat(node.getAttribute('y'));
+    const w = parseFloat(node.getAttribute('width')), h = parseFloat(node.getAttribute('height'));
+    if (spot.x >= x && spot.x <= x + w && spot.y >= y && spot.y <= y + h) {
+      const [z, i, j] = key.split('/').map(Number);
+      // Tuile attendue pour cette latitude et cette longitude, formule slippy map.
+      const n = 2 ** z;
+      const ei = Math.floor(((spot.lon + 180) / 360) * n);
+      const lat = (spot.lat * Math.PI) / 180;
+      const ej = Math.floor(((1 - Math.log(Math.tan(lat) + 1 / Math.cos(lat)) / Math.PI) / 2) * n);
+      return { z, i, j, ei, ej };
+    }
+  }
+  return null;
+});
+check('la tuile sous la Tour Eiffel est la bonne', tileGeo && tileGeo.i === tileGeo.ei && tileGeo.j === tileGeo.ej, JSON.stringify(tileGeo));
+await t.locator('#btn-tiles').click();
+await t.waitForTimeout(200);
+check('la désactivation retire les tuiles', await t.locator('#map .tile:visible').count() === 0);
+
+await t.locator('.layer-chip[data-pins="mine"]').click();
+await t.waitForTimeout(200);
+check('la couche « mes lieux » n’affiche que les lieux posés', await t.locator('#map .pin:not(.is-dim)').count() === 0);
+await t.locator('.layer-chip[data-pins="curated"]').click();
+await t.waitForTimeout(200);
+check('la couche « touristiques » affiche les 155 lieux', await t.locator('#map .pin:not(.is-dim)').count() === 155);
+await t.locator('.layer-chip[data-pins="tous"]').click();
+await t.waitForTimeout(200);
+check('la couche « tout » revient à l’ensemble', await t.locator('.spot-row').count() === 155);
+
 console.log('\n— Accessibilité de base —');
 check('la carte est focusable au clavier', await page.locator('#map[tabindex="0"]').count() === 1);
 check('les onglets ville portent aria-pressed', await page.locator('.city-tab[aria-pressed]').count() === 2);
 
 console.log('\n— Console —');
-const allErrors = [...page.errors, ...page2.errors];
+const allErrors = [...page.errors, ...page2.errors, ...t.errors];
 check('aucune erreur console ni exception', allErrors.length === 0, allErrors.join(' | '));
 
 await browser.close();

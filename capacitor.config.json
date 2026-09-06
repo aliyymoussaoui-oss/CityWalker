@@ -1,0 +1,9 @@
+{
+  "appId": "fr.citywalker.app",
+  "appName": "CityWalker",
+  "webDir": "dist/site",
+  "bundledWebRuntime": false,
+  "server": { "androidScheme": "https" },
+  "ios": { "contentInset": "always", "limitsNavigationsToAppBoundDomains": false },
+  "android": { "allowMixedContent": false }
+}

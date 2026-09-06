@@ -15,6 +15,7 @@
     filters: { q: '', state: 'tous', zone: '', cat: '', tags: [] },
     map: null,
     addMode: false,
+    pinMode: 'tous',
     visible: new Set(),
   };
   window.CityWalker = app;
@@ -70,6 +71,7 @@
     const next = order[(order.indexOf(app.settings.theme) + 1) % order.length];
     app.settings = CW.store.setSettings({ theme: next });
     applyTheme();
+    if (app.map && app.map.city) applyTiles();
     CW.toast(`Thème : ${{ auto: 'automatique', light: 'clair', dark: 'sombre' }[next]}`);
   }
 
@@ -77,6 +79,8 @@
 
   function matches(spot) {
     const f = app.filters;
+    if (app.pinMode === 'mine' && !spot.custom) return false;
+    if (app.pinMode === 'curated' && spot.custom) return false;
     const e = entryOf(spot.id);
     const done = CW.isDone(e);
     if (f.state === 'done' && !done) return false;
@@ -108,7 +112,8 @@
     clear(host);
     const visible = allSpots().filter(matches);
     app.visible = new Set(visible.map((s) => s.id));
-    app.map.setFilter(activeFilterCount() || app.filters.q || app.filters.state !== 'tous' ? app.visible : null);
+    const narrowed = activeFilterCount() || app.filters.q || app.filters.state !== 'tous' || app.pinMode !== 'tous';
+    app.map.setFilter(narrowed ? app.visible : null);
 
     const summary = $('#list-summary');
     const stats = CW.computeStats(app.city, progressOf());
@@ -824,6 +829,19 @@
       }, 'Copier')]));
       host.appendChild(el('p', { class: 'hint' }, ['Ce lien contient ta progression et tes ambiances, pas tes photos (trop lourdes pour une URL). ', size]));
 
+      host.appendChild(el('button', {
+        type: 'button', class: 'btn', onclick: async (ev) => {
+          const btn = ev.currentTarget;
+          btn.disabled = true; btn.textContent = 'Rendu…';
+          try {
+            const blob = await exportMapImage();
+            CW.toast(`Image de la carte enregistrée (${CW.fmtBytes(blob.size)}).`);
+          } catch (err) {
+            CW.toast((err && err.message) || 'Image impossible.', 'error');
+          } finally { btn.disabled = false; btn.textContent = 'Télécharger l’image de la carte'; }
+        },
+      }, 'Télécharger l’image de la carte'));
+
       if (navigator.share) {
         host.appendChild(el('button', {
           type: 'button', class: 'btn', onclick: () => navigator.share({ title: `CityWalker — ${app.city.name}`, url: out.value }).catch(() => {}),
@@ -922,9 +940,24 @@
           el('button', { type: 'button', class: 'btn btn-primary', onclick: (ev) => run(ev.currentTarget, CW.cloud.signIn, 'Connecté.') }, 'Se connecter'),
           el('button', { type: 'button', class: 'btn', onclick: (ev) => run(ev.currentTarget, CW.cloud.signUp, 'Compte créé.') }, 'Créer un compte'),
         ]));
-        wrap.appendChild(el('button', {
-          type: 'button', class: 'btn btn-small btn-ghost', onclick: () => { CW.cloud.setConfig('', ''); render(); },
-        }, 'Changer d’instance'));
+        const helper = async (fn, message) => {
+          if (!email.value.trim()) { CW.toast('Renseigne d’abord ton adresse.', 'error'); return; }
+          try { await fn(email.value.trim()); CW.toast(message, 'info', 7000); }
+          catch (err) { CW.toast((err && err.message) || 'Envoi impossible.', 'error'); }
+        };
+        wrap.appendChild(el('div', { class: 'modal-actions' }, [
+          el('button', {
+            type: 'button', class: 'btn btn-small btn-ghost',
+            onclick: () => helper(CW.cloud.resetPassword, 'Mail de réinitialisation envoyé.'),
+          }, 'Mot de passe oublié'),
+          el('button', {
+            type: 'button', class: 'btn btn-small btn-ghost',
+            onclick: () => helper(CW.cloud.magicLink, 'Lien de connexion envoyé par mail.'),
+          }, 'Recevoir un lien de connexion'),
+          el('button', {
+            type: 'button', class: 'btn btn-small btn-ghost', onclick: () => { CW.cloud.setConfig('', ''); render(); },
+          }, 'Changer d’instance'),
+        ]));
         return;
       }
 
@@ -953,6 +986,13 @@
         }, 'Se déconnecter'),
       ]));
       wrap.appendChild(status);
+      wrap.appendChild(el('label', { class: 'check' }, [
+        el('input', {
+          type: 'checkbox', checked: app.settings.autoSync,
+          onchange: (ev) => { app.settings = CW.store.setSettings({ autoSync: ev.target.checked }); },
+        }),
+        el('span', { text: 'Synchroniser automatiquement à l’ouverture' }),
+      ]));
       wrap.appendChild(el('p', { class: 'hint' },
         'La fusion ne retire jamais rien : si deux appareils divergent, l’union des deux gagne.'));
     }
@@ -971,6 +1011,16 @@
         el('span', { class: 'field-label', text: 'Thème' }),
         el('select', { onchange: (ev) => { app.settings = CW.store.setSettings({ theme: ev.target.value }); applyTheme(); } },
           [['auto', 'Automatique'], ['light', 'Clair'], ['dark', 'Sombre']].map(([v, t]) => el('option', { value: v, selected: app.settings.theme === v }, t))),
+      ]));
+      host.appendChild(el('label', { class: 'check' }, [
+        el('input', {
+          type: 'checkbox', checked: app.settings.tiles,
+          onchange: (ev) => {
+            app.settings = CW.store.setSettings({ tiles: ev.target.checked });
+            applyTiles();
+          },
+        }),
+        el('span', { text: 'Fond détaillé : rues et noms de rues (demande le réseau)' }),
       ]));
       host.appendChild(el('label', { class: 'check' }, [
         el('input', { type: 'checkbox', checked: app.settings.labels, onchange: (ev) => {
@@ -1000,6 +1050,191 @@
         },
       }, `Effacer ma carte de ${app.city.name}`));
       host.appendChild(el('p', { class: 'hint' }, 'Données cartographiques © OpenStreetMap (ODbL) et Ville de Paris (Open Data).'));
+    });
+  }
+
+  // ------------------------------------------------------- fond de carte
+
+  const darkNow = () => (app.settings.theme === 'dark')
+    || (app.settings.theme === 'auto' && matchMedia('(prefers-color-scheme: dark)').matches);
+
+  function applyTiles() {
+    const on = !!app.settings.tiles;
+    app.map.setTiles(on, darkNow() ? 'dark' : 'light');
+    const btn = $('#btn-tiles');
+    btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    btn.classList.toggle('is-on', on);
+    const credit = $('#map-credit');
+    credit.hidden = !on;
+    credit.textContent = on ? app.map.tiles.credit() : '';
+  }
+
+  function toggleTiles() {
+    app.settings = CW.store.setSettings({ tiles: !app.settings.tiles });
+    applyTiles();
+    CW.toast(app.settings.tiles
+      ? 'Fond détaillé activé : rues et noms de rues.'
+      : 'Retour à la carte sobre.');
+  }
+
+  function setPinMode(mode) {
+    app.pinMode = mode;
+    for (const b of $$('.layer-chip')) b.classList.toggle('is-on', b.dataset.pins === mode);
+    renderList();
+  }
+
+  // ------------------------------------------------------------ pellicule
+
+  async function filmModal() {
+    openModal(`Ma pellicule — ${app.city.name}`, async (host) => {
+      const status = el('p', { class: 'hint', text: 'Chargement…' });
+      host.appendChild(status);
+      const grid = el('div', { class: 'film-grid' });
+      host.appendChild(grid);
+      let rows = [];
+      try { rows = await CW.store.photosForCity(app.cityId); } catch (_) { rows = []; }
+      if (!rows.length) {
+        status.textContent = 'Aucune photo pour cette ville. Ajoute-les depuis une fiche, ou importe ta photothèque.';
+        return;
+      }
+      rows.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+      const names = new Map(allSpots().map((sp) => [sp.id, sp.name]));
+      status.textContent = `${rows.length} ${CW.plural(rows.length, 'photo', 'photos')}, de la plus récente à la plus ancienne.`;
+      for (const r of rows) {
+        const fig = el('figure', { class: 'film-item' }, [
+          el('img', { src: CW.store.objectURL(r, 'thumb'), alt: names.get(r.spot) || 'Photo', loading: 'lazy' }),
+          el('figcaption', { text: names.get(r.spot) || 'Lieu supprimé' }),
+        ]);
+        fig.addEventListener('click', () => {
+          $('#modal').close();
+          if (names.has(r.spot)) selectSpot(r.spot, true);
+        });
+        grid.appendChild(fig);
+      }
+    });
+  }
+
+  // -------------------------------------------------------- image de la carte
+
+  /** Styles explicites : une SVG exportée n'emporte pas la feuille de style. */
+  const EXPORT_STYLE = {
+    light: { land: '#eae5db', green: '#d6dfc4', water: '#bed1d9', waterLine: '#92aeba',
+             zone: '#c8c1b5', outline: '#9b958d', label: '#9b958d', ink: '#1b1a18',
+             paper: '#f5f3ef', pin: '#fffdf9', pinLine: '#6d6862' },
+    dark: { land: '#21231f', green: '#202e1c', water: '#1d323b', waterLine: '#395764',
+            zone: '#45473f', outline: '#7c766d', label: '#7c766d', ink: '#eae7e0',
+            paper: '#121311', pin: '#1a1b19', pinLine: '#a9a49b' },
+  };
+
+  async function exportMapImage() {
+    const dark = matchMedia('(prefers-color-scheme: dark)').matches
+      ? app.settings.theme !== 'light' : app.settings.theme === 'dark';
+    const c = EXPORT_STYLE[dark ? 'dark' : 'light'];
+    const stats = CW.computeStats(app.city, progressOf());
+    const view = app.city.view;
+    const SIZE = 1080;
+    const pad = 64;
+    const headerH = 118;
+    const scale = Math.min((SIZE - pad * 2) / view.w, (SIZE - headerH - pad * 1.6) / view.h);
+    const offX = (SIZE - view.w * scale) / 2;
+    const offY = headerH + (SIZE - headerH - pad * 0.6 - view.h * scale) / 2;
+
+    const esc = (t) => String(t).replace(/[&<>]/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[ch]));
+    const parts = [];
+    parts.push(`<rect width="${SIZE}" height="${SIZE}" fill="${c.paper}"/>`);
+    parts.push(`<text x="${pad}" y="72" font-family="sans-serif" font-size="40" font-weight="600" fill="${c.ink}">${esc(app.city.name)}</text>`);
+    parts.push(`<text x="${SIZE - pad}" y="72" text-anchor="end" font-family="sans-serif" font-size="34" fill="${app.city.accent}">${stats.pct} %</text>`);
+    parts.push(`<text x="${pad}" y="102" font-family="sans-serif" font-size="19" fill="${c.label}">${stats.done} / ${stats.total} lieux photographiés · ${esc(stats.level.label)}</text>`);
+    parts.push(`<g transform="translate(${offX} ${offY}) scale(${scale})">`);
+    parts.push(`<clipPath id="c"><path d="${app.city.outline}"/></clipPath>`);
+    parts.push(`<g clip-path="url(#c)"><rect x="-50" y="-50" width="${view.w + 100}" height="${view.h + 100}" fill="${c.land}"/>`);
+    for (const d of app.city.green) parts.push(`<path d="${d}" fill="${c.green}"/>`);
+    for (const d of app.city.water) parts.push(`<path d="${d}" fill="${c.water}" stroke="${c.waterLine}" stroke-width="${0.9 / scale}"/>`);
+    parts.push('</g>');
+    for (const z of app.city.zones) parts.push(`<path d="${z.d}" fill="none" stroke="${c.zone}" stroke-width="${1 / scale}"/>`);
+    parts.push(`<path d="${app.city.outline}" fill="none" stroke="${c.outline}" stroke-width="${1.6 / scale}"/>`);
+    const PIN = 'M0 0C-5.5-6.5-8.5-10.5-8.5-14.5A8.5 8.5 0 1 1 8.5-14.5C8.5-10.5 5.5-6.5 0 0Z';
+    const k = 1 / scale;
+    for (const sp of allSpots()) {
+      const done = CW.isDone(entryOf(sp.id));
+      parts.push(`<g transform="translate(${sp.x} ${sp.y}) scale(${k * 0.9})">`
+        + `<path d="${PIN}" fill="${done ? app.city.accent : c.pin}" stroke="${done ? app.city.accent : c.pinLine}" stroke-width="1.6"/>`
+        + `<circle cx="0" cy="-14.5" r="3.2" fill="${done ? '#fff' : c.pinLine}"/></g>`);
+    }
+    parts.push('</g>');
+    parts.push(`<text x="${SIZE / 2}" y="${SIZE - 26}" text-anchor="middle" font-family="sans-serif" font-size="16" fill="${c.label}">CityWalker · données OpenStreetMap</text>`);
+
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${SIZE}" height="${SIZE}" viewBox="0 0 ${SIZE} ${SIZE}">${parts.join('')}</svg>`;
+    const url = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+    const img = new Image();
+    await new Promise((resolve, reject) => {
+      img.onload = resolve;
+      img.onerror = () => reject(new Error('Rendu de l’image impossible.'));
+      img.src = url;
+    });
+    const canvas = document.createElement('canvas');
+    canvas.width = canvas.height = SIZE;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = c.paper;
+    ctx.fillRect(0, 0, SIZE, SIZE);
+    ctx.drawImage(img, 0, 0);
+    const blob = await new Promise((resolve, reject) =>
+      canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('Encodage impossible.'))), 'image/png'));
+    await CW.download(blob, `citywalker-${app.cityId}-${CW.todayISO()}.png`);
+    return blob;
+  }
+
+  // ---------------------------------------------------------------- itinéraire
+
+  /** Enchaîne des lieux non faits par plus proche voisin, à partir du plus prometteur. */
+  function buildRoute(count) {
+    const todo = allSpots().filter((sp) => !CW.isDone(entryOf(sp.id)));
+    if (todo.length < 2) return null;
+    const seed = todo.find((sp) => sp.tip) || todo[0];
+    const rest = todo.filter((sp) => sp !== seed);
+    const route = [seed];
+    let total = 0;
+    while (route.length < Math.min(count, todo.length)) {
+      const from = route[route.length - 1];
+      let best = null, bestD = Infinity;
+      for (const sp of rest) {
+        if (route.includes(sp)) continue;
+        const d = CW.distanceM(from.lat, from.lon, sp.lat, sp.lon);
+        if (d < bestD) { bestD = d; best = sp; }
+      }
+      if (!best) break;
+      route.push(best);
+      total += bestD;
+    }
+    return { route, total: Math.round(total) };
+  }
+
+  function routeModal() {
+    const built = buildRoute(5);
+    openModal('Une balade', (host) => {
+      if (!built) {
+        host.appendChild(el('p', { class: 'modal-lead' }, 'Il ne reste plus assez de lieux à faire pour tracer une balade.'));
+        return;
+      }
+      const km = (built.total / 1000).toFixed(1);
+      host.appendChild(el('p', { class: 'modal-lead' },
+        `${built.route.length} lieux qui ne sont pas encore faits, enchaînés au plus court : environ ${km} km à pied, soit ${Math.round(built.total / 75)} minutes de marche sans les arrêts.`));
+      const ol = el('ol', { class: 'route-list' });
+      built.route.forEach((sp, i) => {
+        const prev = i ? built.route[i - 1] : null;
+        const d = prev ? Math.round(CW.distanceM(prev.lat, prev.lon, sp.lat, sp.lon)) : 0;
+        ol.appendChild(el('li', {}, el('button', {
+          type: 'button', class: 'sugg', onclick: () => { $('#modal').close(); setView('carte'); selectSpot(sp.id, true); },
+        }, [
+          catIcon(sp.cat, 'cat-ico cat-ico-sm'),
+          el('span', { class: 'sugg-name', text: sp.name }),
+          el('span', { class: 'sugg-tip', text: prev ? `${d} m depuis le précédent` : 'Départ' }),
+        ])));
+      });
+      host.appendChild(ol);
+      host.appendChild(el('button', {
+        type: 'button', class: 'btn', onclick: () => { $('#modal').close(); routeModal(); },
+      }, 'Proposer une autre balade'));
     });
   }
 
@@ -1057,6 +1292,8 @@
       ]);
       const list = el('div', { class: 'menu-list' }, [
         item('▤', 'Mes photos', 'Replacer mes photos sur la carte', importModal),
+        item('▦', 'Ma pellicule', 'Toutes mes photos de la ville', filmModal),
+        item('⇢', 'Une balade', 'Cinq lieux à faire, enchaînés', routeModal),
         item('↗', 'Partager ma carte', 'Lien, export, import', shareModal),
         item('⚙', 'Réglages et compte', 'Thème, synchronisation, données', settingsModal),
         isStandalone() ? null : item('⤓', 'Installer l’application', 'Sur l’écran d’accueil, hors ligne', installModal),
@@ -1146,6 +1383,7 @@
     app.map.getEntry = entryOf;
     app.map.showLabels = app.settings.labels;
     app.map.load(app.city, allSpots());
+    applyTiles();
     buildFilterOptions();
     app.selected = null;
     closeSheet();
@@ -1217,6 +1455,13 @@
     $('#btn-theme').addEventListener('click', cycleTheme);
     $('#btn-settings').addEventListener('click', settingsModal);
     $('#btn-share').addEventListener('click', shareModal);
+    $('#btn-tiles').addEventListener('click', toggleTiles);
+    $$('.layer-chip').forEach((b) => b.addEventListener('click', () => setPinMode(b.dataset.pins)));
+    app.map.onTilesUnavailable = () => {
+      app.settings = CW.store.setSettings({ tiles: false });
+      applyTiles();
+      CW.toast('Le fond détaillé n’a pas pu être chargé (hors ligne ou réseau filtré). La carte sobre reste disponible.', 'error', 7000);
+    };
     $('#btn-menu').addEventListener('click', menuModal);
     $('#btn-import').addEventListener('click', importModal);
     window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); installPrompt = e; });
@@ -1271,12 +1516,26 @@
       }
     }
 
+    // Un lien de connexion ou de récupération dépose la session dans l'URL.
+    try { CW.cloud.adoptSessionFromHash(); } catch (_) { /* rien à adopter */ }
+
     await Promise.all(CW.CITY_ORDER.map(loadCity));
     if (shared) enterShared(shared);
     await switchCity(target, true);
     setView(window.matchMedia('(max-width: 900px)').matches ? 'carte' : 'carte');
     $('#app').setAttribute('aria-busy', 'false');
     $('#boot').hidden = true;
+
+    if (app.settings.autoSync && CW.cloud.configured() && CW.cloud.session() && !app.shared) {
+      CW.cloud.sync(CW.CITY_ORDER, () => {})
+        .then((r) => {
+          if (r.merged || r.downloaded) {
+            refreshAll();
+            CW.toast(`Synchronisé : ${r.merged} ${CW.plural(r.merged, 'lieu mis à jour', 'lieux mis à jour')}, ${r.downloaded} ${CW.plural(r.downloaded, 'photo reçue', 'photos reçues')}.`);
+          }
+        })
+        .catch(() => { /* silencieux au démarrage : le bouton reste disponible */ });
+    }
   }
 
   // Installable et utilisable hors ligne. Uniquement sur un site servi en HTTPS :

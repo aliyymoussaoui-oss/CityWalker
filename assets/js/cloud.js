@@ -137,6 +137,33 @@
     return null;
   }
 
+  /** Envoie un mail de réinitialisation de mot de passe. */
+  async function resetPassword(email) {
+    await auth('recover', { email, redirect_to: location.href.split('#')[0] });
+  }
+
+  /** Envoie un lien de connexion sans mot de passe. */
+  async function magicLink(email) {
+    await auth('magiclink', { email, redirect_to: location.href.split('#')[0] });
+  }
+
+  /** Récupère la session déposée dans l'URL par un lien de connexion ou de récupération. */
+  function adoptSessionFromHash() {
+    const h = location.hash || '';
+    if (!/access_token=/.test(h)) return null;
+    const params = new URLSearchParams(h.replace(/^#/, ''));
+    const s = normalizeSession({
+      access_token: params.get('access_token'),
+      refresh_token: params.get('refresh_token'),
+      expires_in: params.get('expires_in'),
+      user: { id: params.get('user_id') || '', email: params.get('email') || '' },
+    });
+    if (!s) return null;
+    saveSession(s);
+    history.replaceState(null, '', location.pathname + location.search);
+    return s;
+  }
+
   async function signOut() {
     const s = loadSession();
     const cfg = loadConfig();
@@ -286,6 +313,7 @@
   CW.cloud = {
     loadConfig, setConfig, configured,
     session: loadSession, signUp, signIn, signOut, refresh,
+    resetPassword, magicLink, adoptSessionFromHash,
     pullCity, pushCity, listPhotos, uploadPhoto, downloadPhoto, sync, lastSync,
   };
 })();

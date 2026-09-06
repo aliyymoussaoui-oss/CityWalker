@@ -83,6 +83,8 @@
             <span class="map-city-sub"></span>
           </div>
           <div class="map-tools" role="group" aria-label="Outils de carte">
+            <button type="button" class="btn btn-small" id="btn-tiles" aria-pressed="false"
+                    title="Fond détaillé : rues et noms de rues">🗺<span class="btn-text"> Rues</span></button>
             <button type="button" class="btn btn-small" id="btn-add-spot" aria-pressed="false"
                     title="Poser une épingle où tu veux sur la carte">＋<span class="btn-text"> Poser un lieu</span></button>
             <button type="button" class="btn btn-small" id="btn-random"
@@ -101,9 +103,16 @@
           Clique n'importe où sur la carte pour y poser ton lieu. <kbd>Échap</kbd> pour annuler.
         </p>
 
+        <div class="map-layers" role="group" aria-label="Lieux affichés">
+          <button type="button" class="layer-chip is-on" data-pins="tous">Tout</button>
+          <button type="button" class="layer-chip" data-pins="curated">Touristiques</button>
+          <button type="button" class="layer-chip" data-pins="mine">Mes lieux</button>
+        </div>
+
         <div class="map-legend" id="map-legend">
           <span class="legend-item"><span class="legend-dot legend-dot-done"></span>photographié</span>
           <span class="legend-item"><span class="legend-dot legend-dot-todo"></span>à faire</span>
+          <span class="legend-credit" id="map-credit" hidden></span>
           <span class="legend-hint">glisse pour déplacer · molette ou pincement pour zoomer</span>
         </div>
       </div>
@@ -203,6 +212,7 @@
 <script src="assets/js/import.js"></script>
 <script src="assets/js/cloud.js"></script>
 <script src="assets/js/share.js"></script>
+<script src="assets/js/tiles.js"></script>
 <script src="assets/js/map.js"></script>
 <script src="assets/js/ui.js"></script>
 <script src="assets/js/main.js"></script>

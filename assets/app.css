@@ -165,6 +165,13 @@ a { color: var(--accent); }
 .map { width: 100%; height: 100%; display: block; touch-action: none; cursor: grab; }
 .map:active { cursor: grabbing; }
 
+.tile { opacity: 0; transition: opacity .25s; }
+.tile.is-loaded { opacity: 1; }
+/* Sous les tuiles, le fond sobre reste visible en attendant, puis s'efface. */
+.map.has-tiles .layer-base { opacity: .28; }
+.map.has-tiles .layer-green path, .map.has-tiles .layer-water path { opacity: 0; }
+.map.has-tiles .zone { stroke: color-mix(in srgb, var(--accent) 55%, transparent); stroke-width: 1.4; }
+.map.has-tiles .zone-label, .map.has-tiles .sub-label { paint-order: stroke; stroke: var(--paper); stroke-width: 3px; }
 .land { fill: var(--land); }
 .layer-green path { fill: var(--green); stroke: none; }
 .layer-water path { fill: var(--water); stroke: var(--water-line); stroke-width: .9; vector-effect: non-scaling-stroke; }
@@ -250,6 +257,19 @@ a { color: var(--accent); }
 }
 .map-tooltip .is-done { color: color-mix(in srgb, var(--paper) 70%, var(--accent)); }
 
+.map-layers {
+  position: absolute; right: 12px; bottom: 12px; display: flex; gap: 3px;
+  background: color-mix(in srgb, var(--surface) 90%, transparent);
+  backdrop-filter: blur(6px); border: 1px solid var(--line);
+  border-radius: 999px; padding: 3px; z-index: 4;
+}
+.layer-chip {
+  border: 0; background: none; border-radius: 999px; padding: 5px 11px;
+  font-size: 12px; color: var(--ink-soft); cursor: pointer; white-space: nowrap;
+}
+.layer-chip.is-on { background: var(--accent); color: #fff; }
+.legend-credit { color: var(--ink-faint); }
+.legend-credit[hidden] { display: none; }
 .map-legend {
   position: absolute; left: 12px; bottom: 12px; display: flex; gap: 14px; align-items: center;
   flex-wrap: wrap; font-size: 11.5px; color: var(--ink-soft);
@@ -469,6 +489,17 @@ a { color: var(--accent); }
 .import-row:hover { background: var(--surface-2); }
 .import-row .check { align-items: flex-start; gap: 9px; }
 .import-row.is-new strong::after { content: ' · nouveau'; color: var(--accent); font-weight: 400; font-size: 11.5px; }
+.film-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 6px; max-height: 60vh; overflow: auto; }
+.film-item { margin: 0; cursor: pointer; border-radius: var(--radius-sm); overflow: hidden; background: var(--surface-2); }
+.film-item img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; }
+.film-item figcaption {
+  font-size: 11px; color: var(--ink-soft); padding: 4px 6px; overflow: hidden;
+  text-overflow: ellipsis; white-space: nowrap;
+}
+.film-item:hover figcaption { color: var(--accent); }
+.route-list { list-style: decimal inside; display: flex; flex-direction: column; gap: 6px; padding: 0; }
+.route-list li::marker { color: var(--ink-faint); font-size: 12px; }
+.route-list .sugg { display: inline-grid; width: calc(100% - 24px); vertical-align: top; }
 .menu-list { display: flex; flex-direction: column; gap: 2px; }
 .menu-item {
   display: flex; align-items: center; gap: 12px; width: 100%; text-align: left;
@@ -555,7 +586,20 @@ a { color: var(--accent); }
   /* Le dé est déjà dans l'aperçu sous la carte : inutile de l'avoir deux fois. */
   #btn-random { display: none; }
 
-  .map-legend { font-size: 11px; gap: 10px; padding: 5px 9px; bottom: 8px; left: 8px; }
+  .map-layers {
+  position: absolute; right: 12px; bottom: 12px; display: flex; gap: 3px;
+  background: color-mix(in srgb, var(--surface) 90%, transparent);
+  backdrop-filter: blur(6px); border: 1px solid var(--line);
+  border-radius: 999px; padding: 3px; z-index: 4;
+}
+.layer-chip {
+  border: 0; background: none; border-radius: 999px; padding: 5px 11px;
+  font-size: 12px; color: var(--ink-soft); cursor: pointer; white-space: nowrap;
+}
+.layer-chip.is-on { background: var(--accent); color: #fff; }
+.legend-credit { color: var(--ink-faint); }
+.legend-credit[hidden] { display: none; }
+.map-legend { font-size: 11px; gap: 10px; padding: 5px 9px; bottom: 8px; left: 8px; }
 
   /* Une carte large sur un écran haut laisse d'énormes bandes vides : on borne
      la scène à sa proportion réelle et on donne le reste à un aperçu utile. */

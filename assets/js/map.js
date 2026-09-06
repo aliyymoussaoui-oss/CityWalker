@@ -16,6 +16,7 @@
       this.onSelect = () => {};
       this.onZone = () => {};
       this.onAddPoint = () => {};
+      this.onTilesUnavailable = () => {};
       this.addMode = false;
       this.k = 1; this.tx = 0; this.ty = 0;
       this.selected = null;
@@ -43,6 +44,15 @@
 
       const scene = CW.svg('g', { class: 'scene' });
       this.scene = scene;
+      const tiles = CW.svg('g', { class: 'layer-tiles', 'clip-path': 'url(#cw-clip)' });
+      scene.appendChild(tiles);
+      if (!this.tiles) {
+        this.tiles = new CW.TileLayer(tiles);
+        this.tiles.onUnavailable = () => this.onTilesUnavailable();
+      } else {
+        this.tiles.group = tiles;
+      }
+      this.tiles.setCity(city);
       const base = CW.svg('g', { class: 'layer-base', 'clip-path': 'url(#cw-clip)' });
       base.appendChild(CW.svg('rect', { x: -50, y: -50, width: w + 100, height: h + 100, class: 'land' }));
       const green = CW.svg('g', { class: 'layer-green' });
@@ -140,6 +150,15 @@
       return true;
     }
 
+    /** Fond détaillé : les tuiles remplacent visuellement le fond sobre. */
+    setTiles(on, variant) {
+      if (!this.tiles) return;
+      if (variant) this.tiles.setVariant(variant);
+      this.tiles.setEnabled(on);
+      this.svg.classList.toggle('has-tiles', !!on);
+      this._apply();
+    }
+
     setAddMode(on) {
       this.addMode = !!on;
       this.svg.classList.toggle('is-adding', this.addMode);
@@ -191,6 +210,10 @@
       const s = 1 / this.k;
       const pinScale = s * CW.clamp(0.75 + this.k * 0.12, 0.8, 1.15);
       for (const p of this.pins.values()) p.inner.setAttribute('transform', `scale(${pinScale})`);
+      if (this.tiles && this.tiles.enabled) {
+        const m = this._metrics();
+        this.tiles.update({ k: this.k, tx: this.tx, ty: this.ty }, m.scale);
+      }
       const tier = this.k >= (this.city.id === 'paris' ? 2.6 : 2.0) ? 2 : this.k >= 1.6 ? 1 : 0;
       this.svg.dataset.zoomTier = String(tier);
       this.svg.dataset.labels = this.showLabels ? '1' : '0';
