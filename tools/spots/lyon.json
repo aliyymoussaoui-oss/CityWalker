@@ -1,0 +1,505 @@
+{
+ "city": "lyon",
+ "note": "Liste curatée. `zone` est une attente vérifiée au build par point-dans-polygone.",
+ "spots": [
+  {
+   "id": "place-terreaux",
+   "name": "Place des Terreaux",
+   "cat": "place",
+   "zone": "lyon-1er-arrondissement",
+   "query": "Place des Terreaux, Lyon",
+   "best": [
+    "nuit"
+   ],
+   "tip": "La fontaine Bartholdi et les 69 jets au sol : viens à la nuit tombée, tout est éclairé."
+  },
+  {
+   "id": "musee-beaux-arts",
+   "name": "Musée des Beaux-Arts",
+   "cat": "musee",
+   "zone": "lyon-1er-arrondissement",
+   "query": "Musée des Beaux-Arts de Lyon",
+   "tip": "Le cloître et son jardin sont en accès libre, sans billet."
+  },
+  {
+   "id": "opera-lyon",
+   "name": "Opéra de Lyon",
+   "cat": "monument",
+   "zone": "lyon-1er-arrondissement",
+   "query": "Opéra de Lyon",
+   "best": [
+    "nuit"
+   ],
+   "tip": "La verrière de Jean Nouvel vire au rouge le soir."
+  },
+  {
+   "id": "trois-gaules",
+   "name": "Amphithéâtre des Trois Gaules",
+   "cat": "insolite",
+   "zone": "lyon-1er-arrondissement",
+   "query": "Amphithéâtre des Trois Gaules, Lyon"
+  },
+  {
+   "id": "montee-grande-cote",
+   "name": "Montée de la Grande-Côte",
+   "cat": "rue",
+   "zone": "lyon-1er-arrondissement",
+   "query": "Montée de la Grande Côte, Lyon",
+   "best": [
+    "sunset"
+   ],
+   "tip": "Une des plus belles perspectives de la ville, en descendant vers les Terreaux."
+  },
+  {
+   "id": "cour-voraces",
+   "name": "Cour des Voraces",
+   "cat": "insolite",
+   "zone": "lyon-1er-arrondissement",
+   "query": "Cour des Voraces, Lyon",
+   "tip": "La traboule la plus spectaculaire de la Croix-Rousse, six étages d'escaliers."
+  },
+  {
+   "id": "passage-thiaffait",
+   "name": "Passage Thiaffait",
+   "cat": "passage",
+   "zone": "lyon-1er-arrondissement",
+   "query": "Passage Thiaffait, Lyon"
+  },
+  {
+   "id": "place-sathonay",
+   "name": "Place Sathonay",
+   "cat": "place",
+   "zone": "lyon-1er-arrondissement",
+   "query": "Place Sathonay, Lyon",
+   "best": [
+    "automne"
+   ]
+  },
+  {
+   "id": "place-bellecour",
+   "name": "Place Bellecour",
+   "cat": "place",
+   "zone": "lyon-2e-arrondissement",
+   "query": "Place Bellecour, Lyon",
+   "tip": "La plus grande place piétonne d'Europe : recule jusqu'aux angles pour la cadrer."
+  },
+  {
+   "id": "musee-confluences",
+   "name": "Musée des Confluences",
+   "cat": "musee",
+   "zone": "lyon-2e-arrondissement",
+   "query": "Musée des Confluences, Lyon",
+   "best": [
+    "sunset",
+    "nuit"
+   ],
+   "tip": "Le nuage de cristal à l'heure bleue, depuis la pointe du confluent."
+  },
+  {
+   "id": "grand-hotel-dieu",
+   "name": "Grand Hôtel-Dieu",
+   "cat": "monument",
+   "zone": "lyon-2e-arrondissement",
+   "query": "Grand Hôtel-Dieu, Lyon",
+   "best": [
+    "nuit"
+   ]
+  },
+  {
+   "id": "place-jacobins",
+   "name": "Place des Jacobins",
+   "cat": "place",
+   "zone": "lyon-2e-arrondissement",
+   "query": "Place des Jacobins, Lyon",
+   "best": [
+    "nuit"
+   ]
+  },
+  {
+   "id": "rue-merciere",
+   "name": "Rue Mercière",
+   "cat": "rue",
+   "zone": "lyon-2e-arrondissement",
+   "query": "Rue Mercière, Lyon",
+   "best": [
+    "nuit"
+   ]
+  },
+  {
+   "id": "place-carnot",
+   "name": "Place Carnot",
+   "cat": "place",
+   "zone": "lyon-2e-arrondissement",
+   "query": "Place Carnot, Lyon"
+  },
+  {
+   "id": "quais-saone",
+   "name": "Quais de Saône",
+   "cat": "eau",
+   "zone": "lyon-2e-arrondissement",
+   "query": "Quai Saint-Antoine, Lyon",
+   "best": [
+    "sunrise",
+    "brume"
+   ],
+   "tip": "Brume matinale sur la Saône, avec Fourvière au-dessus : le cliché lyonnais."
+  },
+  {
+   "id": "gare-perrache",
+   "name": "Gare de Lyon-Perrache",
+   "cat": "monument",
+   "zone": "lyon-2e-arrondissement",
+   "query": "Gare de Lyon-Perrache"
+  },
+  {
+   "id": "tour-part-dieu",
+   "name": "Tour Part-Dieu",
+   "cat": "monument",
+   "zone": "lyon-3e-arrondissement",
+   "query": "Tour Part-Dieu, Lyon",
+   "best": [
+    "sunset"
+   ],
+   "tip": "Le Crayon : la terrasse du dernier étage est ouverte au public."
+  },
+  {
+   "id": "halles-bocuse",
+   "name": "Halles Paul Bocuse",
+   "cat": "marche",
+   "zone": "lyon-3e-arrondissement",
+   "query": "Halles de Lyon Paul Bocuse",
+   "best": [
+    "jour"
+   ]
+  },
+  {
+   "id": "bibliotheque-part-dieu",
+   "name": "Bibliothèque de la Part-Dieu",
+   "cat": "monument",
+   "zone": "lyon-3e-arrondissement",
+   "query": "Bibliothèque municipale de Lyon Part-Dieu"
+  },
+  {
+   "id": "rue-garibaldi",
+   "name": "Rue Garibaldi",
+   "cat": "rue",
+   "_comment": "La rue traverse les 3e, 6e et 7e ; le géocodeur renvoie son milieu, dans le 6e.",
+   "zone": "lyon-6e-arrondissement",
+   "query": "Rue Garibaldi, Lyon"
+  },
+  {
+   "id": "parc-sergent-blandan",
+   "name": "Parc Sergent-Blandan",
+   "cat": "parc",
+   "zone": "lyon-7e-arrondissement",
+   "query": "Parc Sergent Blandan, Lyon",
+   "best": [
+    "automne"
+   ]
+  },
+  {
+   "id": "mur-canuts",
+   "name": "Mur des Canuts",
+   "cat": "street-art",
+   "zone": "lyon-4e-arrondissement",
+   "query": "Mur des Canuts, Lyon",
+   "best": [
+    "jour"
+   ],
+   "tip": "La plus grande fresque murale d'Europe, repeinte tous les dix ans."
+  },
+  {
+   "id": "gros-caillou",
+   "name": "Le Gros Caillou",
+   "cat": "vue",
+   "zone": "lyon-4e-arrondissement",
+   "query": "Gros Caillou, Lyon",
+   "best": [
+    "sunset"
+   ],
+   "tip": "Le belvédère du plateau : toute la ville et les Alpes par temps clair."
+  },
+  {
+   "id": "marche-croix-rousse",
+   "name": "Marché de la Croix-Rousse",
+   "cat": "marche",
+   "zone": "lyon-4e-arrondissement",
+   "query": "Boulevard de la Croix-Rousse, Lyon",
+   "best": [
+    "jour"
+   ]
+  },
+  {
+   "id": "jardin-rosa-mir",
+   "name": "Jardin Rosa Mir",
+   "cat": "insolite",
+   "zone": "lyon-4e-arrondissement",
+   "query": "Jardin Rosa Mir, Lyon",
+   "tip": "Un jardin de coquillages construit à la main, ouvert quelques heures par semaine."
+  },
+  {
+   "id": "fourviere",
+   "name": "Basilique Notre-Dame de Fourvière",
+   "cat": "eglise",
+   "zone": "lyon-5e-arrondissement",
+   "query": "Basilique Notre-Dame de Fourvière",
+   "best": [
+    "sunset",
+    "nuit"
+   ],
+   "tip": "L'esplanade regarde plein est : viens plutôt au lever, ou de nuit pour la basilique éclairée."
+  },
+  {
+   "id": "theatres-romains",
+   "name": "Théâtres romains de Fourvière",
+   "cat": "monument",
+   "zone": "lyon-5e-arrondissement",
+   "query": "Théâtres romains de Fourvière, Lyon",
+   "best": [
+    "sunrise"
+   ]
+  },
+  {
+   "id": "cathedrale-saint-jean",
+   "name": "Cathédrale Saint-Jean",
+   "cat": "eglise",
+   "zone": "lyon-5e-arrondissement",
+   "query": "Cathédrale Saint-Jean-Baptiste, Lyon"
+  },
+  {
+   "id": "vieux-lyon",
+   "name": "Vieux Lyon et ses traboules",
+   "cat": "quartier",
+   "zone": "lyon-5e-arrondissement",
+   "query": "Rue Saint-Jean, Lyon",
+   "best": [
+    "jour"
+   ],
+   "tip": "La traboule du 27 rue Saint-Jean traverse quatre cours Renaissance."
+  },
+  {
+   "id": "jardin-rosaire",
+   "name": "Jardin du Rosaire",
+   "cat": "vue",
+   "zone": "lyon-5e-arrondissement",
+   "query": "Jardin du Rosaire, Lyon",
+   "best": [
+    "sunrise"
+   ],
+   "tip": "La montée piétonne vers Fourvière, avec des paliers qui dégagent la vue."
+  },
+  {
+   "id": "musee-gadagne",
+   "name": "Musées Gadagne",
+   "cat": "musee",
+   "zone": "lyon-5e-arrondissement",
+   "query": "Musées Gadagne, Lyon"
+  },
+  {
+   "id": "place-saint-jean",
+   "name": "Place Saint-Jean",
+   "cat": "place",
+   "zone": "lyon-5e-arrondissement",
+   "query": "Place Saint-Jean, Lyon"
+  },
+  {
+   "id": "tour-metallique",
+   "name": "Tour métallique de Fourvière",
+   "cat": "monument",
+   "zone": "lyon-5e-arrondissement",
+   "query": "Tour métallique de Fourvière"
+  },
+  {
+   "id": "parc-tete-dor",
+   "name": "Parc de la Tête d'Or",
+   "cat": "parc",
+   "zone": "lyon-6e-arrondissement",
+   "query": "Parc de la Tête d'Or, Lyon",
+   "best": [
+    "automne",
+    "sunrise"
+   ],
+   "tip": "Le lac au lever, avant l'affluence, et la roseraie en juin."
+  },
+  {
+   "id": "roseraie-tete-dor",
+   "name": "Roseraie internationale",
+   "cat": "parc",
+   "zone": "lyon-6e-arrondissement",
+   "query": "Roseraie internationale, Lyon",
+   "best": [
+    "printemps"
+   ]
+  },
+  {
+   "id": "mac-lyon",
+   "name": "Musée d'art contemporain",
+   "cat": "musee",
+   "zone": "lyon-6e-arrondissement",
+   "query": "Musée d'art contemporain de Lyon"
+  },
+  {
+   "id": "cite-internationale",
+   "name": "Cité internationale",
+   "cat": "monument",
+   "zone": "lyon-6e-arrondissement",
+   "query": "Cité internationale, Lyon"
+  },
+  {
+   "id": "serres-tete-dor",
+   "name": "Grandes serres de la Tête d'Or",
+   "cat": "insolite",
+   "zone": "lyon-6e-arrondissement",
+   "query": "Jardin botanique de Lyon",
+   "best": [
+    "jour"
+   ]
+  },
+  {
+   "id": "halle-tony-garnier",
+   "name": "Halle Tony Garnier",
+   "cat": "monument",
+   "zone": "lyon-7e-arrondissement",
+   "query": "Halle Tony Garnier, Lyon"
+  },
+  {
+   "id": "confluent-berges",
+   "name": "Berges du Rhône",
+   "cat": "eau",
+   "zone": "lyon-7e-arrondissement",
+   "query": "Berges du Rhône, Lyon",
+   "best": [
+    "sunset"
+   ]
+  },
+  {
+   "id": "rue-marseille",
+   "name": "Rue de Marseille",
+   "cat": "rue",
+   "zone": "lyon-7e-arrondissement",
+   "query": "Rue de Marseille, Lyon"
+  },
+  {
+   "id": "musee-tony-garnier",
+   "name": "Musée urbain Tony Garnier",
+   "cat": "street-art",
+   "zone": "lyon-8e-arrondissement",
+   "query": "Musée urbain Tony Garnier, Lyon",
+   "best": [
+    "jour"
+   ],
+   "tip": "Vingt-cinq fresques monumentales sur les murs d'un quartier d'habitation."
+  },
+  {
+   "id": "institut-lumiere",
+   "name": "Institut Lumière",
+   "cat": "musee",
+   "zone": "lyon-8e-arrondissement",
+   "query": "Institut Lumière, Lyon",
+   "tip": "La villa des frères Lumière et le hangar du premier film."
+  },
+  {
+   "id": "ile-barbe",
+   "name": "Île Barbe",
+   "cat": "insolite",
+   "zone": "lyon-9e-arrondissement",
+   "query": "Île Barbe, Lyon",
+   "best": [
+    "sunrise",
+    "brume"
+   ]
+  },
+  {
+   "id": "fort-vaise",
+   "name": "Quartier de Vaise",
+   "cat": "quartier",
+   "zone": "lyon-9e-arrondissement",
+   "query": "Place Valmy, Lyon"
+  },
+  {
+   "id": "parc-gorge-loup",
+   "name": "Parc Montel",
+   "cat": "parc",
+   "zone": "lyon-9e-arrondissement",
+   "query": "Parc Montel, Lyon",
+   "best": [
+    "automne"
+   ]
+  },
+  {
+   "id": "place-croix-paquet",
+   "name": "Place Croix-Paquet",
+   "cat": "place",
+   "zone": "lyon-1er-arrondissement",
+   "query": "Place Croix-Paquet, Lyon"
+  },
+  {
+   "id": "passerelle-college",
+   "name": "Passerelle du Palais de Justice",
+   "cat": "pont",
+   "zone": "lyon-5e-arrondissement",
+   "query": "Passerelle du Palais de Justice, Lyon",
+   "best": [
+    "nuit",
+    "sunset"
+   ]
+  },
+  {
+   "id": "palais-justice",
+   "name": "Palais de justice historique",
+   "cat": "monument",
+   "zone": "lyon-5e-arrondissement",
+   "query": "Palais de justice historique de Lyon",
+   "best": [
+    "nuit"
+   ]
+  },
+  {
+   "id": "place-rouville",
+   "name": "Place Rouville",
+   "cat": "vue",
+   "zone": "lyon-1er-arrondissement",
+   "query": "Place Rouville, Lyon",
+   "best": [
+    "sunset"
+   ],
+   "tip": "Un balcon discret sur la Saône et Fourvière, connu des seuls Lyonnais."
+  },
+  {
+   "id": "parc-parilly",
+   "name": "Parc de Parilly",
+   "cat": "parc",
+   "zone": "alentours",
+   "outside": true,
+   "sub": "Bron",
+   "query": "Parc de Parilly, Bron",
+   "best": [
+    "automne"
+   ]
+  },
+  {
+   "id": "pont-collonges",
+   "name": "Collonges-au-Mont-d'Or",
+   "cat": "quartier",
+   "zone": "alentours",
+   "outside": true,
+   "sub": "Collonges",
+   "query": "Collonges-au-Mont-d'Or",
+   "best": [
+    "sunset"
+   ]
+  },
+  {
+   "id": "grand-parc-miribel",
+   "name": "Grand Parc Miribel Jonage",
+   "cat": "parc",
+   "zone": "alentours",
+   "outside": true,
+   "sub": "Vaulx-en-Velin",
+   "query": "Parc de Miribel-Jonage",
+   "best": [
+    "sunrise"
+   ]
+  }
+ ]
+}

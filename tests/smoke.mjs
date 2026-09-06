@@ -130,6 +130,22 @@ check('Montpellier : 7 quartiers', await page.locator('#map .zone').count() === 
 check('sous-quartiers étiquetés', (await page.locator('#map .sub-label').count()) === 17);
 check('Montpellier repart de zéro', await page.locator('#map .pin.is-done').count() === 0);
 
+await page.locator('.city-tab[data-city="lyon"]').click();
+await page.waitForFunction(() => document.querySelector('.map-city-name').textContent === 'Lyon');
+check('Lyon : 53 lieux', await page.locator('#map .pin').count() === 53, String(await page.locator('#map .pin').count()));
+check('Lyon : 9 arrondissements', await page.locator('#map .zone').count() === 9);
+// La couche d'eau prouve que le Rhône et la Saône sont bien chargés : c'est le
+// symptôme exact du bug de préfixe de cache qui vidait ces calques.
+check('Lyon : le Rhône et la Saône sont dessinés', await page.locator('#map .layer-water path').count() >= 2,
+      String(await page.locator('#map .layer-water path').count()));
+check('Lyon : les espaces verts sont dessinés', await page.locator('#map .layer-green path').count() >= 10,
+      String(await page.locator('#map .layer-green path').count()));
+const ordreLyon = await page.locator('.group-label').allInnerTexts();
+check("Lyon : les arrondissements sont dans l'ordre",
+      ordreLyon.slice(0, 9).join(' ') === '1er 2e 3e 4e 5e 6e 7e 8e 9e', ordreLyon.join(' '));
+await page.locator('.city-tab[data-city="montpellier"]').click();
+await page.waitForFunction(() => document.querySelector('.map-city-name').textContent === 'Montpellier');
+
 console.log('\n— Zoom et déplacement —');
 const before = await page.locator('#map .scene').getAttribute('transform');
 await page.locator('#btn-zoom-in').click();
@@ -317,7 +333,8 @@ check('une valeur vide reste vide', urls.vide === '');
 
 console.log('\n— Accessibilité de base —');
 check('la carte est focusable au clavier', await page.locator('#map[tabindex="0"]').count() === 1);
-check('les onglets ville portent aria-pressed', await page.locator('.city-tab[aria-pressed]').count() === 2);
+const nbVilles = await page.evaluate(() => window.CW.CITY_ORDER.length);
+check('un onglet aria-pressed par ville', await page.locator('.city-tab[aria-pressed]').count() === nbVilles);
 
 console.log('\n— Console —');
 const allErrors = [...page.errors, ...page2.errors, ...t.errors];

@@ -218,7 +218,8 @@ await a.locator('.account button', { hasText: 'Synchroniser maintenant' }).click
 await a.waitForFunction(() => document.querySelector('.toast') && /Synchronisé/.test(document.querySelector('.toast').textContent), null, { timeout: 30000 });
 const toastA = await a.locator('.toast').first().textContent();
 check('la synchronisation annonce un envoi de photo', /1 photo envoyée/.test(toastA), toastA);
-check('le serveur a reçu la progression des deux villes', api.state.progress.size === 2, String(api.state.progress.size));
+const villes = await a.evaluate(() => window.CW.CITY_ORDER.length);
+check('le serveur a reçu la progression de chaque ville', api.state.progress.size === villes, String(api.state.progress.size));
 check('le serveur a reçu le fichier image', api.state.blobs.size === 1, String(api.state.blobs.size));
 await a.locator('.modal-close').click();
 

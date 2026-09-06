@@ -4,7 +4,7 @@
   const CW = window.CW;
 
   CW.VERSION = 1;
-  CW.CITY_ORDER = ['paris', 'montpellier'];
+  CW.CITY_ORDER = ['paris', 'montpellier', 'lyon'];
 
   /** Ambiances (« modulo ») : l'ordre est figé, il sert à l'encodage binaire du lien de partage. */
   CW.TAGS = [

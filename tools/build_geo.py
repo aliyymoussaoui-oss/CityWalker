@@ -12,7 +12,7 @@ Pipeline :
 Le script échoue bruyamment (SystemExit) sur toute incohérence : mieux vaut un
 build rouge qu'une carte fausse.
 """
-import json, math, pathlib, sys
+import json, math, pathlib, re, sys
 from collections import defaultdict
 
 ROOT = pathlib.Path(__file__).resolve().parent
@@ -248,7 +248,7 @@ CITY_META = {
     "lyon": {
         "prefix": "lyon",
         "commune": "lyon_commune",
-        "zones": lambda: overpass_zones("lyon_quartiers", 9, label_from_name=False),
+        "zones": lambda: overpass_zones("lyon_quartiers", 9, label_from_name=False, name_prefix="Lyon ", ordinal=True),
         "name": "Lyon",
         "subtitle": "9 arrondissements",
         "accent": "#8a3f5d",
@@ -291,18 +291,28 @@ def paris_zones():
     return zones
 
 
-def overpass_zones(cache_key, expected, label_from_name=True):
+def overpass_zones(cache_key, expected, label_from_name=True, name_prefix=None,
+                   ordinal=False):
     """Quartiers d'une ville, lus depuis une requête Overpass déjà en cache."""
     zones = []
     for el in load_overpass(cache_key):
+        # Une bbox attrape aussi les quartiers des communes voisines.
+        if name_prefix and not el.get("tags", {}).get("name", "").startswith(name_prefix):
+            continue
         name = el["tags"]["name"]
         outer, inner = osm_rings(el)
         if not outer:
             raise SystemExit(f"Quartier sans anneau exploitable : {name}")
-        zones.append({"id": slugify(name), "name": name,
-                      "label": name if label_from_name else short_label(name),
-                      "rings": outer + inner, "order": 0})
-    zones.sort(key=lambda z: -sum(ring_area_m2(r) for r in z["rings"]))
+        label = name if label_from_name else short_label(name)
+        zones.append({"id": slugify(name),
+                      # « Lyon 5e Arrondissement » se lit mieux « 5e arrondissement ».
+                      "name": f"{label} arrondissement" if ordinal else name,
+                      "label": label, "rings": outer + inner, "order": 0})
+    if ordinal:
+        # Les arrondissements se rangent dans leur ordre naturel, pas par surface.
+        zones.sort(key=lambda z: int(re.match(r"\d+", z["label"]).group()))
+    else:
+        zones.sort(key=lambda z: -sum(ring_area_m2(r) for r in z["rings"]))
     for i, z in enumerate(zones):
         z["order"] = i
     if len(zones) != expected:
@@ -325,20 +335,38 @@ def commune_rings(city):
     return outer, inner
 
 
-def area_features(city, kind, rings_commune, min_area):
-    prefix = "paris" if city == "paris" else "mtp"
+def bbox_overlap(a, b):
+    return not (a[2] < b[0] or a[0] > b[2] or a[3] < b[1] or a[1] > b[3])
+
+
+def bbox_inside(inner, outer):
+    return (inner[0] >= outer[0] and inner[1] >= outer[1]
+            and inner[2] <= outer[2] and inner[3] <= outer[3])
+
+
+def area_features(city, kind, view_bbox, min_area):
+    """Plans d'eau et espaces verts visibles dans le cadre de la carte.
+
+    Le filtrage se fait anneau par anneau, jamais élément par élément : « Le
+    Rhône » est une seule relation OSM qui descend jusqu'à la Méditerranée, et
+    son centroïde tombe près d'Arles. Tester l'élément entier écartait donc le
+    fleuve traversant la ville ; on ne garde que les anneaux dont la boîte
+    englobante croise le cadre affiché.
+    """
     feats = []
-    for el in load_overpass(f"{prefix}_{kind}"):
+    for el in load_overpass(f"{CITY_META[city]['prefix']}_{kind}"):
         outer, inner = osm_rings(el)
-        if not outer:
-            continue
-        area = sum(ring_area_m2(r) for r in outer)
-        if area < min_area:
-            continue
-        if not point_in_rings(centroid(outer), rings_commune):
-            continue
-        feats.append({"rings": outer + inner, "area": area,
-                      "name": el.get("tags", {}).get("name", "")})
+        name = el.get("tags", {}).get("name", "")
+        for ring in outer:
+            area = ring_area_m2(ring)
+            if area < min_area:
+                continue
+            box = bbox_of([ring])
+            if not bbox_overlap(box, view_bbox):
+                continue
+            # Un trou appartient à l'anneau qui le contient (île, étang évidé).
+            holes = [h for h in inner if bbox_inside(bbox_of([h]), box)]
+            feats.append({"rings": [ring] + holes, "area": area, "name": name})
     feats.sort(key=lambda f: -f["area"])
     return feats
 
@@ -412,8 +440,6 @@ def build(city):
     meta = CITY_META[city]
     zones = CITY_META[city]["zones"]()
     outer_c, inner_c = commune_rings(city)
-    water = area_features(city, "water", outer_c, meta["min_water_m2"])
-    green = area_features(city, "green", outer_c, meta["min_green_m2"])
     spots = load_spots(city, zones)
     # La projection englobe la commune et les lieux des communes voisines, avec
     # une marge pour que leurs épingles ne collent pas au bord.
@@ -426,6 +452,11 @@ def build(city):
             ring += [(lon - pad, lat - pad), (lon + pad, lat - pad), (lon + pad, lat + pad), (lon - pad, lat + pad)]
         frame.append(ring)
     proj = Projector(frame)
+    # Eau et verdure sont découpées sur le cadre réellement affiché : inutile
+    # d'embarquer le Rhône jusqu'en Camargue.
+    view_bbox = bbox_of(frame)
+    water = area_features(city, "water", view_bbox, meta["min_water_m2"])
+    green = area_features(city, "green", view_bbox, meta["min_green_m2"])
 
     def simp(rings, tol):
         out = []
@@ -481,10 +512,7 @@ def build(city):
 
 if __name__ == "__main__":
     OUT.mkdir(parents=True, exist_ok=True)
-    # Lyon est déclaré mais pas encore construit : il lui manque sa liste de
-    # lieux (tools/spots/lyon.json). `python3 tools/build_geo.py lyon` une fois
-    # celle-ci écrite et les caches téléchargés.
-    for city in (sys.argv[1:] or ["paris", "montpellier"]):
+    for city in (sys.argv[1:] or list(CITY_META)):
         print(f"\n=== {city} ===")
         data = build(city)
         dest = OUT / f"{city}.json"

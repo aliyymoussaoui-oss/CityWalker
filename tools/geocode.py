@@ -22,8 +22,8 @@ CITIES = {
         "names": {"paris", "vincennes", "saint-denis", "saint-ouen-sur-seine", "puteaux", "saint-cloud", "boulogne-billancourt"},
     },
     "lyon": {
-        "viewbox": (4.7600, 45.8200, 4.9200, 45.7000),
-        "names": {"lyon"},
+        "viewbox": (4.7000, 45.8700, 5.0400, 45.6600),
+        "names": {"lyon", "bron", "collonges-au-mont-d'or", "vaulx-en-velin"},
     },
     "montpellier": {
         "viewbox": (3.7300, 43.7000, 4.0500, 43.4900),

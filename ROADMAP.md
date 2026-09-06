@@ -41,22 +41,38 @@ depuis OpenStreetMap, projection Mercator, et le fond détaillé par-dessus.
 La couche de tuiles fonctionne déjà à tous les niveaux de zoom, il n'y a que la
 géométrie de la France et la navigation entre les deux échelles à écrire.
 
-## v1.2 — autres villes (pipeline prêt, curation à faire)
+## v1.2 — Lyon (fait)
 
-Le pipeline est désormais générique : une ville se déclare par un bloc dans
-`CITY_META` (nom, accent, tolérances, d'où viennent ses quartiers) et une liste
+Le pipeline est générique : une ville se déclare par un bloc dans `CITY_META`
+(nom, accent, tolérances, d'où viennent ses quartiers) et une liste
 `tools/spots/<ville>.json`. Paris garde sa source Open Data ; toutes les autres
 villes lisent leurs quartiers depuis OpenStreetMap avec la même fonction.
 
-**Lyon est déjà déclaré** — requêtes Overpass, bbox, métadonnées, étiquettes
-d'arrondissements — il ne lui manque que sa liste de lieux :
+**Lyon est livré** : 9 arrondissements (niveau administratif 9 dans
+OpenStreetMap — le niveau 10 y désigne les conseils de quartier, qui ne
+couvrent pas la ville), 53 lieux dont Bron, Collonges-au-Mont-d'Or et
+Vaulx-en-Velin sous « Alentours ».
+
+Deux défauts du pipeline sont tombés au passage :
+
+- les calques eau et verdure lisaient toujours le cache de Montpellier, quelle
+  que soit la ville demandée ;
+- ils étaient filtrés élément par élément, sur le centroïde. « Le Rhône » est
+  une seule relation OpenStreetMap qui descend jusqu'à la Méditerranée : son
+  centroïde tombe près d'Arles, et le fleuve disparaissait de Lyon. Le filtre
+  travaille désormais anneau par anneau, sur le cadre réellement affiché. Paris
+  y gagne la Marne et la Seine hors les murs, Montpellier ses étangs.
+
+Ajouter une ville :
 
 ```sh
-# 1. écrire tools/spots/lyon.json  (~50 lieux, une heure de curation)
+# 1. écrire tools/spots/<ville>.json  (~50 lieux, une heure de curation)
+#    et son bloc CITY_META + ses requêtes Overpass
 python3 tools/fetch_geo.py
-python3 tools/geocode.py lyon
-python3 tools/build_geo.py lyon
-# 2. ajouter 'lyon' à CW.CITY_ORDER dans assets/js/model.js
+python3 tools/geocode.py <ville>
+python3 tools/build_geo.py
+# 2. ajouter '<ville>' à CW.CITY_ORDER dans assets/js/model.js
+#    et son onglet dans index.html
 ```
 
 Restent ensuite Bordeaux, Marseille, Toulouse, Nantes, Lisbonne, Séville : même

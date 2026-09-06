@@ -14,13 +14,26 @@ JS_ORDER = ["config", "util", "model", "store", "exif", "photos", "import", "clo
             "share", "tiles", "map", "ui", "main"]
 
 
+def cities():
+    """La liste des villes vient de model.js : une seule source de vérité."""
+    src = (ROOT / "assets" / "js" / "model.js").read_text(encoding="utf-8")
+    m = re.search(r"CW\.CITY_ORDER\s*=\s*\[(.*?)\]", src, re.S)
+    if not m:
+        raise SystemExit("CW.CITY_ORDER introuvable dans assets/js/model.js")
+    found = re.findall(r"'([a-z-]+)'", m.group(1))
+    if not found:
+        raise SystemExit("CW.CITY_ORDER est vide")
+    return found
+
+
 def build():
     html = (ROOT / "index.html").read_text(encoding="utf-8")
     css = (ROOT / "assets" / "app.css").read_text(encoding="utf-8")
 
     # Données embarquées : main.js les lira depuis window.CW_DATA au lieu de fetch().
+    names = cities()
     data = {c: json.loads((ROOT / "data" / f"{c}.json").read_text(encoding="utf-8"))
-            for c in ("paris", "montpellier")}
+            for c in names}
     payload = json.dumps(data, ensure_ascii=False, separators=(",", ":"))
     # `</script>` ne doit jamais apparaître littéralement dans un bloc script.
     payload = payload.replace("</", "<\\/")
@@ -55,8 +68,11 @@ def build():
     for name in JS_ORDER:
         if f"---- {name}.js ----" not in text:
             problems.append(f"{name}.js absent du bundle")
-    if '"paris"' not in text or '"montpellier"' not in text:
-        problems.append("données de ville absentes")
+    for c in names:
+        if f'"{c}"' not in text:
+            problems.append(f"données de {c} absentes")
+        if f'data-city="{c}"' not in text:
+            problems.append(f"onglet de {c} absent d'index.html")
     if problems:
         raise SystemExit("Build incohérent :\n  " + "\n  ".join(problems))
 

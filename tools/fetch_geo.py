@@ -50,8 +50,10 @@ out geom;""",
 node["place"~"^(suburb|neighbourhood|quarter)$"]({BBOX_MTP});
 out;""",
     # Lyon : les 9 arrondissements, la limite communale, l'eau et le vert
+    # Les arrondissements de Lyon sont au niveau 9 ; le niveau 10 y désigne les
+    # conseils de quartier, qui ne couvrent pas la ville.
     "lyon_quartiers": f"""[out:json][timeout:120];
-rel["boundary"="administrative"]["admin_level"="10"]({BBOX_LYON});
+rel["boundary"="administrative"]["admin_level"="9"]({BBOX_LYON});
 out geom;""",
     "lyon_commune": """[out:json][timeout:120];
 rel["boundary"="administrative"]["admin_level"="8"]["ref:INSEE"="69123"];

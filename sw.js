@@ -5,7 +5,7 @@
  *  - ressources statiques : cache d'abord, avec rafraîchissement en arrière-plan ;
  *  - le nom du cache porte une version : publier une nouvelle version purge l'ancienne.
  */
-const VERSION = 'cw-v1';
+const VERSION = 'cw-v2';
 const ASSETS = [
   './', './index.html', './manifest.webmanifest',
   './assets/app.css',
@@ -13,7 +13,7 @@ const ASSETS = [
   './assets/js/exif.js', './assets/js/photos.js', './assets/js/import.js',
   './assets/js/cloud.js', './assets/js/share.js',
   './assets/js/tiles.js', './assets/js/map.js', './assets/js/ui.js', './assets/js/main.js',
-  './data/paris.json', './data/montpellier.json',
+  './data/paris.json', './data/montpellier.json', './data/lyon.json',
   './assets/icons/icon.svg',
 ];
 

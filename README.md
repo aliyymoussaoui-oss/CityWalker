@@ -1,6 +1,6 @@
 # CityWalker
 
-Deux cartes sobres — **Paris** et **Montpellier** — pour épingler les lieux que
+Trois cartes sobres — **Paris**, **Montpellier** et **Lyon** — pour épingler les lieux que
 tu as déjà photographiés, noter dans quelle ambiance (coucher de soleil, nuit,
 pluie, brume…), y attacher tes photos, et suivre ton pourcentage de découverte
 de la ville et de ses quartiers.
@@ -12,6 +12,8 @@ tu veux retrouver ta carte ailleurs, un compte facultatif la synchronise.
   Saint-Ouen, la Défense, Saint-Cloud et Boulogne.
 - **89 lieux à Montpellier** : les 7 grands quartiers, plus Palavas, Carnon,
   Maguelone et Lattes.
+- **53 lieux à Lyon** : les 9 arrondissements, plus Bron, Collonges-au-Mont-d'Or
+  et Vaulx-en-Velin.
 - **Autant de lieux à toi que tu veux**, posés n'importe où sur la carte. Ils
   sont comptés à part, pour que le pourcentage de la ville reste honnête.
 - Installable comme une application depuis le navigateur (Menu → Installer),

@@ -653,6 +653,9 @@ a { color: var(--accent); }
 @media (max-width: 420px) {
   .city-tab { padding: 6px 9px; }
   .city-tab-pct { font-size: 11px; }
+  /* À trois villes, les noms se faisaient tronquer sur un petit écran. Le
+     pourcentage ne reste que sur la ville affichée : les noms tiennent. */
+  .city-tab:not([aria-pressed="true"]) .city-tab-pct { display: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {
