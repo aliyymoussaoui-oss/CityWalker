@@ -16,6 +16,8 @@ tu veux retrouver ta carte ailleurs, un compte facultatif la synchronise.
   et Vaulx-en-Velin.
 - **Autant de lieux à toi que tu veux**, posés n'importe où sur la carte. Ils
   sont comptés à part, pour que le pourcentage de la ville reste honnête.
+- **Vue France** : l'Hexagone, une épingle par ville couverte et son
+  pourcentage — un clic ouvre la ville.
 - Installable comme une application depuis le navigateur (Menu → Installer),
   utilisable hors ligne, pensée pour le téléphone.
 - Cartes vectorielles dessinées à partir des données officielles : silhouette de

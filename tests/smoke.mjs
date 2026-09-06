@@ -313,6 +313,45 @@ await t.locator('.layer-chip[data-pins="tous"]').click();
 await t.waitForTimeout(200);
 check('la couche « tout » revient à l’ensemble', await t.locator('.spot-row').count() === 161);
 
+console.log('\n— Vue France —');
+await t.locator('#btn-france').click();
+await t.waitForSelector('.fr-map');
+check('les 13 régions métropolitaines sont dessinées', await t.locator('.fr-region').count() === 13);
+const frVilles = await t.locator('.fr-city').count();
+const nbVillesFr = await t.evaluate(() => window.CW.CITY_ORDER.length);
+check('une épingle par ville de l’application', frVilles === nbVillesFr, `${frVilles} pour ${nbVillesFr}`);
+check('la ville affichée est signalée', await t.locator('.fr-city[data-city="paris"][aria-current="true"]').count() === 1);
+// Les épingles doivent tomber dans l'Hexagone, pas à côté : Paris au nord de
+// Lyon, Lyon au nord-est de Montpellier.
+const pos = await t.evaluate(() => Object.fromEntries(
+  [...document.querySelectorAll('.fr-city')].map((g) => {
+    const m = /translate\(([-\d.]+) ([-\d.]+)\)/.exec(g.getAttribute('transform'));
+    return [g.dataset.city, { x: +m[1], y: +m[2] }];
+  })));
+check('Paris est au nord de Lyon', pos.paris.y < pos.lyon.y, JSON.stringify(pos));
+check('Montpellier est au sud de Lyon', pos.montpellier.y > pos.lyon.y);
+check('Montpellier est à l’ouest de Lyon', pos.montpellier.x < pos.lyon.x);
+const dansLaCarte = await t.evaluate(() => {
+  const svgEl = document.querySelector('.fr-map');
+  const pt = svgEl.createSVGPoint();
+  return [...document.querySelectorAll('.fr-city')].every((g) => {
+    const m = /translate\(([-\d.]+) ([-\d.]+)\)/.exec(g.getAttribute('transform'));
+    pt.x = +m[1]; pt.y = +m[2];
+    return [...document.querySelectorAll('.fr-region')].some((r) => r.isPointInFill(pt));
+  });
+});
+check('chaque ville tombe bien sur le territoire', dansLaCarte);
+await t.locator('.fr-city[data-city="lyon"]').click();
+await t.waitForFunction(() => document.querySelector('.map-city-name').textContent === 'Lyon');
+check('un clic sur l’épingle ouvre la ville', await t.locator('#modal[open]').count() === 0);
+// Au clavier : Entrée sur l'épingle vaut un clic.
+await t.locator('#btn-france').click();
+await t.waitForSelector('.fr-map');
+await t.locator('.fr-city[data-city="paris"]').focus();
+await t.keyboard.press('Enter');
+await t.waitForFunction(() => document.querySelector('.map-city-name').textContent === 'Paris');
+check('Entrée sur l’épingle ouvre la ville aussi', await t.locator('.map-city-name').textContent() === 'Paris');
+
 console.log('\n— Normalisation de l’URL Supabase —');
 const urls = await t.evaluate(() => {
   const c = window.CW.cloud.cleanUrl;

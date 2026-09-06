@@ -33,13 +33,19 @@ Il n'y a volontairement pas de polygone pour ces communes : le fond détaillé
 les montre bien mieux qu'un tracé de plus, et le pourcentage de la ville reste
 celui de la commune.
 
-## v1.3 — vue France
+## v1.3 — vue France (fait)
 
-Une carte de France en entrée, les villes couvertes en épingles, un clic ouvre
-la ville. Même mécanique que les cartes existantes : silhouette de l'Hexagone
-depuis OpenStreetMap, projection Mercator, et le fond détaillé par-dessus.
-La couche de tuiles fonctionne déjà à tous les niveaux de zoom, il n'y a que la
-géométrie de la France et la navigation entre les deux échelles à écrire.
+Un bouton **France** dans la barre du haut (et dans le menu sur téléphone)
+ouvre l'Hexagone : les 13 régions métropolitaines, une épingle par ville
+couverte avec son pourcentage, un clic ou une touche Entrée pour l'ouvrir.
+
+La France n'est volontairement **pas** une ville de `CW.CITY_ORDER` : cette
+liste pilote la synchronisation, le partage et les statistiques, et y glisser un
+index sans lieux les fausserait tous. C'est un fichier à part, `data/france.json`
+(29 Ko), construit par `python3 tools/build_geo.py france` à partir du découpage
+régional simplifié de data.gouv, et une centaine de lignes dans
+`assets/js/france.js`. Les épingles ne montrent que les villes que
+`CW.CITY_ORDER` connaît : un fichier en retard n'affiche jamais une ville morte.
 
 ## v1.2 — Lyon (fait)
 

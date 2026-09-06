@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>CityWalker</title>
-<meta name="description" content="Deux cartes sobres, Paris et Montpellier : épingle les lieux que tu as déjà photographiés, note l'ambiance, ajoute tes photos et suis ton pourcentage de découverte.">
+<meta name="description" content="Trois cartes sobres — Paris, Montpellier et Lyon : épingle les lieux que tu as déjà photographiés, note l'ambiance, ajoute tes photos et suis ton pourcentage de découverte.">
 <meta name="theme-color" content="#f6f4f0" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#121312" media="(prefers-color-scheme: dark)">
 <meta name="color-scheme" content="light dark">
@@ -32,6 +32,11 @@
     </div>
 
     <nav class="city-tabs" aria-label="Choisir la ville">
+      <button type="button" class="france-btn" id="btn-france" aria-haspopup="dialog"
+              title="Voir toutes les villes sur la carte de France">
+        <span class="france-btn-ico" aria-hidden="true">⬡</span>
+        <span class="france-btn-text">France</span>
+      </button>
       <button type="button" class="city-tab" data-city="paris" aria-pressed="false">
         <span class="city-tab-name">Paris</span>
         <span class="city-tab-pct" data-pct-for="paris">—</span>
@@ -219,6 +224,7 @@
 <script src="assets/js/share.js"></script>
 <script src="assets/js/tiles.js"></script>
 <script src="assets/js/map.js"></script>
+<script src="assets/js/france.js"></script>
 <script src="assets/js/ui.js"></script>
 <script src="assets/js/main.js"></script>
 </body>

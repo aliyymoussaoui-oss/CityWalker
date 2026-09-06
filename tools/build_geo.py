@@ -510,9 +510,68 @@ def build(city):
     return data
 
 
+# La France ne se comporte pas comme une ville : pas de quartiers, pas de lieux,
+# pas de progression. C'est un index — les régions pour reconnaître le pays, une
+# épingle par ville couverte. Il vit donc dans son propre fichier, à part.
+FRANCE_TOL = 0.015          # ~1,1 km : l'Hexagone reste net, le fichier reste léger
+
+
+def build_france():
+    gj = json.loads((CACHE / "france_regions.geojson").read_text())
+    regions = []
+    for f in gj["features"]:
+        geom = f["geometry"]
+        polys = geom["coordinates"] if geom["type"] == "MultiPolygon" else [geom["coordinates"]]
+        rings = [[(x, y) for x, y in ring[:-1]] for poly in polys for ring in poly]
+        regions.append({"name": f["properties"]["nom"], "rings": rings})
+    if len(regions) != 13:
+        raise SystemExit(f"France : {len(regions)} régions au lieu de 13")
+
+    proj = Projector([r for reg in regions for r in reg["rings"]])
+    data = {"view": {"w": VIEW_W, "h": proj.height},
+            "projection": proj.meta(), "regions": [], "cities": []}
+    for reg in regions:
+        simplified = []
+        for ring in reg["rings"]:
+            s = simplify(close_ring(list(ring)), FRANCE_TOL)
+            if s and s[0] == s[-1]:
+                s = s[:-1]
+            # Ce qui ne survit pas à 600 m de tolérance mesure moins d'un pixel
+            # à l'échelle du pays : un îlot, pas un morceau de côte.
+            if len(s) >= 3:
+                simplified.append(s)
+        d = path_of(simplified, proj)
+        if not d:
+            raise SystemExit(f"Région vide après simplification : {reg['name']}")
+        data["regions"].append({"name": reg["name"], "d": d})
+
+    for city, meta in CITY_META.items():
+        outer, _ = commune_rings(city)
+        lon, lat = centroid(outer)
+        x, y = proj(lon, lat)
+        data["cities"].append({"id": city, "name": meta["name"],
+                               "subtitle": meta["subtitle"], "accent": meta["accent"],
+                               "x": x, "y": y, "lat": round(lat, 6), "lon": round(lon, 6)})
+    data["cities"].sort(key=lambda c: c["name"])
+    return data
+
+
+def write_france():
+    dest = OUT / "france.json"
+    d = build_france()
+    dest.write_text(json.dumps(d, ensure_ascii=False, separators=(",", ":")))
+    print(f"\n=== france ===\n  régions={len(d['regions'])} villes={len(d['cities'])} "
+          f"viewBox=1000x{d['view']['h']} poids={dest.stat().st_size/1024:.0f} Ko")
+    print("  villes:", ", ".join(f"{c['name']} ({c['x']:.0f},{c['y']:.0f})" for c in d["cities"]))
+
+
 if __name__ == "__main__":
     OUT.mkdir(parents=True, exist_ok=True)
-    for city in (sys.argv[1:] or list(CITY_META)):
+    asked = sys.argv[1:]
+    if asked == ["france"]:
+        write_france()
+        raise SystemExit(0)
+    for city in (asked or list(CITY_META)):
         print(f"\n=== {city} ===")
         data = build(city)
         dest = OUT / f"{city}.json"
@@ -524,3 +583,6 @@ if __name__ == "__main__":
               f"spots={len(data['spots'])} labels={len(data['labels'])} "
               f"viewBox=1000x{data['view']['h']} poids={dest.stat().st_size/1024:.0f} Ko")
         print("  répartition:", dict(sorted(counts.items())))
+    if not asked:
+        # L'index France dépend des villes déclarées : il se refait avec elles.
+        write_france()

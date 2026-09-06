@@ -11,7 +11,7 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 DIST = ROOT / "dist"
 
 JS_ORDER = ["config", "util", "model", "store", "exif", "photos", "import", "cloud",
-            "share", "tiles", "map", "ui", "main"]
+            "share", "tiles", "map", "france", "ui", "main"]
 
 
 def cities():
@@ -34,9 +34,12 @@ def build():
     names = cities()
     data = {c: json.loads((ROOT / "data" / f"{c}.json").read_text(encoding="utf-8"))
             for c in names}
+    france = json.loads((ROOT / "data" / "france.json").read_text(encoding="utf-8"))
     payload = json.dumps(data, ensure_ascii=False, separators=(",", ":"))
+    france_payload = json.dumps(france, ensure_ascii=False, separators=(",", ":"))
     # `</script>` ne doit jamais apparaître littéralement dans un bloc script.
     payload = payload.replace("</", "<\\/")
+    france_payload = france_payload.replace("</", "<\\/")
 
     scripts = []
     for name in JS_ORDER:
@@ -53,7 +56,8 @@ def build():
     html = re.sub(r'\n<script src="assets/js/[a-z]+\.js"></script>', "", html)
     html = html.replace(
         "</body>",
-        f'<script>window.CW_DATA={payload};</script>\n<script>\n{bundle}\n</script>\n</body>',
+        f'<script>window.CW_DATA={payload};window.CW_FRANCE={france_payload};</script>\n'
+        f'<script>\n{bundle}\n</script>\n</body>',
     )
 
     DIST.mkdir(exist_ok=True)
@@ -68,6 +72,8 @@ def build():
     for name in JS_ORDER:
         if f"---- {name}.js ----" not in text:
             problems.append(f"{name}.js absent du bundle")
+    if '"regions"' not in text or 'CW_FRANCE' not in text:
+        problems.append("index France absent du bundle")
     for c in names:
         if f'"{c}"' not in text:
             problems.append(f"données de {c} absentes")

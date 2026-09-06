@@ -23,12 +23,20 @@ await p.waitForFunction(() => document.querySelector('.map-city-name').textConte
 const mtp = await p.locator('#map .pin').count();
 await p.locator('.city-tab[data-city="paris"]').click();
 await p.waitForFunction(() => document.querySelector('.map-city-name').textContent === 'Paris');
+// En file:// aucun fetch n'est possible : la vue France doit venir de CW_FRANCE.
+await p.locator('#btn-france').click();
+await p.waitForSelector('.fr-map');
+const fr = await p.locator('.fr-region').count();
+const frVilles = await p.locator('.fr-city').count();
+await p.locator('.modal-close').click();
+await p.waitForFunction(() => !document.querySelector('#modal').open);
 await p.locator('#btn-share').click();
 await p.waitForSelector('#modal[open]');
 await p.waitForTimeout(600);
 const link = await p.locator('.link-out').inputValue();
 await b.close();
-const ok = pins === 161 && mtp === 89 && /#p=cw1[dr]\./.test(link) && errs.length === 0;
-console.log(`file:// → Paris ${pins} épingles, Montpellier ${mtp}, lien ${/#p=/.test(link) ? 'ok' : 'KO'}, erreurs ${errs.length}`);
+const ok = pins === 161 && mtp === 89 && fr === 13 && frVilles === 3
+  && /#p=cw1[dr]\./.test(link) && errs.length === 0;
+console.log(`file:// → Paris ${pins} épingles, Montpellier ${mtp}, France ${fr} régions / ${frVilles} villes, lien ${/#p=/.test(link) ? 'ok' : 'KO'}, erreurs ${errs.length}`);
 if (errs.length) console.log(errs.join('\n'));
 process.exit(ok ? 0 : 1);

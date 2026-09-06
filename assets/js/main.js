@@ -1306,6 +1306,35 @@
     });
   }
 
+  /** Vue France : toutes les villes couvertes, un clic pour en ouvrir une. */
+  async function franceModal() {
+    let data;
+    try {
+      data = await CW.loadFrance();
+    } catch (err) {
+      CW.toast('Carte de France indisponible hors ligne.', 'warn');
+      return;
+    }
+    const villes = CW.franceCities(data);
+    openModal('Où marcher ?', (host) => {
+      host.appendChild(el('p', { class: 'modal-lead' },
+        `${villes.length} ${villes.length > 1 ? 'villes couvertes' : 'ville couverte'} — touche-en une pour l’ouvrir.`));
+      host.appendChild(el('div', { class: 'fr-wrap' }, [
+        CW.franceMap(data, {
+          currentCity: app.cityId,
+          pctOf: cityPct,
+          onPick: (id) => {
+            $('#modal').close();
+            // Laisse la modale se refermer avant de recalculer toute la carte.
+            setTimeout(() => switchCity(id), 60);
+          },
+        }),
+      ]));
+      host.appendChild(el('p', { class: 'modal-note' },
+        'Chaque ville a ses lieux curatés et son pourcentage. D’autres suivront — le pipeline est le même pour toutes.'));
+    });
+  }
+
   function menuModal() {
     openModal('Menu', (host) => {
       const item = (ico, label, sub, action) => el('button', {
@@ -1318,6 +1347,7 @@
         item('▤', 'Mes photos', 'Replacer mes photos sur la carte', importModal),
         item('▦', 'Ma pellicule', 'Toutes mes photos de la ville', filmModal),
         item('⇢', 'Une balade', 'Cinq lieux à faire, enchaînés', routeModal),
+        item('⬡', 'Vue France', 'Toutes les villes couvertes', franceModal),
         item('↗', 'Partager ma carte', 'Lien, export, import', shareModal),
         item('⚙', 'Réglages et compte', 'Thème, synchronisation, données', settingsModal),
         isStandalone() ? null : item('⤓', 'Installer l’application', 'Sur l’écran d’accueil, hors ligne', installModal),
@@ -1379,14 +1409,20 @@
     updateCityTabs();
   }
 
+  /** Pourcentage découvert d'une ville, ou null si ses données ne sont pas là. */
+  function cityPct(id) {
+    const data = app.cities[id];
+    if (!data) return null;
+    const p = app.shared && app.shared.city === id ? app.shared.progress : CW.store.loadProgress(id);
+    return CW.computeStats(data, p).pct;
+  }
+
   function updateCityTabs() {
     for (const id of CW.CITY_ORDER) {
       const node = document.querySelector(`[data-pct-for="${id}"]`);
       if (!node) continue;
-      const data = app.cities[id];
-      if (!data) { node.textContent = '—'; continue; }
-      const st = CW.computeStats(data, app.shared && app.shared.city === id ? app.shared.progress : CW.store.loadProgress(id));
-      node.textContent = `${Math.round(st.pct)} %`;
+      const pct = cityPct(id);
+      node.textContent = pct === null ? '—' : `${Math.round(pct)} %`;
     }
     $$('.city-tab').forEach((b) => b.setAttribute('aria-pressed', b.dataset.city === app.cityId ? 'true' : 'false'));
   }
@@ -1487,6 +1523,7 @@
       CW.toast('Le fond détaillé n’a pas pu être chargé (hors ligne ou réseau filtré). La carte sobre reste disponible.', 'error', 7000);
     };
     $('#btn-menu').addEventListener('click', menuModal);
+    $('#btn-france').addEventListener('click', franceModal);
     $('#btn-import').addEventListener('click', importModal);
     window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); installPrompt = e; });
     $('#btn-add-spot').addEventListener('click', () => toggleAddMode());

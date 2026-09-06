@@ -11,6 +11,7 @@
   --line-strong: #cfc2a9;
   --land: #efe7d6;
   --beyond: #f2ece0;
+  --fr-line: #cfc2a9;
   --water: #bed1d9;
   --water-line: #92aeba;
   --green: #d3e0bb;
@@ -37,6 +38,7 @@
     --line-strong: #45473f;
     --land: #21231f;
     --beyond: #1b1a17;
+    --fr-line: #5c5e55;
     --water: #1d323b;
     --water-line: #395764;
     --green: #202e1c;
@@ -55,6 +57,7 @@
   --line-strong: #45473f;
   --land: #21231f;
   --beyond: #1b1a17;
+  --fr-line: #5c5e55;
   --water: #1d323b;
   --water-line: #395764;
   --green: #202e1c;
@@ -489,6 +492,51 @@ a { color: var(--accent); }
 .modal-title { font-size: 17px; }
 .modal-h3 { font-size: 13px; }
 .modal-lead { font-size: 13px; color: var(--ink-soft); }
+.modal-note { font-size: 12px; color: var(--ink-faint); margin: 0; }
+
+/* ---------------------------------------------------------- vue France --- */
+
+.france-btn {
+  display: inline-flex; align-items: center; gap: 6px; flex: 0 0 auto;
+  padding: 6px 11px; border: 1px solid var(--line); border-radius: 999px;
+  background: var(--surface); color: var(--ink-soft);
+  font: inherit; font-size: 13px; cursor: pointer;
+}
+.france-btn:hover { background: var(--surface-2); color: var(--ink); }
+.france-btn-ico { font-size: 14px; line-height: 1; }
+
+.fr-wrap { display: flex; justify-content: center; }
+/* La carte garde ses proportions et ne mange jamais toute la modale. */
+.fr-map { width: 100%; max-width: 420px; max-height: 58vh; height: auto; display: block; }
+/* --land se confond avec le fond de la modale en thème sombre ; --surface-2 se
+   détache des deux fonds. */
+.fr-region {
+  fill: var(--surface-2); stroke: var(--fr-line); stroke-width: 1.4;
+  stroke-linejoin: round; vector-effect: non-scaling-stroke;
+}
+.fr-city { cursor: pointer; }
+.fr-city-hit { fill: transparent; }
+.fr-city-dot {
+  fill: var(--surface); stroke: var(--accent); stroke-width: 4;
+  vector-effect: non-scaling-stroke;
+}
+.fr-city.is-current .fr-city-dot { fill: var(--accent); }
+.fr-city:hover .fr-city-dot { fill: var(--accent); }
+/* Le halo est celui de la modale, pas celui de la page : sinon les étiquettes
+   se posent sur une auréole d'une autre couleur. */
+.fr-city-name {
+  fill: var(--ink); font-size: 34px; font-weight: 640; text-anchor: middle;
+  paint-order: stroke; stroke: var(--surface); stroke-width: 7; stroke-linejoin: round;
+}
+.fr-city-pct {
+  fill: var(--ink-soft); font-size: 28px; text-anchor: middle;
+  paint-order: stroke; stroke: var(--surface); stroke-width: 7; stroke-linejoin: round;
+}
+.fr-city:focus { outline: none; }
+.fr-city:focus-visible .fr-city-hit {
+  fill: var(--accent-soft); stroke: var(--accent); stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+}
 .modal-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 .link-row { display: flex; gap: 7px; }
 .link-out { font-size: 12px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
@@ -652,6 +700,9 @@ a { color: var(--accent); }
 
 @media (max-width: 420px) {
   .city-tab { padding: 6px 9px; }
+  /* Le libellé « France » cède la place aux noms de ville ; l'hexagone reste. */
+  .france-btn { padding: 6px 9px; }
+  .france-btn-text { display: none; }
   .city-tab-pct { font-size: 11px; }
   /* À trois villes, les noms se faisaient tronquer sur un petit écran. Le
      pourcentage ne reste que sur la ville affichée : les noms tiennent. */
