@@ -58,6 +58,12 @@ jobs:
               "$(printf '%s' "$SUPABASE_URL" | python3 -c 'import json,sys;print(json.dumps(sys.stdin.read().strip()))')" \
               "$(printf '%s' "$SUPABASE_ANON_KEY" | python3 -c 'import json,sys;print(json.dumps(sys.stdin.read().strip()))')" \
               > _site/assets/js/config.js
+            # Une configuration muette est le pire des cas : on vérifie que le
+            # fichier écrit contient bien une URL https et une clé plausible.
+            grep -q "supabaseUrl: \"https://" _site/assets/js/config.js \
+              || { echo "URL Supabase invalide : elle doit commencer par https://"; exit 1; }
+            grep -qE 'supabaseAnonKey: ".{40,}"' _site/assets/js/config.js \
+              || { echo "Clé anon absente ou trop courte"; exit 1; }
             echo "Synchronisation configurée pour ${SUPABASE_URL}"
           else
             echo "Pas de variables SUPABASE_URL / SUPABASE_ANON_KEY : le site reste en local seul."
