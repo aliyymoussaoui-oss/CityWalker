@@ -8,15 +8,20 @@ de la ville et de ses quartiers.
 Une seule page, aucun serveur obligatoire. Tout reste sur ton appareil — et si
 tu veux retrouver ta carte ailleurs, un compte facultatif la synchronise.
 
-- **155 lieux à Paris**, répartis sur les 20 arrondissements.
-- **85 lieux à Montpellier**, répartis sur les 7 grands quartiers.
+- **161 lieux à Paris** : les 20 arrondissements, plus Vincennes, Saint-Denis,
+  Saint-Ouen, la Défense, Saint-Cloud et Boulogne.
+- **89 lieux à Montpellier** : les 7 grands quartiers, plus Palavas, Carnon,
+  Maguelone et Lattes.
 - **Autant de lieux à toi que tu veux**, posés n'importe où sur la carte. Ils
   sont comptés à part, pour que le pourcentage de la ville reste honnête.
 - Installable comme une application depuis le navigateur (Menu → Installer),
   utilisable hors ligne, pensée pour le téléphone.
 - Cartes vectorielles dessinées à partir des données officielles : silhouette de
-  la commune, limites de quartiers, cours d'eau, parcs. Aucune tuile à charger,
-  la carte fonctionne hors ligne une fois la page ouverte.
+  la commune, limites de quartiers, cours d'eau, parcs. Rien à charger, la carte
+  fonctionne hors ligne une fois la page ouverte.
+- Un **fond détaillé** facultatif ajoute les rues et leurs noms, en clair ou en
+  sombre. S'il ne charge pas, la carte sobre reprend la main toute seule.
+- Trois couches au choix : tout, les lieux touristiques seuls, tes lieux seuls.
 
 ## Comment ça marche
 
@@ -142,7 +147,7 @@ node tests/single.mjs    # le fichier unique, ouvert en file://
 node tests/cloud.mjs     # 15 vérifications sur les comptes et la synchro
 ```
 
-50 vérifications de bout en bout : rendu des deux cartes, cochage d'un lieu,
+59 vérifications de bout en bout : rendu des deux cartes, cochage d'un lieu,
 ambiances, filtres, recherche sans accent, persistance après rechargement,
 changement de ville, zoom, pose d'un lieu à la main, tirage au hasard, lien de
 partage, mode lecture seule, fusion, et un import de photothèque complet sur de

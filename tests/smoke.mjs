@@ -74,10 +74,10 @@ await page.goto(base, { waitUntil: 'load' });
 await page.waitForSelector('#app[aria-busy="false"]', { timeout: 25000 });
 
 console.log('\n— Chargement —');
-check('la carte de Paris est rendue', await page.locator('#map .pin').count() === 155, `${await page.locator('#map .pin').count()} épingles`);
+check('la carte de Paris est rendue', await page.locator('#map .pin').count() === 161, `${await page.locator('#map .pin').count()} épingles`);
 check('20 arrondissements dessinés', await page.locator('#map .zone').count() === 20);
 check('les couches eau et vert sont là', (await page.locator('#map .layer-water path').count()) > 20 && (await page.locator('#map .layer-green path').count()) > 50);
-check('la liste liste les 155 lieux', await page.locator('.spot-row').count() === 155);
+check('la liste liste les 161 lieux', await page.locator('.spot-row').count() === 161);
 check('titre de la ville', (await page.locator('.map-city-name').textContent()) === 'Paris');
 
 console.log('\n— Cocher un lieu —');
@@ -120,7 +120,7 @@ check('la progression survit au rechargement', await page.locator('#map .pin.is-
 console.log('\n— Changement de ville —');
 await page.locator('.city-tab[data-city="montpellier"]').click();
 await page.waitForFunction(() => document.querySelector('.map-city-name').textContent === 'Montpellier');
-check('Montpellier : 85 lieux', await page.locator('#map .pin').count() === 85, String(await page.locator('#map .pin').count()));
+check('Montpellier : 89 lieux', await page.locator('#map .pin').count() === 89, String(await page.locator('#map .pin').count()));
 check('Montpellier : 7 quartiers', await page.locator('#map .zone').count() === 7);
 check('sous-quartiers étiquetés', (await page.locator('#map .sub-label').count()) === 17);
 check('Montpellier repart de zéro', await page.locator('#map .pin.is-done').count() === 0);
@@ -140,8 +140,21 @@ await page.locator('.city-tab[data-city="montpellier"]').click();
 await page.waitForFunction(() => document.querySelector('.map-city-name').textContent === 'Montpellier');
 await page.locator('#btn-add-spot').click();
 check('le mode « poser un lieu » s’annonce', await page.locator('#add-hint').isVisible());
-const box = await page.locator('#map').boundingBox();
-await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+// On vise la place de la Comédie, décalée de quelques pixels : le centre du
+// cadre tombe désormais au sud de la commune, du côté des étangs.
+const target = await page.evaluate(() => {
+  const app = window.CityWalker;
+  const sp = app.city.spots.find((s) => s.id === 'place-comedie');
+  const svg = document.getElementById('map');
+  const r = svg.getBoundingClientRect();
+  const v = app.city.view;
+  const scale = Math.min(r.width / v.w, r.height / v.h);
+  return {
+    x: r.left + (r.width - v.w * scale) / 2 + sp.x * scale + 26,
+    y: r.top + (r.height - v.h * scale) / 2 + sp.y * scale + 26,
+  };
+});
+await page.mouse.click(target.x, target.y);
 await page.waitForSelector('#sheet:not([hidden])');
 check('l’indication disparaît après la pose', await page.locator('#add-hint').isHidden());
 check('une épingle personnelle est née', await page.locator('#map .pin.is-custom').count() === 1);
@@ -272,10 +285,10 @@ await t.waitForTimeout(200);
 check('la couche « mes lieux » n’affiche que les lieux posés', await t.locator('#map .pin:not(.is-dim)').count() === 0);
 await t.locator('.layer-chip[data-pins="curated"]').click();
 await t.waitForTimeout(200);
-check('la couche « touristiques » affiche les 155 lieux', await t.locator('#map .pin:not(.is-dim)').count() === 155);
+check('la couche « touristiques » affiche les 161 lieux', await t.locator('#map .pin:not(.is-dim)').count() === 161);
 await t.locator('.layer-chip[data-pins="tous"]').click();
 await t.waitForTimeout(200);
-check('la couche « tout » revient à l’ensemble', await t.locator('.spot-row').count() === 155);
+check('la couche « tout » revient à l’ensemble', await t.locator('.spot-row').count() === 161);
 
 console.log('\n— Accessibilité de base —');
 check('la carte est focusable au clavier', await page.locator('#map[tabindex="0"]').count() === 1);

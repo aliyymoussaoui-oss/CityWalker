@@ -845,6 +845,50 @@
    "best": [
     "sunset"
    ]
+  },
+  {
+   "id": "palavas",
+   "name": "Palavas-les-Flots",
+   "cat": "eau",
+   "outside": true,
+   "sub": "Palavas",
+   "query": "Palavas-les-Flots",
+   "best": [
+    "sunset"
+   ],
+   "tip": "La plage la plus proche de Montpellier, au bout de la ligne 3."
+  },
+  {
+   "id": "carnon",
+   "name": "Carnon-Plage",
+   "cat": "eau",
+   "outside": true,
+   "sub": "Mauguio",
+   "query": "Carnon-Plage",
+   "best": [
+    "sunrise",
+    "sunset"
+   ]
+  },
+  {
+   "id": "maguelone",
+   "name": "Cathédrale de Maguelone",
+   "cat": "eglise",
+   "outside": true,
+   "sub": "Villeneuve-lès-Maguelone",
+   "query": "Cathédrale de Maguelone",
+   "best": [
+    "jour"
+   ],
+   "tip": "Une cathédrale romane posée entre les étangs et la mer."
+  },
+  {
+   "id": "lattara",
+   "name": "Site archéologique Lattara",
+   "cat": "musee",
+   "outside": true,
+   "sub": "Lattes",
+   "query": "Musée Henri Prades, Lattes"
   }
  ]
 }

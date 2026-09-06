@@ -243,6 +243,9 @@ CITY_META = {
 
 ORDINAL = {1: "1er"}
 
+# Zone virtuelle, sans polygone : les lieux des communes voisines.
+OUTSIDE_ZONE = "alentours"
+
 
 def slugify(text):
     import re, unicodedata
@@ -353,8 +356,12 @@ def load_spots(city, zones):
             lat, lon, label = hit["lat"], hit["lon"], hit["display_name"][:70]
         found = next((z["id"] for z in zones if point_in_rings((lon, lat), z["rings"])), None)
         if found is None:
-            problems.append(f"{spot['id']} : hors zone ({lat},{lon}) — {label}")
-            continue
+            # Un lieu explicitement marqué « alentours » a le droit d'être hors
+            # de la commune ; tout autre lieu hors zone est une erreur de donnée.
+            if not spot.get("outside"):
+                problems.append(f"{spot['id']} : hors zone ({lat},{lon}) — {label}")
+                continue
+            found = OUTSIDE_ZONE
         if spot.get("zone") and spot["zone"] != found:
             moved.append(f"{spot['id']} : attendu {spot['zone']} → réel {found} "
                          f"({zone_index[found]['name']})")
@@ -379,7 +386,17 @@ def build(city):
     water = area_features(city, "water", outer_c, meta["min_water_m2"])
     green = area_features(city, "green", outer_c, meta["min_green_m2"])
     spots = load_spots(city, zones)
-    proj = Projector(outer_c)
+    # La projection englobe la commune et les lieux des communes voisines, avec
+    # une marge pour que leurs épingles ne collent pas au bord.
+    frame = list(outer_c)
+    outside = [(s["lon"], s["lat"]) for s in spots if s["zone"] == OUTSIDE_ZONE]
+    if outside:
+        pad = 0.012
+        ring = []
+        for lon, lat in outside:
+            ring += [(lon - pad, lat - pad), (lon + pad, lat - pad), (lon + pad, lat + pad), (lon - pad, lat + pad)]
+        frame.append(ring)
+    proj = Projector(frame)
 
     def simp(rings, tol):
         out = []
@@ -414,6 +431,9 @@ def build(city):
         data["zones"].append({"id": z["id"], "name": z["name"], "label": z["label"],
                               "d": path_of(simp(z["rings"], meta["tol"]), proj),
                               "cx": px, "cy": py})
+    if any(s["zone"] == OUTSIDE_ZONE for s in spots):
+        data["zones"].append({"id": OUTSIDE_ZONE, "name": "Alentours", "label": "Alentours",
+                              "d": "", "cx": 0, "cy": 0})
     if city == "montpellier":
         data["labels"] = montpellier_labels(proj, outer_c)
 

@@ -65,6 +65,7 @@
 
       const zones = CW.svg('g', { class: 'layer-zones' });
       for (const z of city.zones) {
+        if (!z.d) continue;                 // zone virtuelle « Alentours » : rien à tracer
         const p = CW.svg('path', { d: z.d, class: 'zone', 'data-zone': z.id });
         p.addEventListener('click', (e) => { if (!this._moved) this.onZone(z.id, e); });
         zones.appendChild(p);
@@ -74,6 +75,7 @@
 
       const zl = CW.svg('g', { class: 'layer-zone-labels' });
       for (const z of city.zones) {
+        if (!z.d) continue;
         zl.appendChild(CW.svg('text', { x: z.cx, y: z.cy, class: 'zone-label', text: z.label }));
       }
       scene.appendChild(zl);

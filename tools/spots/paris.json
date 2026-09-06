@@ -1386,6 +1386,74 @@
    "cat": "insolite",
    "zone": "20",
    "query": "Villa de l'Ermitage, Paris"
+  },
+  {
+   "id": "chateau-vincennes",
+   "name": "Château de Vincennes",
+   "cat": "monument",
+   "outside": true,
+   "sub": "Vincennes",
+   "query": "Château de Vincennes",
+   "best": [
+    "jour"
+   ]
+  },
+  {
+   "id": "basilique-saint-denis",
+   "name": "Basilique de Saint-Denis",
+   "cat": "eglise",
+   "outside": true,
+   "sub": "Saint-Denis",
+   "query": "Basilique Saint-Denis",
+   "tip": "La nécropole des rois de France, et le premier vitrail gothique."
+  },
+  {
+   "id": "puces-saint-ouen",
+   "name": "Marché aux Puces de Saint-Ouen",
+   "cat": "marche",
+   "outside": true,
+   "sub": "Saint-Ouen",
+   "query": "Marché aux Puces de Saint-Ouen",
+   "best": [
+    "jour"
+   ]
+  },
+  {
+   "id": "grande-arche",
+   "name": "Grande Arche de la Défense",
+   "cat": "monument",
+   "outside": true,
+   "sub": "Puteaux",
+   "query": "Grande Arche de la Défense",
+   "best": [
+    "sunset",
+    "nuit"
+   ],
+   "tip": "Dans l'axe historique : le soleil se couche pile dedans début septembre."
+  },
+  {
+   "id": "parc-saint-cloud",
+   "name": "Domaine national de Saint-Cloud",
+   "cat": "parc",
+   "outside": true,
+   "sub": "Saint-Cloud",
+   "query": "Domaine national de Saint-Cloud",
+   "best": [
+    "automne",
+    "sunrise"
+   ]
+  },
+  {
+   "id": "albert-kahn",
+   "name": "Jardins Albert-Kahn",
+   "cat": "parc",
+   "outside": true,
+   "sub": "Boulogne-Billancourt",
+   "query": "Musée Albert-Kahn, Boulogne-Billancourt",
+   "best": [
+    "printemps",
+    "automne"
+   ]
   }
  ]
 }

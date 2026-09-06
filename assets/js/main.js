@@ -145,7 +145,7 @@
       group.appendChild(el('h3', { class: 'group-head' }, [
         el('button', {
           type: 'button', class: 'group-title', title: `Zoomer sur ${z.name}`,
-          onclick: () => { if (z.id !== '__custom') app.map.focusZone(z.id); setView('carte'); },
+          onclick: () => { if (z.id !== '__custom' && z.d !== '') app.map.focusZone(z.id); setView('carte'); },
         }, [
           el('span', { class: 'group-label', text: z.label }),
           el('span', { class: 'group-name', text: z.label === z.name ? '' : z.name }),
@@ -454,14 +454,19 @@
 
   function createCustomSpot(x, y) {
     if (readOnly()) return;
-    if (!app.map.insideCity(x, y)) {
-      CW.toast(`Ce point est hors de ${app.city.name}. Pose l'épingle à l'intérieur de la ville.`, 'error');
+    const view = app.city.view;
+    if (!(x >= 0 && x <= view.w && y >= 0 && y <= view.h)) {
+      CW.toast('Ce point est hors de la carte. Pose l’épingle dessus.', 'error');
       return;
     }
+    // Hors de la commune, le lieu rejoint le groupe « Alentours » quand il existe.
+    const inCity = app.map.insideCity(x, y);
+    const hasOutside = app.city.zones.some((z) => z.id === 'alentours');
+    const zone = inCity ? (app.map.zoneAt(x, y) || '') : (hasOutside ? 'alentours' : app.map.zoneAt(x, y) || '');
     const { lat, lon } = app.map.unproject(x, y);
     const spot = CW.normalizeCustom({
       id: 'u' + CW.uid(), name: '', cat: 'insolite',
-      zone: app.map.zoneAt(x, y) || '',
+      zone,
       x: Math.round(x * 10) / 10, y: Math.round(y * 10) / 10, lat, lon,
     });
     const p = CW.store.loadProgress(app.cityId);
@@ -664,7 +669,8 @@
         const spot = CW.normalizeCustom({
           id: 'u' + CW.uid(),
           name: first && first.takenAt ? `Photos du ${CW.fmtDate(CW.dateToISO(first.takenAt))}` : 'Lieu importé',
-          cat: 'insolite', zone: app.map.zoneAt(x, y) || '', x, y, lat: g.lat, lon: g.lon,
+          cat: 'insolite', zone: app.map.insideCity(x, y) ? (app.map.zoneAt(x, y) || '') : 'alentours',
+          x, y, lat: g.lat, lon: g.lon,
         });
         const p = CW.store.loadProgress(app.cityId);
         p.custom.push(spot);
@@ -729,7 +735,7 @@
       if (!s) continue;
       zl.appendChild(el('li', { class: `prog-row${s.done === s.total && s.total ? ' is-complete' : ''}` }, [
         el('button', {
-          type: 'button', class: 'prog-name', onclick: () => { app.map.focusZone(z.id); setView('carte'); },
+          type: 'button', class: 'prog-name', onclick: () => { if (z.d) app.map.focusZone(z.id); setView('carte'); },
         }, z.label === z.name ? z.name : `${z.label} · ${z.name}`),
         bar(s.done, s.total),
         el('span', { class: 'prog-num', text: `${s.done}/${s.total}` }),

@@ -16,21 +16,22 @@
 - **Comptes et synchronisation** facultatifs entre appareils.
 - Installable depuis le navigateur (PWA) et utilisable hors ligne.
 
-## v1.1 — communes alentours
+## v1.1 — communes alentours (fait)
 
-La carte est aujourd'hui bornée à la commune. Ajouter les alentours demande :
+La projection englobe désormais les lieux des communes voisines, regroupés sous
+un quartier « Alentours ». Un lieu posé à la main hors de la commune y tombe
+tout seul, comme une photo importée dont le GPS pointe au-delà.
 
-1. élargir la bbox et la projection de chaque ville dans `tools/fetch_geo.py` ;
-2. ajouter une couche « communes voisines » dessinée en retrait, sous les
-   quartiers, avec son propre style discret ;
-3. décider du comptage : les lieux hors commune forment un groupe séparé, comme
-   « Mes lieux », pour ne pas diluer le pourcentage de la ville.
+Côté Paris : château de Vincennes, basilique de Saint-Denis, puces de
+Saint-Ouen, Grande Arche, domaine de Saint-Cloud, jardins Albert-Kahn.
+Côté Montpellier : Palavas-les-Flots, Carnon-Plage, cathédrale de Maguelone,
+site archéologique Lattara.
 
-Cibles : Vincennes, Boulogne, Saint-Ouen, Saint-Denis côté Paris ;
-Palavas-les-Flots, Villeneuve-lès-Maguelone, Lattes, Pic Saint-Loup côté
-Montpellier.
+Il n'y a volontairement pas de polygone pour ces communes : le fond détaillé
+les montre bien mieux qu'un tracé de plus, et le pourcentage de la ville reste
+celui de la commune.
 
-## v1.2 — autres villes
+## v1.2 — autres villes (à faire)
 
 Le pipeline coûte environ une heure par ville : écrire `tools/spots/<ville>.json`
 puis lancer les trois commandes. Lyon, Bordeaux, Marseille, Toulouse, Nantes,
@@ -95,7 +96,7 @@ lien magique, et synchronisation automatique en arrière-plan plutôt qu'au bout
 
 ## Idées non planifiées
 
-- Vue « pellicule » : toutes les photos d'une ville sur une page.
-- Export d'une image de la carte, format carré, à publier.
-- Itinéraire : enchaîner cinq lieux non faits en une balade.
-- Mode duo : deux cartes côte à côte, la tienne et celle de quelqu'un d'autre.
+Faites : la pellicule, l'image carrée de la carte, la balade en cinq lieux.
+
+Reste : le mode duo, deux cartes côte à côte, la tienne et celle de quelqu'un
+d'autre — le lien de partage en donne déjà l'essentiel.

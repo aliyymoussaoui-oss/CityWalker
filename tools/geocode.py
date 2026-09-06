@@ -18,12 +18,12 @@ ENDPOINT = "https://nominatim.openstreetmap.org/search"
 CITIES = {
     # bbox de recherche : (lon_min, lat_max, lon_max, lat_min) — format viewbox
     "paris": {
-        "viewbox": (2.2200, 48.9150, 2.4750, 48.8000),
-        "names": {"paris"},
+        "viewbox": (2.1800, 48.9800, 2.5300, 48.7500),
+        "names": {"paris", "vincennes", "saint-denis", "saint-ouen-sur-seine", "puteaux", "saint-cloud", "boulogne-billancourt"},
     },
     "montpellier": {
-        "viewbox": (3.7900, 43.6800, 3.9600, 43.5600),
-        "names": {"montpellier"},
+        "viewbox": (3.7300, 43.7000, 4.0500, 43.4900),
+        "names": {"montpellier", "palavas-les-flots", "mauguio", "villeneuve-lès-maguelone", "lattes"},
     },
 }
 

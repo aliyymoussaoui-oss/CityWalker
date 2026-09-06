@@ -26,7 +26,7 @@ await p.waitForSelector('#modal[open]');
 await p.waitForTimeout(600);
 const link = await p.locator('.link-out').inputValue();
 await b.close();
-const ok = pins === 155 && mtp === 85 && /#p=cw1[dr]\./.test(link) && errs.length === 0;
+const ok = pins === 161 && mtp === 89 && /#p=cw1[dr]\./.test(link) && errs.length === 0;
 console.log(`file:// → Paris ${pins} épingles, Montpellier ${mtp}, lien ${/#p=/.test(link) ? 'ok' : 'KO'}, erreurs ${errs.length}`);
 if (errs.length) console.log(errs.join('\n'));
 process.exit(ok ? 0 : 1);
