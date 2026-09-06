@@ -18,16 +18,24 @@
 
   /* `window.CW_TILE_SOURCES` permet de pointer vers un autre fournisseur — une
      instance auto-hébergée, ou un serveur de test. */
-  const SOURCES = window.CW_TILE_SOURCES || {
-    light: {
-      url: (z, x, y) => `https://basemaps.cartocdn.com/light_all/${z}/${x}/${y}.png`,
-      credit: '© OpenStreetMap · © CARTO',
-    },
-    dark: {
-      url: (z, x, y) => `https://basemaps.cartocdn.com/dark_all/${z}/${x}/${y}.png`,
-      credit: '© OpenStreetMap · © CARTO',
-    },
+  const KEY = (window.CW_CONFIG && window.CW_CONFIG.cartoKey) || '';
+  const SUFFIX = KEY ? `?key=${encodeURIComponent(KEY)}` : '';
+  const CREDIT = '© OpenStreetMap · © CARTO';
+  const carto = (style) => ({
+    url: (z, x, y) => `https://basemaps.cartocdn.com/rastertiles/${style}/${z}/${x}/${y}.png${SUFFIX}`,
+    credit: CREDIT,
+  });
+
+  const BUILTIN = {
+    chaleureux: carto('voyager'),      // couleurs franches, relief, points d'intérêt
+    sobre: carto('light_all'),         // gris pâle, pour laisser parler les épingles
+    sombre: carto('dark_all'),
   };
+  // `light` et `dark` restent les noms par défaut de la couche.
+  BUILTIN.light = BUILTIN.chaleureux;
+  BUILTIN.dark = BUILTIN.sombre;
+
+  const SOURCES = window.CW_TILE_SOURCES || BUILTIN;
 
   class TileLayer {
     constructor(group) {

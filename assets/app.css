@@ -1,21 +1,21 @@
 /* CityWalker — feuille de style unique. Palette sobre « papier & encre ». */
 
 :root {
-  --paper: #f5f3ef;
-  --surface: #fffdf9;
-  --surface-2: #efece5;
+  --paper: #f8f3e9;
+  --surface: #fffdf6;
+  --surface-2: #f1e9da;
   --ink: #1b1a18;
   --ink-soft: #6d6862;
   --ink-faint: #9b958d;
-  --line: #dfd9cf;
-  --line-strong: #c8c1b5;
-  --land: #eae5db;
+  --line: #e6dbc7;
+  --line-strong: #cfc2a9;
+  --land: #efe7d6;
   --water: #bed1d9;
   --water-line: #92aeba;
-  --green: #d6dfc4;
+  --green: #d3e0bb;
   --accent: #2f5d8a;
   --accent-soft: color-mix(in srgb, var(--accent) 14%, transparent);
-  --danger: #a13b2a;
+  --danger: #b4472f;
   --radius: 12px;
   --radius-sm: 8px;
   --shadow: 0 1px 2px rgba(30, 25, 15, .06), 0 8px 24px rgba(30, 25, 15, .07);
@@ -26,9 +26,9 @@
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --paper: #121311;
-    --surface: #1a1b19;
-    --surface-2: #232421;
+    --paper: #141310;
+    --surface: #1c1b18;
+    --surface-2: #262420;
     --ink: #eae7e0;
     --ink-soft: #a9a49b;
     --ink-faint: #7c766d;
@@ -43,9 +43,9 @@
   }
 }
 :root[data-theme="dark"] {
-  --paper: #121311;
-  --surface: #1a1b19;
-  --surface-2: #232421;
+  --paper: #141310;
+  --surface: #1c1b18;
+  --surface-2: #262420;
   --ink: #eae7e0;
   --ink-soft: #a9a49b;
   --ink-faint: #7c766d;
@@ -168,7 +168,7 @@ a { color: var(--accent); }
 .tile { opacity: 0; transition: opacity .25s; }
 .tile.is-loaded { opacity: 1; }
 /* Sous les tuiles, le fond sobre reste visible en attendant, puis s'efface. */
-.map.has-tiles .layer-base { opacity: .28; }
+.map.has-tiles .layer-base { opacity: .18; }
 .map.has-tiles .layer-green path, .map.has-tiles .layer-water path { opacity: 0; }
 .map.has-tiles .zone { stroke: color-mix(in srgb, var(--accent) 55%, transparent); stroke-width: 1.4; }
 .map.has-tiles .zone-label, .map.has-tiles .sub-label { paint-order: stroke; stroke: var(--paper); stroke-width: 3px; }

@@ -17,4 +17,7 @@
 window.CW_CONFIG = {
   supabaseUrl: '',
   supabaseAnonKey: '',
+  // Clé CARTO des fonds raster. Comme la clé anon, elle est publique par
+  // conception : elle voyage dans l'URL de chaque tuile.
+  cartoKey: 'cb1_2si0_1_9784af0a74c9f91479d9d44b',
 };

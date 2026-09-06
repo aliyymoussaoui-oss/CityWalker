@@ -58,9 +58,13 @@ jobs:
             # de la base qui protègent les données, pas le secret de cette clé.
             # Le tableau de bord Supabase affiche aussi l'adresse de l'API : on
             # ne garde que l'origine du projet, comme le fait déjà le code.
-            printf 'window.CW_CONFIG = {\n  supabaseUrl: %s,\n  supabaseAnonKey: %s,\n};\n' \
+            # La clé CARTO reste celle du dépôt, sauf variable CARTO_KEY.
+            CARTO="${CARTO_KEY:-$(sed -n "s/.*cartoKey: '\([^']*\)'.*/\1/p" assets/js/config.js)}"
+            test -n "$CARTO" || { echo "Clé CARTO introuvable"; exit 1; }
+            printf 'window.CW_CONFIG = {\n  supabaseUrl: %s,\n  supabaseAnonKey: %s,\n  cartoKey: "%s",\n};\n' \
               "$(printf '%s' "$SUPABASE_URL" | python3 -c 'import json,re,sys;print(json.dumps(re.sub(r"/(rest|auth|storage|realtime|graphql)/v\d+/?$", "", sys.stdin.read().strip()).rstrip("/")))')" \
               "$(printf '%s' "$SUPABASE_ANON_KEY" | python3 -c 'import json,sys;print(json.dumps(sys.stdin.read().strip()))')" \
+              "$CARTO" \
               > _site/assets/js/config.js
             # Une configuration muette est le pire des cas : on vérifie que le
             # fichier écrit contient bien une URL https et une clé plausible.

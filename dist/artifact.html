@@ -4,21 +4,21 @@
 /* CityWalker — feuille de style unique. Palette sobre « papier & encre ». */
 
 :root {
-  --paper: #f5f3ef;
-  --surface: #fffdf9;
-  --surface-2: #efece5;
+  --paper: #f8f3e9;
+  --surface: #fffdf6;
+  --surface-2: #f1e9da;
   --ink: #1b1a18;
   --ink-soft: #6d6862;
   --ink-faint: #9b958d;
-  --line: #dfd9cf;
-  --line-strong: #c8c1b5;
-  --land: #eae5db;
+  --line: #e6dbc7;
+  --line-strong: #cfc2a9;
+  --land: #efe7d6;
   --water: #bed1d9;
   --water-line: #92aeba;
-  --green: #d6dfc4;
+  --green: #d3e0bb;
   --accent: #2f5d8a;
   --accent-soft: color-mix(in srgb, var(--accent) 14%, transparent);
-  --danger: #a13b2a;
+  --danger: #b4472f;
   --radius: 12px;
   --radius-sm: 8px;
   --shadow: 0 1px 2px rgba(30, 25, 15, .06), 0 8px 24px rgba(30, 25, 15, .07);
@@ -29,9 +29,9 @@
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --paper: #121311;
-    --surface: #1a1b19;
-    --surface-2: #232421;
+    --paper: #141310;
+    --surface: #1c1b18;
+    --surface-2: #262420;
     --ink: #eae7e0;
     --ink-soft: #a9a49b;
     --ink-faint: #7c766d;
@@ -46,9 +46,9 @@
   }
 }
 :root[data-theme="dark"] {
-  --paper: #121311;
-  --surface: #1a1b19;
-  --surface-2: #232421;
+  --paper: #141310;
+  --surface: #1c1b18;
+  --surface-2: #262420;
   --ink: #eae7e0;
   --ink-soft: #a9a49b;
   --ink-faint: #7c766d;
@@ -171,7 +171,7 @@ a { color: var(--accent); }
 .tile { opacity: 0; transition: opacity .25s; }
 .tile.is-loaded { opacity: 1; }
 /* Sous les tuiles, le fond sobre reste visible en attendant, puis s'efface. */
-.map.has-tiles .layer-base { opacity: .28; }
+.map.has-tiles .layer-base { opacity: .18; }
 .map.has-tiles .layer-green path, .map.has-tiles .layer-water path { opacity: 0; }
 .map.has-tiles .zone { stroke: color-mix(in srgb, var(--accent) 55%, transparent); stroke-width: 1.4; }
 .map.has-tiles .zone-label, .map.has-tiles .sub-label { paint-order: stroke; stroke: var(--paper); stroke-width: 3px; }
@@ -860,6 +860,9 @@ a { color: var(--accent); }
 window.CW_CONFIG = {
   supabaseUrl: '',
   supabaseAnonKey: '',
+  // Clé CARTO des fonds raster. Comme la clé anon, elle est publique par
+  // conception : elle voyage dans l'URL de chaque tuile.
+  cartoKey: 'cb1_2si0_1_9784af0a74c9f91479d9d44b',
 };
 
 /* ---- util.js ---- */
@@ -1348,7 +1351,7 @@ window.CW_CONFIG = {
 
   // ---------------------------------------------------------------- réglages
 
-  const DEFAULT_SETTINGS = { owner: '', theme: 'auto', lastCity: 'paris', labels: true, hint: true, autoSync: true, tiles: false };
+  const DEFAULT_SETTINGS = { owner: '', theme: 'auto', lastCity: 'paris', labels: true, hint: true, autoSync: true, tiles: false, mapStyle: 'auto' };
 
   function getSettings() {
     const raw = lsGet('settings');
@@ -2629,16 +2632,24 @@ window.CW_CONFIG = {
 
   /* `window.CW_TILE_SOURCES` permet de pointer vers un autre fournisseur — une
      instance auto-hébergée, ou un serveur de test. */
-  const SOURCES = window.CW_TILE_SOURCES || {
-    light: {
-      url: (z, x, y) => `https://basemaps.cartocdn.com/light_all/${z}/${x}/${y}.png`,
-      credit: '© OpenStreetMap · © CARTO',
-    },
-    dark: {
-      url: (z, x, y) => `https://basemaps.cartocdn.com/dark_all/${z}/${x}/${y}.png`,
-      credit: '© OpenStreetMap · © CARTO',
-    },
+  const KEY = (window.CW_CONFIG && window.CW_CONFIG.cartoKey) || '';
+  const SUFFIX = KEY ? `?key=${encodeURIComponent(KEY)}` : '';
+  const CREDIT = '© OpenStreetMap · © CARTO';
+  const carto = (style) => ({
+    url: (z, x, y) => `https://basemaps.cartocdn.com/rastertiles/${style}/${z}/${x}/${y}.png${SUFFIX}`,
+    credit: CREDIT,
+  });
+
+  const BUILTIN = {
+    chaleureux: carto('voyager'),      // couleurs franches, relief, points d'intérêt
+    sobre: carto('light_all'),         // gris pâle, pour laisser parler les épingles
+    sombre: carto('dark_all'),
   };
+  // `light` et `dark` restent les noms par défaut de la couche.
+  BUILTIN.light = BUILTIN.chaleureux;
+  BUILTIN.dark = BUILTIN.sombre;
+
+  const SOURCES = window.CW_TILE_SOURCES || BUILTIN;
 
   class TileLayer {
     constructor(group) {
@@ -4248,6 +4259,15 @@ window.CW_CONFIG = {
         }),
         el('span', { text: 'Fond détaillé : rues et noms de rues (demande le réseau)' }),
       ]));
+      host.appendChild(el('label', { class: 'field' }, [
+        el('span', { class: 'field-label', text: 'Style du fond détaillé' }),
+        el('select', {
+          onchange: (ev) => {
+            app.settings = CW.store.setSettings({ mapStyle: ev.target.value, tiles: true });
+            applyTiles();
+          },
+        }, MAP_STYLES.map(([v, t]) => el('option', { value: v, selected: (app.settings.mapStyle || 'auto') === v }, t))),
+      ]));
       host.appendChild(el('label', { class: 'check' }, [
         el('input', { type: 'checkbox', checked: app.settings.labels, onchange: (ev) => {
           app.settings = CW.store.setSettings({ labels: ev.target.checked });
@@ -4284,9 +4304,14 @@ window.CW_CONFIG = {
   const darkNow = () => (app.settings.theme === 'dark')
     || (app.settings.theme === 'auto' && matchMedia('(prefers-color-scheme: dark)').matches);
 
+  const MAP_STYLES = [['auto', 'Selon le thème'], ['chaleureux', 'Chaleureux'],
+                      ['sobre', 'Sobre'], ['sombre', 'Sombre']];
+
   function applyTiles() {
     const on = !!app.settings.tiles;
-    app.map.setTiles(on, darkNow() ? 'dark' : 'light');
+    const choice = app.settings.mapStyle || 'auto';
+    const style = choice === 'auto' ? (darkNow() ? 'sombre' : 'chaleureux') : choice;
+    app.map.setTiles(on, style);
     const btn = $('#btn-tiles');
     btn.setAttribute('aria-pressed', on ? 'true' : 'false');
     btn.classList.toggle('is-on', on);

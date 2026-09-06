@@ -1032,6 +1032,15 @@
         }),
         el('span', { text: 'Fond détaillé : rues et noms de rues (demande le réseau)' }),
       ]));
+      host.appendChild(el('label', { class: 'field' }, [
+        el('span', { class: 'field-label', text: 'Style du fond détaillé' }),
+        el('select', {
+          onchange: (ev) => {
+            app.settings = CW.store.setSettings({ mapStyle: ev.target.value, tiles: true });
+            applyTiles();
+          },
+        }, MAP_STYLES.map(([v, t]) => el('option', { value: v, selected: (app.settings.mapStyle || 'auto') === v }, t))),
+      ]));
       host.appendChild(el('label', { class: 'check' }, [
         el('input', { type: 'checkbox', checked: app.settings.labels, onchange: (ev) => {
           app.settings = CW.store.setSettings({ labels: ev.target.checked });
@@ -1068,9 +1077,14 @@
   const darkNow = () => (app.settings.theme === 'dark')
     || (app.settings.theme === 'auto' && matchMedia('(prefers-color-scheme: dark)').matches);
 
+  const MAP_STYLES = [['auto', 'Selon le thème'], ['chaleureux', 'Chaleureux'],
+                      ['sobre', 'Sobre'], ['sombre', 'Sombre']];
+
   function applyTiles() {
     const on = !!app.settings.tiles;
-    app.map.setTiles(on, darkNow() ? 'dark' : 'light');
+    const choice = app.settings.mapStyle || 'auto';
+    const style = choice === 'auto' ? (darkNow() ? 'sombre' : 'chaleureux') : choice;
+    app.map.setTiles(on, style);
     const btn = $('#btn-tiles');
     btn.setAttribute('aria-pressed', on ? 'true' : 'false');
     btn.classList.toggle('is-on', on);
