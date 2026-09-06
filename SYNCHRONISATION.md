@@ -44,6 +44,16 @@ Le workflow de publication réécrit `assets/js/config.js` au déploiement. Rien
 committer, rien à saisir sur chaque appareil, et la synchronisation est active
 pour tout le monde dès la poussée suivante.
 
+**Condition indispensable** : dépôt → *Settings* → *Pages* → *Build and
+deployment* → **Source : GitHub Actions**. Avec « Deploy from a branch », GitHub
+republie le dépôt brut par-dessus l'artefact du workflow, et le fichier injecté
+n'atteint jamais le visiteur — l'injection réussit dans le journal, mais le site
+sert quand même une configuration vide.
+
+Peu importe laquelle des adresses Supabase est collée : celle du projet, de
+l'API REST ou de l'auth. Elle est ramenée à l'origine du projet, à l'injection
+comme à l'exécution.
+
 **b. Dans le dépôt.** Écrire les deux valeurs dans `assets/js/config.js` et
 pousser.
 
