@@ -2122,6 +2122,15 @@ window.CW_CONFIG = {
   }
   const configured = () => !!(loadConfig().url && loadConfig().key);
 
+  /** La configuration vient-elle du site plutôt que de cet appareil ?
+   *  Dans ce cas « changer d'instance » n'a pas de sens : le site la réimposerait
+   *  au rechargement suivant. */
+  function isBaked() {
+    const baked = window.CW_CONFIG || {};
+    const stored = readJSON(CONFIG_KEY, null);
+    return !!(baked.supabaseUrl && baked.supabaseAnonKey) && !(stored && stored.url);
+  }
+
   function loadSession() {
     if (session === null) session = readJSON(SESSION_KEY, false) || false;
     return session || null;
@@ -2376,7 +2385,7 @@ window.CW_CONFIG = {
   const lastSync = () => readJSON('citywalker:v1:last-sync', 0);
 
   CW.cloud = {
-    loadConfig, setConfig, configured, cleanUrl,
+    loadConfig, setConfig, configured, cleanUrl, isBaked,
     session: loadSession, signUp, signIn, signOut, refresh,
     resetPassword, magicLink, adoptSessionFromHash,
     pullCity, pushCity, listPhotos, uploadPhoto, downloadPhoto, sync, lastSync,
@@ -4181,10 +4190,14 @@ window.CW_CONFIG = {
             type: 'button', class: 'btn btn-small btn-ghost',
             onclick: () => helper(CW.cloud.magicLink, 'Lien de connexion envoyé par mail.'),
           }, 'Recevoir un lien de connexion'),
-          el('button', {
+          CW.cloud.isBaked() ? null : el('button', {
             type: 'button', class: 'btn btn-small btn-ghost', onclick: () => { CW.cloud.setConfig('', ''); render(); },
           }, 'Changer d’instance'),
         ]));
+        if (CW.cloud.isBaked()) {
+          wrap.appendChild(el('p', { class: 'hint' },
+            'La synchronisation est configurée par le site : rien à saisir sur cet appareil.'));
+        }
         return;
       }
 

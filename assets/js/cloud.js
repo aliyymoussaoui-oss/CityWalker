@@ -70,6 +70,15 @@
   }
   const configured = () => !!(loadConfig().url && loadConfig().key);
 
+  /** La configuration vient-elle du site plutôt que de cet appareil ?
+   *  Dans ce cas « changer d'instance » n'a pas de sens : le site la réimposerait
+   *  au rechargement suivant. */
+  function isBaked() {
+    const baked = window.CW_CONFIG || {};
+    const stored = readJSON(CONFIG_KEY, null);
+    return !!(baked.supabaseUrl && baked.supabaseAnonKey) && !(stored && stored.url);
+  }
+
   function loadSession() {
     if (session === null) session = readJSON(SESSION_KEY, false) || false;
     return session || null;
@@ -324,7 +333,7 @@
   const lastSync = () => readJSON('citywalker:v1:last-sync', 0);
 
   CW.cloud = {
-    loadConfig, setConfig, configured, cleanUrl,
+    loadConfig, setConfig, configured, cleanUrl, isBaked,
     session: loadSession, signUp, signIn, signOut, refresh,
     resetPassword, magicLink, adoptSessionFromHash,
     pullCity, pushCity, listPhotos, uploadPhoto, downloadPhoto, sync, lastSync,

@@ -960,10 +960,14 @@
             type: 'button', class: 'btn btn-small btn-ghost',
             onclick: () => helper(CW.cloud.magicLink, 'Lien de connexion envoyé par mail.'),
           }, 'Recevoir un lien de connexion'),
-          el('button', {
+          CW.cloud.isBaked() ? null : el('button', {
             type: 'button', class: 'btn btn-small btn-ghost', onclick: () => { CW.cloud.setConfig('', ''); render(); },
           }, 'Changer d’instance'),
         ]));
+        if (CW.cloud.isBaked()) {
+          wrap.appendChild(el('p', { class: 'hint' },
+            'La synchronisation est configurée par le site : rien à saisir sur cet appareil.'));
+        }
         return;
       }
 
