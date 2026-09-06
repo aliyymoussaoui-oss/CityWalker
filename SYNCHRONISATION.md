@@ -2,124 +2,85 @@
 
 Par défaut CityWalker ne demande aucun compte et n'envoie rien nulle part. Un
 compte ne sert qu'à une chose : **retrouver sa carte et ses photos sur un autre
-appareil**. Tant que rien n'est configuré, l'application fonctionne exactement
-comme avant, en local.
+appareil**. Sans configuration, tout fonctionne en local, comme avant.
 
-La synchronisation s'appuie sur [Supabase](https://supabase.com), dont l'offre
-gratuite (500 Mo de base, 1 Go de fichiers) suffit largement. CityWalker parle à
-son API REST directement, sans SDK ni dépendance.
+Le dépôt contient tout ce qu'il faut côté base. Il ne reste que deux valeurs à
+renseigner.
 
-## Mise en place, une fois pour toutes
+## 1. Le schéma s'applique tout seul
 
-### 1. Créer le projet
+`supabase/migrations/` contient la migration complète : les tables `progress` et
+`photos`, leurs règles RLS, le bac de stockage privé `photos` et ses politiques.
+L'intégration GitHub de Supabase l'applique à chaque poussée sur la branche
+raccordée.
 
-[supabase.com](https://supabase.com) → *New project*. Note deux valeurs dans
-*Project Settings → API* :
+Pour vérifier : tableau de bord Supabase → **Database → Migrations**, la
+migration `citywalker` doit apparaître comme appliquée. Sinon, **Table Editor**
+doit montrer `progress` et `photos`, et **Storage** un bac `photos` privé.
 
-- l'**URL du projet** (`https://xxxx.supabase.co`) ;
+Si l'intégration n'est pas active, le même fichier se colle tel quel dans
+**SQL Editor** → *Run*. Il est idempotent : le rejouer ne casse rien.
+
+## 2. Les deux valeurs à renseigner
+
+Dans Supabase, **Project Settings → API** :
+
+- l'**URL du projet**, `https://xxxx.supabase.co` ;
 - la clé **anon public**. Elle est publique par conception : ce sont les règles
-  RLS ci-dessous qui protègent les données, pas le secret de cette clé. Ne colle
-  jamais la clé `service_role`.
+  RLS ci-dessus qui protègent les données. Ne colle jamais la clé
+  `service_role`.
 
-### 2. Créer les tables
+Trois façons de les fournir, de la plus durable à la plus rapide.
 
-*SQL Editor* → coller ceci → *Run*.
+**a. Variables de dépôt GitHub — recommandé.** Dépôt → *Settings* → *Secrets and
+variables* → *Actions* → onglet **Variables** → *New repository variable* :
 
-```sql
--- Une ligne de progression par utilisateur et par ville.
-create table public.progress (
-  user_id    uuid        not null references auth.users on delete cascade,
-  city       text        not null,
-  data       jsonb       not null,
-  updated_at timestamptz not null default now(),
-  primary key (user_id, city)
-);
+| Nom | Valeur |
+| --- | --- |
+| `SUPABASE_URL` | `https://xxxx.supabase.co` |
+| `SUPABASE_ANON_KEY` | la clé anon |
 
-alter table public.progress enable row level security;
+Le workflow de publication réécrit `assets/js/config.js` au déploiement. Rien à
+committer, rien à saisir sur chaque appareil, et la synchronisation est active
+pour tout le monde dès la poussée suivante.
 
-create policy "chacun ne voit et n'écrit que ses lignes"
-  on public.progress for all
-  using (auth.uid() = user_id)
-  with check (auth.uid() = user_id);
+**b. Dans le dépôt.** Écrire les deux valeurs dans `assets/js/config.js` et
+pousser.
 
--- Le catalogue des photos ; les fichiers eux-mêmes vont dans le stockage.
-create table public.photos (
-  id         text   not null,
-  user_id    uuid   not null references auth.users on delete cascade,
-  city       text   not null,
-  spot       text   not null,
-  w          int,
-  h          int,
-  taken_at   text,
-  created_at bigint,
-  primary key (user_id, id)
-);
+**c. Sur l'appareil.** **⚙ Réglages → Compte et synchronisation** : coller les
+deux valeurs. Utile pour essayer sans toucher au dépôt, mais à refaire sur
+chaque appareil.
 
-alter table public.photos enable row level security;
+## 3. Autoriser le site
 
-create policy "chacun ne voit et n'écrit que ses photos"
-  on public.photos for all
-  using (auth.uid() = user_id)
-  with check (auth.uid() = user_id);
-```
+**Authentication → URL Configuration** : mettre
+`https://aliyymoussaoui-oss.github.io/CityWalker/` dans *Site URL* et dans
+*Redirect URLs*. Sans cela, le lien de connexion et la réinitialisation de mot
+de passe renverront vers la mauvaise adresse.
 
-### 3. Créer le bac de stockage
+Pour essayer sans attendre le mail de confirmation :
+**Authentication → Providers → Email** → décocher *Confirm email*.
 
-*Storage* → *New bucket* → nom `photos`, **privé** (ne pas cocher « Public
-bucket »). Puis, de nouveau dans *SQL Editor* :
+## 4. Utiliser
 
-```sql
--- Chaque utilisateur n'accède qu'au dossier qui porte son identifiant.
-create policy "photos : lecture de son dossier"
-  on storage.objects for select
-  using (bucket_id = 'photos' and (storage.foldername(name))[1] = auth.uid()::text);
+**⚙ Réglages → Compte et synchronisation** → créer un compte, puis
+*Synchroniser maintenant*. La case « synchroniser automatiquement à l'ouverture »
+est cochée par défaut.
 
-create policy "photos : écriture dans son dossier"
-  on storage.objects for insert
-  with check (bucket_id = 'photos' and (storage.foldername(name))[1] = auth.uid()::text);
-
-create policy "photos : remplacement dans son dossier"
-  on storage.objects for update
-  using (bucket_id = 'photos' and (storage.foldername(name))[1] = auth.uid()::text);
-```
-
-### 4. Autoriser le site
-
-*Authentication → URL Configuration* : ajoute l'adresse du site dans *Site URL*
-et dans *Redirect URLs*.
-
-Si tu veux te connecter sans passer par la confirmation par e-mail pendant les
-essais : *Authentication → Providers → Email* → décocher *Confirm email*.
-
-### 5. Renseigner l'application
-
-Dans CityWalker : **⚙ Réglages → Compte et synchronisation**, coller l'URL et la
-clé anon, puis créer un compte. Les deux valeurs restent dans le navigateur ; il
-n'y a rien à modifier dans le code ni à redéployer.
-
-Pour figer la configuration dans le site plutôt que la saisir sur chaque
-appareil, définis-la avant le chargement des scripts :
-
-```html
-<script>window.CW_CONFIG = { supabaseUrl: 'https://xxxx.supabase.co', supabaseAnonKey: '…' };</script>
-```
+Mot de passe oublié et connexion par lien sans mot de passe sont sur le même
+écran.
 
 ## Ce qui se passe à la synchronisation
 
-1. Pour chaque ville, la progression distante est récupérée et **fusionnée** avec
-   la locale. La fusion ne retire jamais rien : si deux appareils divergent,
-   l'union des deux gagne. Un lieu coché quelque part reste coché partout.
+1. Pour chaque ville, la progression distante est récupérée et **fusionnée**
+   avec la locale. La fusion ne retire jamais rien : si deux appareils
+   divergent, l'union des deux gagne.
 2. Le résultat est renvoyé au serveur.
 3. Les photos présentes ici mais pas là-bas sont envoyées ; celles présentes
    là-bas mais pas ici sont téléchargées.
 
-Il n'y a pas de synchronisation automatique en arrière-plan : elle se déclenche
-au bouton. C'est volontaire — pas de trafic surprise, pas de conflit invisible.
-
 ## Ce qui n'est pas fait
 
-- Pas de réinitialisation de mot de passe dans l'interface : elle passe par
-  Supabase.
 - Pas de partage de compte à plusieurs. Pour montrer sa carte à quelqu'un, le
   lien de partage reste la bonne réponse, et il ne demande aucun compte.
 - Les photos téléchargées depuis le serveur n'ont pas de vignette séparée : la

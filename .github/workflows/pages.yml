@@ -45,6 +45,23 @@ jobs:
             test ! -e "_site/$d" || { echo "$d ne devrait pas être publié"; exit 1; }
           done
           du -sh _site
+      - name: Injecter la configuration de synchronisation
+        env:
+          SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ vars.SUPABASE_ANON_KEY }}
+        run: |
+          set -eu
+          if [ -n "${SUPABASE_URL:-}" ] && [ -n "${SUPABASE_ANON_KEY:-}" ]; then
+            # La clé « anon » est publique par conception : ce sont les règles RLS
+            # de la base qui protègent les données, pas le secret de cette clé.
+            printf 'window.CW_CONFIG = {\n  supabaseUrl: %s,\n  supabaseAnonKey: %s,\n};\n' \
+              "$(printf '%s' "$SUPABASE_URL" | python3 -c 'import json,sys;print(json.dumps(sys.stdin.read().strip()))')" \
+              "$(printf '%s' "$SUPABASE_ANON_KEY" | python3 -c 'import json,sys;print(json.dumps(sys.stdin.read().strip()))')" \
+              > _site/assets/js/config.js
+            echo "Synchronisation configurée pour ${SUPABASE_URL}"
+          else
+            echo "Pas de variables SUPABASE_URL / SUPABASE_ANON_KEY : le site reste en local seul."
+          fi
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

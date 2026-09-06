@@ -9,7 +9,7 @@ const VERSION = 'cw-v1';
 const ASSETS = [
   './', './index.html', './manifest.webmanifest',
   './assets/app.css',
-  './assets/js/util.js', './assets/js/model.js', './assets/js/store.js',
+  './assets/js/config.js', './assets/js/util.js', './assets/js/model.js', './assets/js/store.js',
   './assets/js/exif.js', './assets/js/photos.js', './assets/js/import.js',
   './assets/js/cloud.js', './assets/js/share.js',
   './assets/js/tiles.js', './assets/js/map.js', './assets/js/ui.js', './assets/js/main.js',

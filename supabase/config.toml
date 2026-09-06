@@ -1,0 +1,7 @@
+# Configuration Supabase locale (CLI). Le projet distant est raccordé depuis le
+# tableau de bord Supabase ; les migrations de supabase/migrations y sont
+# appliquées à chaque poussée.
+project_id = "citywalker"
+
+[db]
+major_version = 15
