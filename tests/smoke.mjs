@@ -290,6 +290,24 @@ await t.locator('.layer-chip[data-pins="tous"]').click();
 await t.waitForTimeout(200);
 check('la couche « tout » revient à l’ensemble', await t.locator('.spot-row').count() === 161);
 
+console.log('\n— Normalisation de l’URL Supabase —');
+const urls = await t.evaluate(() => {
+  const c = window.CW.cloud.cleanUrl;
+  return {
+    rest: c('https://abcd.supabase.co/rest/v1/'),
+    auth: c('https://abcd.supabase.co/auth/v1'),
+    storage: c('https://abcd.supabase.co/storage/v1/'),
+    slash: c('https://abcd.supabase.co///'),
+    clean: c('  https://abcd.supabase.co  '),
+    vide: c(''),
+  };
+});
+check('l’URL de l’API REST est ramenée au projet', urls.rest === 'https://abcd.supabase.co', urls.rest);
+check('celle de l’auth aussi', urls.auth === 'https://abcd.supabase.co', urls.auth);
+check('celle du stockage aussi', urls.storage === 'https://abcd.supabase.co', urls.storage);
+check('les barres et espaces en trop disparaissent', urls.slash === 'https://abcd.supabase.co' && urls.clean === 'https://abcd.supabase.co');
+check('une valeur vide reste vide', urls.vide === '');
+
 console.log('\n— Accessibilité de base —');
 check('la carte est focusable au clavier', await page.locator('#map[tabindex="0"]').count() === 1);
 check('les onglets ville portent aria-pressed', await page.locator('.city-tab[aria-pressed]').count() === 2);

@@ -40,17 +40,30 @@
   let config = null;
   let session = null;
 
+  /**
+   * Ne garde que l'origine du projet.
+   * Le tableau de bord Supabase affiche plusieurs adresses, et c'est souvent
+   * celle de l'API REST qui est copiée : `https://xxxx.supabase.co/rest/v1/`.
+   * Collée telle quelle, chaque appel viserait `/rest/v1//auth/v1/...`.
+   */
+  function cleanUrl(raw) {
+    let url = String(raw || '').trim();
+    if (!url) return '';
+    url = url.replace(/\/(rest|auth|storage|realtime|graphql)\/v\d+\/?$/i, '');
+    return url.replace(/\/+$/, '');
+  }
+
   function loadConfig() {
     if (config) return config;
     const stored = readJSON(CONFIG_KEY, null);
     const baked = window.CW_CONFIG || {};
     const url = (stored && stored.url) || baked.supabaseUrl || '';
     const key = (stored && stored.key) || baked.supabaseAnonKey || '';
-    config = { url: String(url).replace(/\/+$/, ''), key: String(key) };
+    config = { url: cleanUrl(url), key: String(key).trim() };
     return config;
   }
   function setConfig(url, key) {
-    config = { url: String(url || '').trim().replace(/\/+$/, ''), key: String(key || '').trim() };
+    config = { url: cleanUrl(url), key: String(key || '').trim() };
     writeJSON(CONFIG_KEY, config.url && config.key ? config : null);
     if (!config.url || !config.key) clearSession();
     return config;
@@ -311,7 +324,7 @@
   const lastSync = () => readJSON('citywalker:v1:last-sync', 0);
 
   CW.cloud = {
-    loadConfig, setConfig, configured,
+    loadConfig, setConfig, configured, cleanUrl,
     session: loadSession, signUp, signIn, signOut, refresh,
     resetPassword, magicLink, adoptSessionFromHash,
     pullCity, pushCity, listPhotos, uploadPhoto, downloadPhoto, sync, lastSync,
