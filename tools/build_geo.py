@@ -218,6 +218,9 @@ def centroid(rings):
 
 CITY_META = {
     "paris": {
+        "prefix": "paris",
+        "commune": "paris_commune",
+        "zones": lambda: paris_zones(),
         "name": "Paris",
         "subtitle": "20 arrondissements",
         "accent": "#2f5d8a",
@@ -229,6 +232,9 @@ CITY_META = {
         "min_water_m2": 4000,
     },
     "montpellier": {
+        "prefix": "mtp",
+        "commune": "mtp_commune",
+        "zones": lambda: overpass_zones("mtp_quartiers", 7),
         "name": "Montpellier",
         "subtitle": "7 grands quartiers",
         "accent": "#b4622f",
@@ -238,6 +244,20 @@ CITY_META = {
         "tol_detail": 0.00014,
         "min_green_m2": 6000,
         "min_water_m2": 1500,
+    },
+    "lyon": {
+        "prefix": "lyon",
+        "commune": "lyon_commune",
+        "zones": lambda: overpass_zones("lyon_quartiers", 9, label_from_name=False),
+        "name": "Lyon",
+        "subtitle": "9 arrondissements",
+        "accent": "#8a3f5d",
+        "zone_word": "arrondissement",
+        "zone_word_plural": "arrondissements",
+        "tol": 0.00010,
+        "tol_detail": 0.00018,
+        "min_green_m2": 9000,
+        "min_water_m2": 3000,
     },
 }
 
@@ -271,25 +291,34 @@ def paris_zones():
     return zones
 
 
-def montpellier_zones():
+def overpass_zones(cache_key, expected, label_from_name=True):
+    """Quartiers d'une ville, lus depuis une requête Overpass déjà en cache."""
     zones = []
-    for el in load_overpass("mtp_quartiers"):
+    for el in load_overpass(cache_key):
         name = el["tags"]["name"]
         outer, inner = osm_rings(el)
         if not outer:
             raise SystemExit(f"Quartier sans anneau exploitable : {name}")
-        zones.append({"id": slugify(name), "name": name, "label": name,
+        zones.append({"id": slugify(name), "name": name,
+                      "label": name if label_from_name else short_label(name),
                       "rings": outer + inner, "order": 0})
     zones.sort(key=lambda z: -sum(ring_area_m2(r) for r in z["rings"]))
     for i, z in enumerate(zones):
         z["order"] = i
-    if len(zones) != 7:
-        raise SystemExit(f"Montpellier : {len(zones)} quartiers au lieu de 7")
+    if len(zones) != expected:
+        raise SystemExit(f"{cache_key} : {len(zones)} quartiers au lieu de {expected}")
     return zones
 
 
+def short_label(name):
+    """« Lyon 5e Arrondissement » -> « 5e » ; sinon le nom tel quel."""
+    import re
+    m = re.search(r"(\d+)\s*(?:er|e|ème|eme)\b", name, re.I)
+    return ORDINAL.get(int(m.group(1)), f"{m.group(1)}e") if m else name
+
+
 def commune_rings(city):
-    els = load_overpass("paris_commune" if city == "paris" else "mtp_commune")
+    els = load_overpass(CITY_META[city]["commune"])
     outer, inner = osm_rings(els[0])
     if not outer:
         raise SystemExit(f"Limite communale illisible pour {city}")
@@ -381,7 +410,7 @@ def load_spots(city, zones):
 
 def build(city):
     meta = CITY_META[city]
-    zones = paris_zones() if city == "paris" else montpellier_zones()
+    zones = CITY_META[city]["zones"]()
     outer_c, inner_c = commune_rings(city)
     water = area_features(city, "water", outer_c, meta["min_water_m2"])
     green = area_features(city, "green", outer_c, meta["min_green_m2"])
@@ -452,6 +481,9 @@ def build(city):
 
 if __name__ == "__main__":
     OUT.mkdir(parents=True, exist_ok=True)
+    # Lyon est déclaré mais pas encore construit : il lui manque sa liste de
+    # lieux (tools/spots/lyon.json). `python3 tools/build_geo.py lyon` une fois
+    # celle-ci écrite et les caches téléchargés.
     for city in (sys.argv[1:] or ["paris", "montpellier"]):
         print(f"\n=== {city} ===")
         data = build(city)

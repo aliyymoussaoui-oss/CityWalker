@@ -31,12 +31,27 @@ Il n'y a volontairement pas de polygone pour ces communes : le fond détaillé
 les montre bien mieux qu'un tracé de plus, et le pourcentage de la ville reste
 celui de la commune.
 
-## v1.2 — autres villes (à faire)
+## v1.2 — autres villes (pipeline prêt, curation à faire)
 
-Le pipeline coûte environ une heure par ville : écrire `tools/spots/<ville>.json`
-puis lancer les trois commandes. Lyon, Bordeaux, Marseille, Toulouse, Nantes,
-Lisbonne, Séville. C'est l'atout principal du projet : ajouter cinquante villes
-est un week-end, pas une équipe.
+Le pipeline est désormais générique : une ville se déclare par un bloc dans
+`CITY_META` (nom, accent, tolérances, d'où viennent ses quartiers) et une liste
+`tools/spots/<ville>.json`. Paris garde sa source Open Data ; toutes les autres
+villes lisent leurs quartiers depuis OpenStreetMap avec la même fonction.
+
+**Lyon est déjà déclaré** — requêtes Overpass, bbox, métadonnées, étiquettes
+d'arrondissements — il ne lui manque que sa liste de lieux :
+
+```sh
+# 1. écrire tools/spots/lyon.json  (~50 lieux, une heure de curation)
+python3 tools/fetch_geo.py
+python3 tools/geocode.py lyon
+python3 tools/build_geo.py lyon
+# 2. ajouter 'lyon' à CW.CITY_ORDER dans assets/js/model.js
+```
+
+Restent ensuite Bordeaux, Marseille, Toulouse, Nantes, Lisbonne, Séville : même
+recette, une heure de curation chacune. C'est l'atout principal du projet —
+ajouter cinquante villes est un week-end de curation, pas une équipe.
 
 ## v2 — application mobile
 

@@ -16,6 +16,7 @@ UA = "CityWalker/1.0 (carte photo perso; github.com/aliyymoussaoui-oss/CityWalke
 # bbox Paris intra-muros + bois : (S, W, N, E)
 BBOX_PARIS = "48.800,2.220,48.915,2.475"
 BBOX_MTP = "43.560,3.790,43.680,3.960"
+BBOX_LYON = "45.700,4.760,45.820,4.920"
 
 QUERIES = {
     # Montpellier : les 7 grands quartiers officiels (admin_level 10)
@@ -48,6 +49,27 @@ out geom;""",
     "mtp_places": f"""[out:json][timeout:120];
 node["place"~"^(suburb|neighbourhood|quarter)$"]({BBOX_MTP});
 out;""",
+    # Lyon : les 9 arrondissements, la limite communale, l'eau et le vert
+    "lyon_quartiers": f"""[out:json][timeout:120];
+rel["boundary"="administrative"]["admin_level"="10"]({BBOX_LYON});
+out geom;""",
+    "lyon_commune": """[out:json][timeout:120];
+rel["boundary"="administrative"]["admin_level"="8"]["ref:INSEE"="69123"];
+out geom;""",
+    "lyon_water": f"""[out:json][timeout:180];
+(
+  way["natural"="water"]({BBOX_LYON});
+  way["waterway"="riverbank"]({BBOX_LYON});
+  rel["natural"="water"]({BBOX_LYON});
+);
+out geom;""",
+    "lyon_green": f"""[out:json][timeout:180];
+(
+  way["leisure"="park"]({BBOX_LYON});
+  rel["leisure"="park"]({BBOX_LYON});
+  way["landuse"="forest"]({BBOX_LYON});
+);
+out geom;""",
     # Paris : limite communale (silhouette + clipping)
     "paris_commune": """[out:json][timeout:120];
 rel["boundary"="administrative"]["admin_level"="8"]["ref:INSEE"="75056"];
