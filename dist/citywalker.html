@@ -187,8 +187,14 @@ a { color: var(--accent); }
 /* Sous les tuiles, le fond sobre reste visible en attendant, puis s'efface. */
 .map.has-tiles .layer-base { opacity: .18; }
 .map.has-tiles .layer-green path, .map.has-tiles .layer-water path { opacity: 0; }
-.map.has-tiles .zone { stroke: color-mix(in srgb, var(--accent) 50%, transparent); stroke-width: 1.2; }
-.map.has-tiles .outline { stroke: var(--accent); stroke-width: 2.4; }
+.map.has-tiles .zone { stroke: color-mix(in srgb, var(--accent) 32%, transparent); stroke-width: .9; }
+.map.has-tiles .outline {
+  stroke: color-mix(in srgb, var(--accent) 78%, transparent); stroke-width: 1.8;
+  paint-order: stroke; filter: drop-shadow(0 0 2px rgba(0, 0, 0, .35));
+}
+/* Les étiquettes de quartier doublonnent avec celles des tuiles. */
+.map.has-tiles .zone-label { opacity: .5; }
+.map.has-tiles .sub-label { opacity: 0; }
 .map.has-tiles .zone-label, .map.has-tiles .sub-label { paint-order: stroke; stroke: var(--paper); stroke-width: 3px; }
 .beyond { fill: var(--beyond); }
 .map.has-tiles .beyond { fill: none; }
@@ -1371,7 +1377,7 @@ window.CW_CONFIG = {
 
   // ---------------------------------------------------------------- réglages
 
-  const DEFAULT_SETTINGS = { owner: '', theme: 'auto', lastCity: 'paris', labels: true, hint: true, autoSync: true, tiles: true, mapStyle: 'auto' };
+  const DEFAULT_SETTINGS = { owner: '', theme: 'auto', lastCity: 'paris', labels: true, hint: true, autoSync: true, tiles: true, mapStyle: 'chaleureux' };
 
   function getSettings() {
     const raw = lsGet('settings');
@@ -4293,7 +4299,7 @@ window.CW_CONFIG = {
             app.settings = CW.store.setSettings({ mapStyle: ev.target.value, tiles: true });
             applyTiles();
           },
-        }, MAP_STYLES.map(([v, t]) => el('option', { value: v, selected: (app.settings.mapStyle || 'auto') === v }, t))),
+        }, MAP_STYLES.map(([v, t]) => el('option', { value: v, selected: (app.settings.mapStyle || 'chaleureux') === v }, t))),
       ]));
       host.appendChild(el('label', { class: 'check' }, [
         el('input', { type: 'checkbox', checked: app.settings.labels, onchange: (ev) => {
@@ -4331,12 +4337,12 @@ window.CW_CONFIG = {
   const darkNow = () => (app.settings.theme === 'dark')
     || (app.settings.theme === 'auto' && matchMedia('(prefers-color-scheme: dark)').matches);
 
-  const MAP_STYLES = [['auto', 'Selon le thème'], ['chaleureux', 'Chaleureux'],
-                      ['sobre', 'Sobre'], ['sombre', 'Sombre']];
+  const MAP_STYLES = [['chaleureux', 'Chaleureux'], ['sobre', 'Sobre'],
+                      ['sombre', 'Sombre'], ['auto', 'Selon le thème']];
 
   function applyTiles() {
     const on = !!app.settings.tiles;
-    const choice = app.settings.mapStyle || 'auto';
+    const choice = app.settings.mapStyle || 'chaleureux';
     const style = choice === 'auto' ? (darkNow() ? 'sombre' : 'chaleureux') : choice;
     app.map.setTiles(on, style);
     const btn = $('#btn-tiles');

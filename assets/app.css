@@ -173,8 +173,14 @@ a { color: var(--accent); }
 /* Sous les tuiles, le fond sobre reste visible en attendant, puis s'efface. */
 .map.has-tiles .layer-base { opacity: .18; }
 .map.has-tiles .layer-green path, .map.has-tiles .layer-water path { opacity: 0; }
-.map.has-tiles .zone { stroke: color-mix(in srgb, var(--accent) 50%, transparent); stroke-width: 1.2; }
-.map.has-tiles .outline { stroke: var(--accent); stroke-width: 2.4; }
+.map.has-tiles .zone { stroke: color-mix(in srgb, var(--accent) 32%, transparent); stroke-width: .9; }
+.map.has-tiles .outline {
+  stroke: color-mix(in srgb, var(--accent) 78%, transparent); stroke-width: 1.8;
+  paint-order: stroke; filter: drop-shadow(0 0 2px rgba(0, 0, 0, .35));
+}
+/* Les étiquettes de quartier doublonnent avec celles des tuiles. */
+.map.has-tiles .zone-label { opacity: .5; }
+.map.has-tiles .sub-label { opacity: 0; }
 .map.has-tiles .zone-label, .map.has-tiles .sub-label { paint-order: stroke; stroke: var(--paper); stroke-width: 3px; }
 .beyond { fill: var(--beyond); }
 .map.has-tiles .beyond { fill: none; }

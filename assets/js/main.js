@@ -1039,7 +1039,7 @@
             app.settings = CW.store.setSettings({ mapStyle: ev.target.value, tiles: true });
             applyTiles();
           },
-        }, MAP_STYLES.map(([v, t]) => el('option', { value: v, selected: (app.settings.mapStyle || 'auto') === v }, t))),
+        }, MAP_STYLES.map(([v, t]) => el('option', { value: v, selected: (app.settings.mapStyle || 'chaleureux') === v }, t))),
       ]));
       host.appendChild(el('label', { class: 'check' }, [
         el('input', { type: 'checkbox', checked: app.settings.labels, onchange: (ev) => {
@@ -1077,12 +1077,12 @@
   const darkNow = () => (app.settings.theme === 'dark')
     || (app.settings.theme === 'auto' && matchMedia('(prefers-color-scheme: dark)').matches);
 
-  const MAP_STYLES = [['auto', 'Selon le thème'], ['chaleureux', 'Chaleureux'],
-                      ['sobre', 'Sobre'], ['sombre', 'Sombre']];
+  const MAP_STYLES = [['chaleureux', 'Chaleureux'], ['sobre', 'Sobre'],
+                      ['sombre', 'Sombre'], ['auto', 'Selon le thème']];
 
   function applyTiles() {
     const on = !!app.settings.tiles;
-    const choice = app.settings.mapStyle || 'auto';
+    const choice = app.settings.mapStyle || 'chaleureux';
     const style = choice === 'auto' ? (darkNow() ? 'sombre' : 'chaleureux') : choice;
     app.map.setTiles(on, style);
     const btn = $('#btn-tiles');
