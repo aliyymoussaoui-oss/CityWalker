@@ -2,7 +2,8 @@
 import { chromium } from 'playwright';
 import { pathToFileURL } from 'node:url';
 import { existsSync } from 'node:fs';
-const file = pathToFileURL('/home/user/CityWalker/dist/citywalker.html').href;
+// Chemin relatif au dépôt : le test doit tourner ailleurs que sur ma machine.
+const file = new URL('../dist/citywalker.html', import.meta.url).href;
 const b = await chromium.launch({ executablePath: process.env.CW_CHROME || (existsSync('/opt/pw-browsers/chromium-1194/chrome-linux/chrome') ? '/opt/pw-browsers/chromium-1194/chrome-linux/chrome' : undefined) });
 const p = await (await b.newContext({ viewport: { width: 1280, height: 800 } })).newPage();
 const errs = [];

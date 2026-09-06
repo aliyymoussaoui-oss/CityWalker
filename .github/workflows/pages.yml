@@ -47,8 +47,10 @@ jobs:
           du -sh _site
       - name: Injecter la configuration de synchronisation
         env:
-          SUPABASE_URL: ${{ vars.SUPABASE_URL }}
-          SUPABASE_ANON_KEY: ${{ vars.SUPABASE_ANON_KEY }}
+          # Variable de dépôt de préférence ; secret accepté aussi, car la clé
+          # « anon » est publique par conception et beaucoup la rangent là.
+          SUPABASE_URL: ${{ vars.SUPABASE_URL || secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ vars.SUPABASE_ANON_KEY || secrets.SUPABASE_ANON_KEY }}
         run: |
           set -eu
           if [ -n "${SUPABASE_URL:-}" ] && [ -n "${SUPABASE_ANON_KEY:-}" ]; then
@@ -66,7 +68,10 @@ jobs:
               || { echo "Clé anon absente ou trop courte"; exit 1; }
             echo "Synchronisation configurée pour ${SUPABASE_URL}"
           else
-            echo "Pas de variables SUPABASE_URL / SUPABASE_ANON_KEY : le site reste en local seul."
+            echo "Ni variable ni secret SUPABASE_URL / SUPABASE_ANON_KEY :"
+            echo "le site est publié sans synchronisation, chacun devra coller"
+            echo "ses deux valeurs dans Réglages → Compte et synchronisation."
+            echo "Voir SYNCHRONISATION.md, section « Les deux valeurs à renseigner »."
           fi
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
