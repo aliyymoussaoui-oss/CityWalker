@@ -894,9 +894,30 @@
 
   // ------------------------------------------------------------ compte
 
+  function formatBytes(n) {
+    const v = Number(n) || 0;
+    if (v >= 1024 ** 3) return `${(v / 1024 ** 3).toLocaleString('fr-FR', { maximumFractionDigits: 1 })} Go`;
+    if (v >= 1024 ** 2) return `${(v / 1024 ** 2).toLocaleString('fr-FR', { maximumFractionDigits: 1 })} Mo`;
+    return `${Math.round(v / 1024)} Ko`;
+  }
+
   function accountSection(host) {
     const wrap = el('section', { class: 'account' });
     host.appendChild(wrap);
+    let mode = 'login';          // 'login' | 'recover'
+    let freshRecovery = '';      // clé de secours à montrer, une seule fois
+
+    const field = (label, input) => el('label', { class: 'field' }, [el('span', { class: 'field-label', text: label }), input]);
+
+    /** Bouton occupé pendant l'appel ; les erreurs deviennent un message. */
+    async function busy(btn, label, fn) {
+      const before = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = label;
+      try { return await fn(); }
+      catch (err) { CW.toast((err && err.message) || 'Échec.', 'error', 6000); return null; }
+      finally { btn.disabled = false; btn.textContent = before; }
+    }
 
     function render() {
       CW.clear(wrap);
@@ -904,76 +925,118 @@
 
       if (!CW.cloud.configured()) {
         wrap.appendChild(el('p', { class: 'hint' },
-          'Aucune instance configurée : tout reste sur cet appareil. Pour synchroniser entre plusieurs appareils, crée un projet Supabase gratuit et colle ses deux valeurs ici (voir SYNCHRONISATION.md).'));
-        const url = el('input', { type: 'url', placeholder: 'https://xxxx.supabase.co', autocomplete: 'off' });
-        const key = el('input', { type: 'text', placeholder: 'Clé publique « anon »', autocomplete: 'off' });
-        wrap.appendChild(el('label', { class: 'field' }, [el('span', { class: 'field-label', text: 'URL du projet' }), url]));
-        wrap.appendChild(el('label', { class: 'field' }, [el('span', { class: 'field-label', text: 'Clé anon' }), key]));
-        wrap.appendChild(el('button', {
-          type: 'button', class: 'btn', onclick: () => {
-            const candidate = url.value.trim();
-            // https partout, http toléré en local pour développer.
-            const okUrl = /^https:\/\/.+/.test(candidate) || /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?/.test(candidate);
-            if (!okUrl) { CW.toast('URL invalide : elle doit commencer par https://', 'error'); return; }
-            if (key.value.trim().length < 20) { CW.toast('Clé trop courte.', 'error'); return; }
-            CW.cloud.setConfig(url.value, key.value);
-            CW.toast('Synchronisation configurée.');
-            render();
-          },
-        }, 'Enregistrer la configuration'));
+          'La synchronisation n’est pas activée sur ce site : tout reste sur cet appareil, rien n’est perdu. Pour une copie de sécurité, exporte ta carte depuis « Partager ».'));
         return;
       }
-
+      if (freshRecovery) { renderRecoveryKey(); return; }
       const s = CW.cloud.session();
-      if (!s) {
-        const email = el('input', { type: 'email', placeholder: 'ton@adresse.fr', autocomplete: 'email' });
-        const pass = el('input', { type: 'password', placeholder: 'Mot de passe (8 caractères minimum)', autocomplete: 'current-password' });
-        wrap.appendChild(el('label', { class: 'field' }, [el('span', { class: 'field-label', text: 'Adresse e-mail' }), email]));
-        wrap.appendChild(el('label', { class: 'field' }, [el('span', { class: 'field-label', text: 'Mot de passe' }), pass]));
-        const busy = (btn, on) => { btn.disabled = on; };
-        const run = async (btn, fn, okMessage) => {
-          if (!email.value.trim() || pass.value.length < 8) { CW.toast('Adresse et mot de passe de 8 caractères minimum.', 'error'); return; }
-          busy(btn, true);
-          try {
-            const r = await fn(email.value.trim(), pass.value);
-            if (r && r.pending) CW.toast('Compte créé. Confirme ton adresse depuis le mail reçu, puis connecte-toi.', 'info', 8000);
-            else { CW.toast(okMessage); render(); }
-          } catch (err) {
-            CW.toast((err && err.message) || 'Échec.', 'error');
-          } finally { busy(btn, false); }
-        };
-        wrap.appendChild(el('div', { class: 'modal-actions' }, [
-          el('button', { type: 'button', class: 'btn btn-primary', onclick: (ev) => run(ev.currentTarget, CW.cloud.signIn, 'Connecté.') }, 'Se connecter'),
-          el('button', { type: 'button', class: 'btn', onclick: (ev) => run(ev.currentTarget, CW.cloud.signUp, 'Compte créé.') }, 'Créer un compte'),
-        ]));
-        const helper = async (fn, message) => {
-          if (!email.value.trim()) { CW.toast('Renseigne d’abord ton adresse.', 'error'); return; }
-          try { await fn(email.value.trim()); CW.toast(message, 'info', 7000); }
-          catch (err) { CW.toast((err && err.message) || 'Envoi impossible.', 'error'); }
-        };
-        wrap.appendChild(el('div', { class: 'modal-actions' }, [
-          el('button', {
-            type: 'button', class: 'btn btn-small btn-ghost',
-            onclick: () => helper(CW.cloud.resetPassword, 'Mail de réinitialisation envoyé.'),
-          }, 'Mot de passe oublié'),
-          el('button', {
-            type: 'button', class: 'btn btn-small btn-ghost',
-            onclick: () => helper(CW.cloud.magicLink, 'Lien de connexion envoyé par mail.'),
-          }, 'Recevoir un lien de connexion'),
-          CW.cloud.isBaked() ? null : el('button', {
-            type: 'button', class: 'btn btn-small btn-ghost', onclick: () => { CW.cloud.setConfig('', ''); render(); },
-          }, 'Changer d’instance'),
-        ]));
-        if (CW.cloud.isBaked()) {
-          wrap.appendChild(el('p', { class: 'hint' },
-            'La synchronisation est configurée par le site : rien à saisir sur cet appareil.'));
-        }
-        return;
-      }
+      if (!s) { if (mode === 'recover') renderRecover(); else renderLogin(); return; }
+      renderSignedIn(s);
+    }
 
+    function renderLogin() {
+      const email = el('input', { type: 'email', placeholder: 'ton@adresse.fr', autocomplete: 'email' });
+      const pass = el('input', { type: 'password', placeholder: '8 caractères minimum', autocomplete: 'current-password' });
+      wrap.appendChild(field('Adresse e-mail', email));
+      wrap.appendChild(field('Mot de passe', pass));
+      const valid = () => {
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value.trim())) { CW.toast('Adresse e-mail invalide.', 'error'); return false; }
+        if (pass.value.length < 8) { CW.toast('Le mot de passe doit faire 8 caractères au moins.', 'error'); return false; }
+        return true;
+      };
+      wrap.appendChild(el('div', { class: 'modal-actions' }, [
+        el('button', {
+          type: 'button', class: 'btn btn-primary', onclick: async (ev) => {
+            const btn = ev.currentTarget;
+            if (!valid()) return;
+            if (await busy(btn, 'Connexion…', () => CW.cloud.signIn(email.value, pass.value))) { CW.toast('Connecté.'); render(); }
+          },
+        }, 'Se connecter'),
+        el('button', {
+          type: 'button', class: 'btn', onclick: async (ev) => {
+            const btn = ev.currentTarget;
+            if (!valid()) return;
+            const r = await busy(btn, 'Création…', () => CW.cloud.signUp(email.value, pass.value));
+            if (r) { freshRecovery = r.recovery; render(); }
+          },
+        }, 'Créer un compte'),
+      ]));
+      wrap.appendChild(el('div', { class: 'modal-actions' }, [
+        el('button', { type: 'button', class: 'btn btn-small btn-ghost', onclick: () => { mode = 'recover'; render(); } }, 'Mot de passe oublié ?'),
+      ]));
+      wrap.appendChild(el('p', { class: 'hint' },
+        'Aucun e-mail n’est jamais envoyé : l’adresse sert seulement d’identifiant, et le mot de passe ne quitte pas cet appareil.'));
+    }
+
+    function renderRecover() {
+      const email = el('input', { type: 'email', placeholder: 'ton@adresse.fr', autocomplete: 'email' });
+      const code = el('input', { type: 'text', class: 'recovery-input', placeholder: 'XXXXX-XXXXX-XXXXX-XXXXX-XXXXX', autocomplete: 'off', spellcheck: 'false', autocapitalize: 'characters' });
+      const pass = el('input', { type: 'password', placeholder: '8 caractères minimum', autocomplete: 'new-password' });
+      wrap.appendChild(el('p', { class: 'hint' }, 'Avec la clé de secours reçue à la création du compte, choisis un nouveau mot de passe. Tes autres appareils seront déconnectés.'));
+      wrap.appendChild(field('Adresse e-mail', email));
+      wrap.appendChild(field('Clé de secours', code));
+      wrap.appendChild(field('Nouveau mot de passe', pass));
+      wrap.appendChild(el('div', { class: 'modal-actions' }, [
+        el('button', {
+          type: 'button', class: 'btn btn-primary', onclick: async (ev) => {
+            const btn = ev.currentTarget;
+            if (!email.value.trim() || !code.value.trim()) { CW.toast('Adresse et clé de secours, s’il te plaît.', 'error'); return; }
+            if (pass.value.length < 8) { CW.toast('Le mot de passe doit faire 8 caractères au moins.', 'error'); return; }
+            if (await busy(btn, 'Vérification…', () => CW.cloud.recover(email.value, code.value, pass.value))) {
+              mode = 'login';
+              CW.toast('Mot de passe changé : te voilà connecté.');
+              render();
+            }
+          },
+        }, 'Changer le mot de passe'),
+        el('button', { type: 'button', class: 'btn', onclick: () => { mode = 'login'; render(); } }, 'Retour'),
+      ]));
+    }
+
+    function renderRecoveryKey() {
+      const s = CW.cloud.session();
+      wrap.appendChild(el('p', { class: 'hint' }, [
+        el('strong', { text: 'Ta clé de secours. ' }),
+        'Sans e-mail, c’est le seul moyen de retrouver ton compte si tu oublies ton mot de passe. Note-la ou télécharge-la : elle ne sera plus affichée.',
+      ]));
+      wrap.appendChild(el('p', { class: 'recovery-code', text: freshRecovery }));
+      wrap.appendChild(el('div', { class: 'modal-actions' }, [
+        el('button', {
+          type: 'button', class: 'btn', onclick: async () => {
+            try { await navigator.clipboard.writeText(freshRecovery); CW.toast('Clé copiée.'); }
+            catch (_) { CW.toast('Copie impossible : recopie-la à la main.', 'error'); }
+          },
+        }, 'Copier'),
+        el('button', {
+          type: 'button', class: 'btn', onclick: () => {
+            const text = `CityWalker — clé de secours\n\nCompte : ${(s && s.email) || ''}\nClé : ${freshRecovery}\n\nElle permet de choisir un nouveau mot de passe (Réglages → Compte → Mot de passe oublié).\n`;
+            CW.download(new Blob([text], { type: 'text/plain;charset=utf-8' }), 'citywalker-cle-de-secours.txt');
+          },
+        }, 'Télécharger'),
+        el('button', { type: 'button', class: 'btn btn-primary', onclick: () => { freshRecovery = ''; render(); } }, 'C’est noté'),
+      ]));
+    }
+
+    function renderSignedIn(s) {
       const last = CW.cloud.lastSync();
       wrap.appendChild(el('p', { class: 'account-who' }, [el('strong', { text: s.email || 'Connecté' })]));
       wrap.appendChild(el('p', { class: 'hint', text: last ? `Dernière synchronisation : ${new Date(last).toLocaleString('fr-FR')}.` : 'Jamais synchronisé sur cet appareil.' }));
+      const usage = el('p', { class: 'hint account-usage' });
+      wrap.appendChild(usage);
+      CW.cloud.account().then((a) => {
+        if (!a || !usage.isConnected) return;
+        usage.textContent = a.photos
+          ? `Photos en ligne : ${formatBytes(a.bytes)} sur ${formatBytes(a.maxBytes)}.`
+          : 'Ce serveur synchronise la progression ; les photos restent sur chaque appareil.';
+      }).catch((err) => {
+        // Session révoquée ailleurs (mot de passe changé, compte supprimé) :
+        // on le dit tout de suite plutôt que de laisser des boutons morts.
+        if (err && err.code === 'unauthorized' && wrap.isConnected) {
+          CW.toast(err.message, 'error', 8000);
+          render();
+        }
+      });
+
       const status = el('p', { class: 'hint' });
       wrap.appendChild(el('div', { class: 'modal-actions' }, [
         el('button', {
@@ -983,11 +1046,12 @@
             try {
               const r = await CW.cloud.sync(CW.CITY_ORDER, (t) => { status.textContent = t; });
               status.textContent = '';
-              CW.toast(`Synchronisé : ${r.merged} ${CW.plural(r.merged, 'lieu mis à jour', 'lieux mis à jour')}, ${r.uploaded} ${CW.plural(r.uploaded, 'photo envoyée', 'photos envoyées')}, ${r.downloaded} ${CW.plural(r.downloaded, 'photo reçue', 'photos reçues')}.`, 'info', 7000);
+              CW.toast(`Synchronisé : ${r.merged} ${CW.plural(r.merged, 'lieu mis à jour', 'lieux mis à jour')}, ${r.uploaded} ${CW.plural(r.uploaded, 'photo envoyée', 'photos envoyées')}, ${r.downloaded} ${CW.plural(r.downloaded, 'photo reçue', 'photos reçues')}.${r.photoIssue ? ' ' + r.photoIssue : ''}`, 'info', r.photoIssue ? 10000 : 7000);
               refreshAll(); renderSheet(); render();
             } catch (err) {
               status.textContent = '';
               CW.toast((err && err.message) || 'Synchronisation impossible.', 'error');
+              if (!CW.cloud.session()) render();
             } finally { btn.disabled = false; }
           },
         }, 'Synchroniser maintenant'),
@@ -1005,6 +1069,38 @@
       ]));
       wrap.appendChild(el('p', { class: 'hint' },
         'La fusion ne retire jamais rien : si deux appareils divergent, l’union des deux gagne.'));
+
+      const danger = el('div', { class: 'account-danger' });
+      danger.appendChild(el('div', { class: 'modal-actions' }, [
+        el('button', {
+          type: 'button', class: 'btn btn-small btn-ghost', onclick: async (ev) => {
+            if (!confirm('Créer une nouvelle clé de secours ? L’ancienne ne fonctionnera plus.')) return;
+            const code = await busy(ev.currentTarget, 'Création…', () => CW.cloud.renewRecovery());
+            if (code) { freshRecovery = code; render(); }
+          },
+        }, 'Nouvelle clé de secours'),
+        el('button', {
+          type: 'button', class: 'btn btn-small btn-ghost btn-danger', onclick: () => {
+            CW.clear(danger);
+            const pass = el('input', { type: 'password', placeholder: 'Ton mot de passe', autocomplete: 'current-password' });
+            danger.appendChild(el('p', { class: 'hint' }, 'Supprime le compte, sa progression et ses photos en ligne. Ce qui est sur cet appareil reste.'));
+            danger.appendChild(field('Mot de passe', pass));
+            danger.appendChild(el('div', { class: 'modal-actions' }, [
+              el('button', {
+                type: 'button', class: 'btn btn-danger', onclick: async (ev) => {
+                  if (!pass.value) { CW.toast('Mot de passe requis.', 'error'); return; }
+                  if (await busy(ev.currentTarget, 'Suppression…', () => CW.cloud.deleteAccount(pass.value).then(() => true))) {
+                    CW.toast('Compte supprimé.');
+                    render();
+                  }
+                },
+              }, 'Supprimer définitivement'),
+              el('button', { type: 'button', class: 'btn', onclick: () => render() }, 'Annuler'),
+            ]));
+          },
+        }, 'Supprimer mon compte'),
+      ]));
+      wrap.appendChild(danger);
     }
 
     render();
@@ -1576,9 +1672,6 @@
         CW.toast(err && err.message ? err.message : 'Lien de partage invalide.', 'error');
       }
     }
-
-    // Un lien de connexion ou de récupération dépose la session dans l'URL.
-    try { CW.cloud.adoptSessionFromHash(); } catch (_) { /* rien à adopter */ }
 
     await Promise.all(CW.CITY_ORDER.map(loadCity));
     if (shared) enterShared(shared);

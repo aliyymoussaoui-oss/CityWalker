@@ -2,10 +2,14 @@
   "name": "citywalker",
   "version": "1.0.0",
   "private": true,
-  "description": "Cartes photo de Paris et Montpellier : épingler les lieux photographiés et suivre sa progression.",
+  "description": "Cartes photo de Paris, Montpellier et Lyon : épingler les lieux photographiés et suivre sa progression.",
   "scripts": {
-    "test": "node tests/smoke.mjs",
-    "serve": "python3 -m http.server 8000"
+    "test": "node tests/smoke.mjs && node tests/api.mjs && node tests/cloud.mjs",
+    "serve": "python3 -m http.server 8000",
+    "api": "cd server && wrangler dev"
   },
-  "devDependencies": { "playwright": "1.49.1" }
+  "devDependencies": {
+    "playwright": "1.49.1",
+    "wrangler": "4.143.0"
+  }
 }

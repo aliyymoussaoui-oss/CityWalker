@@ -1,0 +1,24 @@
+# Configuration de développement et de test : `wrangler dev` fait tourner le
+# serveur en local, avec une base D1 et un stockage R2 simulés sur le disque —
+# aucun compte Cloudflare n'est nécessaire.
+#
+# Le déploiement n'utilise pas ce fichier tel quel : server/deploy.sh en écrit
+# une copie avec le vrai identifiant de base, et sans R2 si R2 n'est pas activé.
+name = "citywalker-api"
+main = "src/index.js"
+compatibility_date = "2026-09-01"
+workers_dev = true
+
+[[d1_databases]]
+binding = "DB"
+database_name = "citywalker"
+database_id = "00000000-0000-0000-0000-000000000000"
+migrations_dir = "migrations"
+
+[[r2_buckets]]
+binding = "PHOTOS"
+bucket_name = "citywalker-photos"
+
+# Ménage quotidien (compteurs échus, sessions abandonnées), à 3 h 17 UTC.
+[triggers]
+crons = ["17 3 * * *"]

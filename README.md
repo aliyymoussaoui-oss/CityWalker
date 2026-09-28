@@ -63,11 +63,12 @@ Montpellier du sien, et vous vous échangez vos liens.
 
 ### Synchroniser entre plusieurs appareils
 
-Facultatif, éteint par défaut. **⚙ Réglages → Compte et synchronisation** : colle
-l'URL et la clé publique d'un projet [Supabase](https://supabase.com) gratuit,
-crée un compte, et ta progression comme tes photos suivent d'un appareil à
-l'autre. La fusion ne retire jamais rien. Mise en place détaillée, schéma SQL
-compris, dans **[SYNCHRONISATION.md](SYNCHRONISATION.md)**.
+Facultatif. **⚙ Réglages → Compte et synchronisation** : crée un compte (une
+adresse, un mot de passe, et une clé de secours à garder), et ta progression
+comme tes photos suivent d'un appareil à l'autre. La fusion ne retire jamais
+rien. Le serveur est un petit Cloudflare Worker (`server/`) que le workflow de
+publication met en ligne tout seul ; l'activer demande deux secrets dans le
+dépôt, voir **[SYNCHRONISATION.md](SYNCHRONISATION.md)**.
 
 ### Où sont mes données
 
@@ -111,8 +112,8 @@ assets/js/store.js    localStorage (progression) + IndexedDB (photos)
 assets/js/exif.js     lecteur EXIF minimal : date de prise de vue et GPS
 assets/js/photos.js   décodage, redimensionnement, vignette
 assets/js/import.js   import de photothèque : lecture GPS, regroupement, rapport
-assets/js/config.js   URL Supabase, clé anon, clé CARTO (injectées au déploiement)
-assets/js/cloud.js    comptes et synchronisation (API REST Supabase, sans SDK)
+assets/js/config.js   adresse du serveur, clé CARTO (injectées au déploiement)
+assets/js/cloud.js    comptes et synchronisation (quelques fetch, sans SDK)
 assets/js/tiles.js    fond détaillé en tuiles CARTO, placé sans bibliothèque
 assets/js/share.js    lien de partage, export/import, fusion
 assets/js/map.js      carte SVG : rendu, pan/zoom, épingles
@@ -123,7 +124,10 @@ tools/                pipeline de génération des données
 tools/build_single.py fabrique dist/citywalker.html et dist/artifact.html
 tests/smoke.mjs       tests de bout en bout (Chromium headless)
 tests/single.mjs      vérifie le fichier unique hors serveur
-tests/cloud.mjs       comptes et synchronisation, contre un faux Supabase
+tests/api.mjs         le serveur, dans le moteur de Cloudflare en local
+tests/cloud.mjs       comptes et synchronisation : navigateurs contre vrai serveur
+tests/deploy.mjs      server/deploy.sh face à une imitation de l'API Cloudflare
+server/               serveur de synchronisation (Cloudflare Worker, D1, R2)
 manifest.webmanifest  installation en application
 sw.js                 cache hors ligne
 DEPLOIEMENT.md        mise en ligne, hébergeur par hébergeur

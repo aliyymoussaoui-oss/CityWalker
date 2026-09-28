@@ -16,5 +16,7 @@ jobs:
       - run: npm install
       - run: npx playwright install --with-deps chromium
       - run: node tests/smoke.mjs
+      - run: node tests/api.mjs
       - run: node tests/cloud.mjs
+      - run: node tests/deploy.mjs
       - run: python3 tools/build_single.py && node tests/single.mjs

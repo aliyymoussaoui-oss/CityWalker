@@ -3,7 +3,7 @@
 # L'environnement `github-pages` n'accepte, par défaut, que des déploiements
 # venant de la branche par défaut du dépôt. Le workflow n'écoute donc qu'elle :
 # une poussée sur `public` produirait un échec sans journal, avant le premier pas.
-# Seuls les fichiers du site sont publiés : ni outils, ni tests, ni fixtures.
+# Seuls les fichiers du site sont publiés : ni serveur, ni outils, ni tests.
 name: Publier sur GitHub Pages
 
 on:
@@ -23,7 +23,29 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # Le serveur de synchronisation d'abord (Cloudflare Worker, voir server/) :
+  # le site a besoin de son adresse. Sans secrets Cloudflare, cette étape ne
+  # fait rien et le site part sans synchronisation — il reste utilisable en
+  # local. Si elle échoue, rien n'est publié : le site en ligne garde sa
+  # version précédente, qui fonctionne.
+  api:
+    runs-on: ubuntu-latest
+    outputs:
+      url: ${{ steps.deploy.outputs.url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '22' }
+      - run: npm install --no-audit --no-fund
+      - id: deploy
+        name: Déployer le serveur de synchronisation
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID || vars.CLOUDFLARE_ACCOUNT_ID }}
+        run: bash server/deploy.sh
+
   deploy:
+    needs: api
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -33,52 +55,35 @@ jobs:
       - name: Rassembler le site, et lui seul
         run: |
           set -eu
-          for f in index.html manifest.webmanifest sw.js data/paris.json data/montpellier.json; do
+          for f in index.html manifest.webmanifest sw.js data/paris.json data/montpellier.json data/lyon.json data/france.json; do
             test -f "$f" || { echo "manquant : $f"; exit 1; }
           done
           mkdir -p _site
           cp index.html manifest.webmanifest sw.js _site/
           cp -r assets data _site/
           touch _site/.nojekyll
-          # Rien d'autre ne doit partir en ligne : ni outils, ni tests, ni build.
-          for d in tools tests dist .github node_modules; do
+          # Rien d'autre ne doit partir en ligne : ni serveur, ni outils, ni tests.
+          for d in server tools tests dist .github node_modules; do
             test ! -e "_site/$d" || { echo "$d ne devrait pas être publié"; exit 1; }
           done
           du -sh _site
-      - name: Injecter la configuration de synchronisation
+      - name: Brancher le site sur le serveur de synchronisation
         env:
-          # Variable de dépôt de préférence ; secret accepté aussi, car la clé
-          # « anon » est publique par conception et beaucoup la rangent là.
-          SUPABASE_URL: ${{ vars.SUPABASE_URL || secrets.SUPABASE_URL }}
-          SUPABASE_ANON_KEY: ${{ vars.SUPABASE_ANON_KEY || secrets.SUPABASE_ANON_KEY }}
+          API_URL: ${{ needs.api.outputs.url }}
         run: |
           set -eu
-          if [ -n "${SUPABASE_URL:-}" ] && [ -n "${SUPABASE_ANON_KEY:-}" ]; then
-            # La clé « anon » est publique par conception : ce sont les règles RLS
-            # de la base qui protègent les données, pas le secret de cette clé.
-            # Le tableau de bord Supabase affiche aussi l'adresse de l'API : on
-            # ne garde que l'origine du projet, comme le fait déjà le code.
-            # La clé CARTO reste celle du dépôt, sauf variable CARTO_KEY.
-            CARTO="${CARTO_KEY:-$(sed -n "s/.*cartoKey: '\([^']*\)'.*/\1/p" assets/js/config.js)}"
-            test -n "$CARTO" || { echo "Clé CARTO introuvable"; exit 1; }
-            printf 'window.CW_CONFIG = {\n  supabaseUrl: %s,\n  supabaseAnonKey: %s,\n  cartoKey: "%s",\n};\n' \
-              "$(printf '%s' "$SUPABASE_URL" | python3 -c 'import json,re,sys;print(json.dumps(re.sub(r"/(rest|auth|storage|realtime|graphql)/v\d+/?$", "", sys.stdin.read().strip()).rstrip("/")))')" \
-              "$(printf '%s' "$SUPABASE_ANON_KEY" | python3 -c 'import json,sys;print(json.dumps(sys.stdin.read().strip()))')" \
-              "$CARTO" \
-              > _site/assets/js/config.js
-            # Une configuration muette est le pire des cas : on vérifie que le
-            # fichier écrit contient bien une URL https et une clé plausible.
-            grep -q "supabaseUrl: \"https://" _site/assets/js/config.js \
-              || { echo "URL Supabase invalide : elle doit commencer par https://"; exit 1; }
-            grep -qE 'supabaseAnonKey: ".{40,}"' _site/assets/js/config.js \
-              || { echo "Clé anon absente ou trop courte"; exit 1; }
-            echo "Synchronisation configurée pour ${SUPABASE_URL}"
-          else
-            echo "Ni variable ni secret SUPABASE_URL / SUPABASE_ANON_KEY :"
-            echo "le site est publié sans synchronisation, chacun devra coller"
-            echo "ses deux valeurs dans Réglages → Compte et synchronisation."
-            echo "Voir SYNCHRONISATION.md, section « Les deux valeurs à renseigner »."
+          # La clé CARTO reste celle du dépôt, sauf variable CARTO_KEY.
+          CARTO="${CARTO_KEY:-$(sed -n "s/.*cartoKey: '\([^']*\)'.*/\1/p" assets/js/config.js)}"
+          test -n "$CARTO" || { echo "Clé CARTO introuvable"; exit 1; }
+          if [ -n "$API_URL" ]; then
+            case "$API_URL" in https://*) ;; *) echo "Adresse de serveur invalide : $API_URL"; exit 1 ;; esac
           fi
+          printf 'window.CW_CONFIG = {\n  apiUrl: %s,\n  cartoKey: %s,\n};\n' \
+            "$(python3 -c 'import json,os;print(json.dumps(os.environ["API_URL"]))')" \
+            "$(CARTO="$CARTO" python3 -c 'import json,os;print(json.dumps(os.environ["CARTO"]))')" \
+            > _site/assets/js/config.js
+          cat _site/assets/js/config.js
+          if [ -n "$API_URL" ]; then echo "Synchronisation branchée sur $API_URL"; else echo "Publié sans synchronisation (pas de secrets Cloudflare)."; fi
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

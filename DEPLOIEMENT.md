@@ -7,6 +7,12 @@ ouverte par deux personnes ou par cent mille. Les données de chacun (lieux
 cochés, notes, photos) vivent dans son propre navigateur et ne transitent jamais
 par l'hébergeur.
 
+Seule exception, facultative : les comptes et la synchronisation entre
+appareils passent par un petit serveur, un Cloudflare Worker (`server/`), que
+le workflow GitHub Pages déploie tout seul dès que les deux secrets Cloudflare
+sont renseignés — voir [SYNCHRONISATION.md](SYNCHRONISATION.md). Sans eux, le
+site est publié sans synchronisation et fonctionne entièrement en local.
+
 Il y a deux formes livrées :
 
 | Fichier | Usage |

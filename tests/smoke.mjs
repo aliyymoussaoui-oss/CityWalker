@@ -61,7 +61,10 @@ const browser = await chromium.launch({ executablePath: process.env.CW_CHROME ||
 async function newPage(ctx) {
   const page = await ctx.newPage();
   const errors = [];
-  page.on('console', (m) => { if (m.type() === 'error') errors.push(`console: ${m.text()}`); });
+  // Les tuiles CARTO peuvent être injoignables depuis la machine de test
+  // (réseau filtré, certificat intercepté) : leurs échecs sont ignorés, comme
+  // leurs requêtes plus bas. Tout le reste compte.
+  page.on('console', (m) => { if (m.type() === 'error' && !/basemaps\.cartocdn\.com/.test(m.location().url || '')) errors.push(`console: ${m.text()}`); });
   page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`));
   page.on('requestfailed', (r) => {
     // Le fond détaillé dépend du réseau : son indisponibilité est un cas géré,
@@ -352,23 +355,16 @@ await t.keyboard.press('Enter');
 await t.waitForFunction(() => document.querySelector('.map-city-name').textContent === 'Paris');
 check('Entrée sur l’épingle ouvre la ville aussi', await t.locator('.map-city-name').textContent() === 'Paris');
 
-console.log('\n— Normalisation de l’URL Supabase —');
-const urls = await t.evaluate(() => {
-  const c = window.CW.cloud.cleanUrl;
-  return {
-    rest: c('https://abcd.supabase.co/rest/v1/'),
-    auth: c('https://abcd.supabase.co/auth/v1'),
-    storage: c('https://abcd.supabase.co/storage/v1/'),
-    slash: c('https://abcd.supabase.co///'),
-    clean: c('  https://abcd.supabase.co  '),
-    vide: c(''),
-  };
-});
-check('l’URL de l’API REST est ramenée au projet', urls.rest === 'https://abcd.supabase.co', urls.rest);
-check('celle de l’auth aussi', urls.auth === 'https://abcd.supabase.co', urls.auth);
-check('celle du stockage aussi', urls.storage === 'https://abcd.supabase.co', urls.storage);
-check('les barres et espaces en trop disparaissent', urls.slash === 'https://abcd.supabase.co' && urls.clean === 'https://abcd.supabase.co');
-check('une valeur vide reste vide', urls.vide === '');
+console.log('\n— Synchronisation non activée —');
+// Sans adresse de serveur, rien ne doit être demandé à l'utilisateur : ni
+// formulaire, ni configuration, juste l'assurance que tout reste en local.
+await t.locator('#btn-settings').click();
+await t.waitForSelector('#modal[open] .account');
+check('le compte explique que tout reste sur l’appareil',
+  /pas activée sur ce site/.test(await t.locator('.account').textContent()));
+check('aucun formulaire à remplir', await t.locator('.account input').count() === 0);
+await t.locator('.modal-close').click();
+await t.waitForFunction(() => !document.querySelector('#modal').open);
 
 console.log('\n— Accessibilité de base —');
 check('la carte est focusable au clavier', await page.locator('#map[tabindex="0"]').count() === 1);

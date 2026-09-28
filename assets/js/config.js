@@ -1,23 +1,13 @@
-/* CityWalker — configuration de la synchronisation.
+/* CityWalker — configuration du site.
  *
- * Ces deux valeurs viennent de Supabase, Project Settings → API :
- * l'URL du projet et la clé publique « anon ». Cette clé est publique par
- * conception ; ce sont les règles RLS de la base qui protègent les données.
- * Ne colle jamais la clé `service_role` ici.
+ * apiUrl : adresse du serveur de synchronisation (un Cloudflare Worker, voir
+ *   server/ et SYNCHRONISATION.md). Vide, l'application fonctionne entièrement
+ *   en local. Sur le site publié, le workflow de déploiement la renseigne
+ *   tout seul après avoir mis le serveur en ligne : rien à écrire ici.
  *
- * Trois façons de les fournir, de la plus durable à la plus rapide :
- *  1. deux variables de dépôt GitHub, SUPABASE_URL et SUPABASE_ANON_KEY : le
- *     workflow de publication réécrit ce fichier au déploiement (rien à
- *     committer, rien à saisir sur chaque appareil) ;
- *  2. les écrire ici et pousser ;
- *  3. les coller dans Réglages → Compte et synchronisation, sur chaque appareil.
- *
- * Laissé vide, tout fonctionne en local, sans compte.
+ * cartoKey : clé du fond de carte détaillé (tuiles CARTO).
  */
 window.CW_CONFIG = {
-  supabaseUrl: '',
-  supabaseAnonKey: '',
-  // Clé CARTO des fonds raster. Comme la clé anon, elle est publique par
-  // conception : elle voyage dans l'URL de chaque tuile.
+  apiUrl: '',
   cartoKey: 'cb1_2si0_1_9784af0a74c9f91479d9d44b',
 };

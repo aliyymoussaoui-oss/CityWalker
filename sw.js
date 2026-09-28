@@ -5,7 +5,7 @@
  *  - ressources statiques : cache d'abord, avec rafraîchissement en arrière-plan ;
  *  - le nom du cache porte une version : publier une nouvelle version purge l'ancienne.
  */
-const VERSION = 'cw-v3';
+const VERSION = 'cw-v4';
 const ASSETS = [
   './', './index.html', './manifest.webmanifest',
   './assets/app.css',

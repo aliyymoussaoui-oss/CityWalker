@@ -1,23 +1,22 @@
 /* CityWalker — comptes et synchronisation.
  *
- * Parle à une instance Supabase par son API REST, sans SDK : quelques appels
- * `fetch` suffisent et l'application reste sans dépendance.
+ * Parle au serveur CityWalker (un Cloudflare Worker, voir server/) par
+ * quelques appels `fetch`, sans SDK. Rien n'est obligatoire : tant que le site
+ * n'indique pas d'adresse de serveur, tout fonctionne en local, comme avant.
  *
- * Rien n'est obligatoire : tant qu'aucune instance n'est configurée, toute
- * l'application fonctionne exactement comme avant, en local. La configuration
- * (URL + clé publique « anon ») se saisit dans les réglages et vit dans le
- * navigateur — cette clé est publique par conception, ce sont les règles RLS
- * de la base qui protègent les données.
- *
- * Le schéma SQL à exécuter une fois est dans SYNCHRONISATION.md.
+ * Le mot de passe ne quitte jamais l'appareil. Le navigateur en dérive une clé
+ * (PBKDF2-SHA256, 600 000 tours, sel tiré de l'adresse) et n'envoie qu'elle.
+ * Aucun e-mail n'est envoyé : un mot de passe oublié se remplace avec la clé
+ * de secours affichée à la création du compte.
  */
 (function () {
   'use strict';
   const CW = window.CW;
 
-  const CONFIG_KEY = 'citywalker:v1:cloud-config';
-  const SESSION_KEY = 'citywalker:v1:cloud-session';
-  const BUCKET = 'photos';
+  const SESSION_KEY = 'citywalker:v2:session';
+  const LAST_SYNC_KEY = 'citywalker:v1:last-sync';
+  const PBKDF2_ITERATIONS = 600000;
+  const RECOVERY_ALPHABET = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';   // base32 de Crockford
 
   function readJSON(key, fallback) {
     try {
@@ -37,249 +36,217 @@
     }
   }
 
-  let config = null;
+  // L'ancienne synchronisation (Supabase) a laissé une configuration et une
+  // session qui ne mènent plus nulle part.
+  try {
+    localStorage.removeItem('citywalker:v1:cloud-config');
+    localStorage.removeItem('citywalker:v1:cloud-session');
+  } catch (_) { /* stockage indisponible */ }
+
+  const apiUrl = () => String((window.CW_CONFIG && window.CW_CONFIG.apiUrl) || '').trim().replace(/\/+$/, '');
+  const configured = () => !!apiUrl();
+
   let session = null;
-
-  /**
-   * Ne garde que l'origine du projet.
-   * Le tableau de bord Supabase affiche plusieurs adresses, et c'est souvent
-   * celle de l'API REST qui est copiée : `https://xxxx.supabase.co/rest/v1/`.
-   * Collée telle quelle, chaque appel viserait `/rest/v1//auth/v1/...`.
-   */
-  function cleanUrl(raw) {
-    let url = String(raw || '').trim();
-    if (!url) return '';
-    url = url.replace(/\/(rest|auth|storage|realtime|graphql)\/v\d+\/?$/i, '');
-    return url.replace(/\/+$/, '');
-  }
-
-  function loadConfig() {
-    if (config) return config;
-    const stored = readJSON(CONFIG_KEY, null);
-    const baked = window.CW_CONFIG || {};
-    const url = (stored && stored.url) || baked.supabaseUrl || '';
-    const key = (stored && stored.key) || baked.supabaseAnonKey || '';
-    config = { url: cleanUrl(url), key: String(key).trim() };
-    return config;
-  }
-  function setConfig(url, key) {
-    config = { url: cleanUrl(url), key: String(key || '').trim() };
-    writeJSON(CONFIG_KEY, config.url && config.key ? config : null);
-    if (!config.url || !config.key) clearSession();
-    return config;
-  }
-  const configured = () => !!(loadConfig().url && loadConfig().key);
-
-  /** La configuration vient-elle du site plutôt que de cet appareil ?
-   *  Dans ce cas « changer d'instance » n'a pas de sens : le site la réimposerait
-   *  au rechargement suivant. */
-  function isBaked() {
-    const baked = window.CW_CONFIG || {};
-    const stored = readJSON(CONFIG_KEY, null);
-    return !!(baked.supabaseUrl && baked.supabaseAnonKey) && !(stored && stored.url);
-  }
-
   function loadSession() {
-    if (session === null) session = readJSON(SESSION_KEY, false) || false;
+    if (session === null) {
+      const s = readJSON(SESSION_KEY, null);
+      session = s && typeof s.token === 'string' && s.token.length === 43 ? s : false;
+    }
     return session || null;
   }
   function saveSession(s) {
     session = s || false;
     writeJSON(SESSION_KEY, s || null);
   }
-  function clearSession() { saveSession(null); }
 
-  function normalizeSession(payload) {
-    if (!payload || !payload.access_token) return null;
-    return {
-      accessToken: payload.access_token,
-      refreshToken: payload.refresh_token || '',
-      expiresAt: Date.now() + (Number(payload.expires_in) || 3600) * 1000,
-      userId: (payload.user && payload.user.id) || '',
-      email: (payload.user && payload.user.email) || '',
-    };
+  const normEmail = (email) => String(email || '').trim().toLowerCase();
+
+  // ------------------------------------------------------------ cryptographie
+
+  function base64url(bytes) {
+    let s = '';
+    for (const b of new Uint8Array(bytes)) s += String.fromCharCode(b);
+    return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
   }
 
-  async function readError(res, fallback) {
-    let detail = '';
-    try {
-      const body = await res.json();
-      detail = body.msg || body.message || body.error_description || body.error || '';
-    } catch (_) { /* corps illisible */ }
-    const known = {
-      'Invalid login credentials': 'Adresse ou mot de passe incorrect.',
-      'User already registered': 'Un compte existe déjà avec cette adresse.',
-      'Email not confirmed': 'Confirme d’abord l’adresse depuis le mail reçu.',
-    };
-    return new Error(known[detail] || detail || `${fallback} (${res.status})`);
-  }
-
-  // ------------------------------------------------------------------ auth
-
-  async function auth(path, body) {
-    const cfg = loadConfig();
-    if (!cfg.url) throw new Error('Synchronisation non configurée.');
-    const res = await fetch(`${cfg.url}/auth/v1/${path}`, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json', apikey: cfg.key },
-      body: JSON.stringify(body),
-    });
-    if (!res.ok) throw await readError(res, 'Authentification refusée');
-    return res.json();
-  }
-
-  async function signUp(email, password) {
-    const payload = await auth('signup', { email, password });
-    const s = normalizeSession(payload);
-    if (!s) {
-      // Confirmation par mail activée : pas de session tout de suite.
-      return { pending: true };
+  /** Clé envoyée au serveur à la place du mot de passe. */
+  async function deriveKey(email, password) {
+    if (!(window.crypto && crypto.subtle)) {
+      throw new Error('Ce navigateur ne sait pas protéger le mot de passe : ouvre le site en https.');
     }
+    const enc = new TextEncoder();
+    const base = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveBits']);
+    const bits = await crypto.subtle.deriveBits({
+      name: 'PBKDF2', hash: 'SHA-256', iterations: PBKDF2_ITERATIONS,
+      salt: enc.encode(`citywalker/v1/${normEmail(email)}`),
+    }, base, 256);
+    return base64url(bits);
+  }
+
+  /** 25 caractères aléatoires (125 bits), en cinq groupes lisibles. */
+  function newRecoveryCode() {
+    const bytes = crypto.getRandomValues(new Uint8Array(25));
+    let code = '';
+    for (let i = 0; i < 25; i++) {
+      code += RECOVERY_ALPHABET[bytes[i] & 31];
+      if (i % 5 === 4 && i < 24) code += '-';
+    }
+    return code;
+  }
+
+  // ------------------------------------------------------------------ requêtes
+
+  const MESSAGES = {
+    invalid_credentials: 'Adresse ou mot de passe incorrect.',
+    email_taken: 'Un compte existe déjà avec cette adresse.',
+    invalid_recovery: 'Adresse ou clé de secours incorrecte.',
+    bad_email: 'Adresse e-mail invalide.',
+    unauthorized: 'Session expirée : reconnecte-toi.',
+  };
+
+  async function request(method, path, opts) {
+    const o = opts || {};
+    const url = apiUrl();
+    if (!url) throw new Error('La synchronisation n’est pas activée sur ce site.');
+    const headers = {};
+    if (o.auth !== false) {
+      const s = loadSession();
+      if (!s) {
+        const err = new Error(MESSAGES.unauthorized);
+        err.code = 'unauthorized';
+        throw err;
+      }
+      headers.authorization = `Bearer ${s.token}`;
+    }
+    let body;
+    if (o.json !== undefined) { headers['content-type'] = 'application/json'; body = JSON.stringify(o.json); }
+    if (o.blob !== undefined) { headers['content-type'] = o.blob.type || 'image/jpeg'; body = o.blob; }
+    let res;
+    try {
+      res = await fetch(url + path, { method, headers, body });
+    } catch (_) {
+      throw new Error('Serveur injoignable. Rien n’est perdu : tout reste sur cet appareil.');
+    }
+    if (res.ok) {
+      // Réponse JSON : lue ici, entièrement, pour que chaque requête se
+      // termine proprement ; une photo, elle, revient telle quelle.
+      if (/json/.test(res.headers.get('content-type') || '')) return res.json();
+      return res;
+    }
+    let data = {};
+    try { data = await res.json(); } catch (_) { /* corps illisible */ }
+    // Seule une session refusée déconnecte : un mauvais mot de passe au moment
+    // de supprimer le compte, par exemple, ne doit pas faire perdre la session.
+    if (data.error === 'unauthorized') saveSession(null);
+    const err = new Error(MESSAGES[data.error] || data.message || `Le serveur a refusé la requête (${res.status}).`);
+    err.code = data.error || String(res.status);
+    throw err;
+  }
+
+  // ---------------------------------------------------------------------- compte
+
+  function adopt(payload) {
+    if (!payload || typeof payload.token !== 'string' || !payload.user) throw new Error('Réponse inattendue du serveur.');
+    const s = { token: payload.token, userId: payload.user.id, email: payload.user.email };
     saveSession(s);
-    return { pending: false, session: s };
+    return s;
+  }
+
+  /** Crée le compte ; renvoie la clé de secours, à montrer une seule fois. */
+  async function signUp(email, password) {
+    const recovery = newRecoveryCode();
+    const key = await deriveKey(email, password);
+    const s = adopt(await request('POST', '/v1/auth/signup', { auth: false, json: { email: normEmail(email), key, recovery } }));
+    return { session: s, recovery };
   }
 
   async function signIn(email, password) {
-    const payload = await auth('token?grant_type=password', { email, password });
-    const s = normalizeSession(payload);
-    if (!s) throw new Error('Réponse d’authentification inattendue.');
-    saveSession(s);
-    return s;
+    const key = await deriveKey(email, password);
+    return adopt(await request('POST', '/v1/auth/login', { auth: false, json: { email: normEmail(email), key } }));
   }
 
-  async function refresh() {
+  /** Nouveau mot de passe grâce à la clé de secours. */
+  async function recover(email, recoveryCode, newPassword) {
+    const key = await deriveKey(email, newPassword);
+    return adopt(await request('POST', '/v1/auth/recover', { auth: false, json: { email: normEmail(email), recovery: recoveryCode, key } }));
+  }
+
+  /** Remplace la clé de secours ; l'ancienne cesse de fonctionner. */
+  async function renewRecovery() {
+    const recovery = newRecoveryCode();
+    await request('PUT', '/v1/account/recovery', { json: { recovery } });
+    return recovery;
+  }
+
+  function account() {
+    return request('GET', '/v1/me');
+  }
+
+  async function deleteAccount(password) {
     const s = loadSession();
-    if (!s || !s.refreshToken) return null;
-    try {
-      const payload = await auth('token?grant_type=refresh_token', { refresh_token: s.refreshToken });
-      const next = normalizeSession(payload);
-      if (next) { saveSession(next); return next; }
-    } catch (_) { /* jeton périmé */ }
-    clearSession();
-    return null;
-  }
-
-  /** Envoie un mail de réinitialisation de mot de passe. */
-  async function resetPassword(email) {
-    await auth('recover', { email, redirect_to: location.href.split('#')[0] });
-  }
-
-  /** Envoie un lien de connexion sans mot de passe. */
-  async function magicLink(email) {
-    await auth('magiclink', { email, redirect_to: location.href.split('#')[0] });
-  }
-
-  /** Récupère la session déposée dans l'URL par un lien de connexion ou de récupération. */
-  function adoptSessionFromHash() {
-    const h = location.hash || '';
-    if (!/access_token=/.test(h)) return null;
-    const params = new URLSearchParams(h.replace(/^#/, ''));
-    const s = normalizeSession({
-      access_token: params.get('access_token'),
-      refresh_token: params.get('refresh_token'),
-      expires_in: params.get('expires_in'),
-      user: { id: params.get('user_id') || '', email: params.get('email') || '' },
-    });
-    if (!s) return null;
-    saveSession(s);
-    history.replaceState(null, '', location.pathname + location.search);
-    return s;
+    if (!s) throw new Error(MESSAGES.unauthorized);
+    const key = await deriveKey(s.email, password);
+    await request('DELETE', '/v1/account', { json: { key } });
+    saveSession(null);
+    writeJSON(LAST_SYNC_KEY, null);
   }
 
   async function signOut() {
     const s = loadSession();
-    const cfg = loadConfig();
-    clearSession();
-    if (!s || !cfg.url) return;
-    try {
-      await fetch(`${cfg.url}/auth/v1/logout`, {
-        method: 'POST',
-        headers: { apikey: cfg.key, authorization: `Bearer ${s.accessToken}` },
-      });
-    } catch (_) { /* la session locale est déjà effacée, c'est l'essentiel */ }
+    if (!s) return;
+    try { await request('POST', '/v1/auth/logout'); } catch (_) { /* la session locale tombe quand même */ }
+    saveSession(null);
   }
 
-  // ------------------------------------------------------------- requêtes
-
-  async function api(path, opts, retry) {
-    const cfg = loadConfig();
-    let s = loadSession();
-    if (!s) throw new Error('Pas connecté.');
-    if (s.expiresAt - Date.now() < 60000) s = (await refresh()) || s;
-    const headers = Object.assign({
-      apikey: cfg.key,
-      authorization: `Bearer ${s.accessToken}`,
-    }, (opts && opts.headers) || {});
-    const res = await fetch(`${cfg.url}${path}`, Object.assign({}, opts, { headers }));
-    if (res.status === 401 && !retry) {
-      if (await refresh()) return api(path, opts, true);
-      clearSession();
-      throw new Error('Session expirée, reconnecte-toi.');
-    }
-    if (!res.ok) throw await readError(res, 'Requête refusée');
-    return res;
-  }
-
-  const jsonHeaders = { 'content-type': 'application/json', accept: 'application/json' };
+  // ------------------------------------------------------------ progression
 
   async function pullCity(cityId) {
-    const res = await api(`/rest/v1/progress?select=data,updated_at&city=eq.${encodeURIComponent(cityId)}`,
-      { method: 'GET', headers: jsonHeaders });
-    const rows = await res.json();
-    if (!Array.isArray(rows) || !rows.length) return null;
-    return CW.normalizeProgress(rows[0].data, cityId);
+    const body = await request('GET', `/v1/progress/${encodeURIComponent(cityId)}`);
+    return body && body.data ? CW.normalizeProgress(body.data, cityId) : null;
   }
 
   async function pushCity(cityId, progress) {
-    const s = loadSession();
-    await api('/rest/v1/progress', {
-      method: 'POST',
-      headers: Object.assign({}, jsonHeaders, { prefer: 'resolution=merge-duplicates,return=minimal' }),
-      body: JSON.stringify([{ user_id: s.userId, city: cityId, data: progress, updated_at: new Date().toISOString() }]),
-    });
+    await request('PUT', `/v1/progress/${encodeURIComponent(cityId)}`, { json: { data: progress } });
   }
+
+  // ------------------------------------------------------------------ photos
 
   async function listPhotos() {
-    const res = await api('/rest/v1/photos?select=id,city,spot,w,h,taken_at,created_at',
-      { method: 'GET', headers: jsonHeaders });
-    const rows = await res.json();
-    return Array.isArray(rows) ? rows : [];
+    const all = [];
+    let after = '';
+    for (;;) {
+      const body = await request('GET', `/v1/photos${after ? `?after=${encodeURIComponent(after)}` : ''}`);
+      all.push(...(body.photos || []));
+      if (!body.next) return all;
+      after = body.next;
+    }
   }
 
-  const photoPath = (userId, id) => `${userId}/${id}.jpg`;
-
   async function uploadPhoto(record) {
-    const s = loadSession();
-    await api(`/storage/v1/object/${BUCKET}/${photoPath(s.userId, record.id)}`, {
-      method: 'POST',
-      headers: { 'content-type': 'image/jpeg', 'x-upsert': 'true' },
-      body: record.full,
+    const q = new URLSearchParams({
+      city: record.city, spot: record.spot,
+      w: String(record.w || 0), h: String(record.h || 0),
+      takenAt: record.takenAt ? String(record.takenAt).slice(0, 40) : '',
+      createdAt: String(Math.round(record.createdAt || Date.now())),
     });
-    await api('/rest/v1/photos', {
-      method: 'POST',
-      headers: Object.assign({}, jsonHeaders, { prefer: 'resolution=merge-duplicates,return=minimal' }),
-      body: JSON.stringify([{
-        id: record.id, user_id: s.userId, city: record.city, spot: record.spot,
-        w: record.w || 0, h: record.h || 0, taken_at: record.takenAt || '',
-        created_at: record.createdAt || Date.now(),
-      }]),
-    });
+    await request('PUT', `/v1/photos/${encodeURIComponent(record.id)}?${q}`, { blob: record.full });
   }
 
   async function downloadPhoto(row) {
-    const s = loadSession();
-    const res = await api(`/storage/v1/object/${BUCKET}/${photoPath(s.userId, row.id)}`, { method: 'GET' });
+    const res = await request('GET', `/v1/photos/${encodeURIComponent(row.id)}`);
     return res.blob();
   }
 
   // ---------------------------------------------------------- orchestration
 
   /**
-   * Synchronise dans les deux sens. La fusion ne retire jamais rien :
-   * en cas de divergence entre deux appareils, l'union gagne.
+   * Synchronise dans les deux sens. La fusion ne retire jamais rien : en cas
+   * de divergence entre deux appareils, l'union gagne. La progression passe
+   * d'abord ; un souci de photos (quota, stockage non activé) n'empêche pas
+   * qu'elle soit à jour, il est simplement signalé dans le rapport.
    */
   async function sync(cityIds, onProgress) {
-    const report = { cities: 0, merged: 0, uploaded: 0, downloaded: 0 };
+    const report = { cities: 0, merged: 0, uploaded: 0, downloaded: 0, photoIssue: '' };
     const step = (t) => { if (onProgress) onProgress(t); };
 
     for (const cityId of cityIds) {
@@ -297,45 +264,52 @@
       report.cities++;
     }
 
-    step('Comparaison des photos…');
-    const remotePhotos = await listPhotos();
-    const remoteIds = new Set(remotePhotos.map((r) => r.id));
-    for (const cityId of cityIds) {
-      const localRows = await CW.store.photosForCity(cityId);
-      const localIds = new Set(localRows.map((r) => r.id));
-      for (const row of localRows) {
-        if (remoteIds.has(row.id)) continue;
-        step(`Envoi des photos… (${report.uploaded + 1})`);
-        await uploadPhoto(row);
-        report.uploaded++;
-      }
-      for (const row of remotePhotos) {
-        if (row.city !== cityId || localIds.has(row.id)) continue;
-        step(`Réception des photos… (${report.downloaded + 1})`);
-        const blob = await downloadPhoto(row);
-        await CW.store.putPhoto({
-          id: row.id, city: row.city, spot: row.spot, w: row.w || 0, h: row.h || 0,
-          takenAt: row.taken_at || '', caption: '', createdAt: row.created_at || Date.now(),
-          full: blob, thumb: blob,
-        });
-        const entry = CW.store.ensureEntry(row.city, row.spot);
-        if (!entry.photos.includes(row.id)) {
-          CW.store.updateEntry(row.city, row.spot, { photos: entry.photos.concat([row.id]), done: true });
+    try {
+      step('Comparaison des photos…');
+      const remotePhotos = await listPhotos();
+      const remoteIds = new Set(remotePhotos.map((r) => r.id));
+      for (const cityId of cityIds) {
+        const localRows = await CW.store.photosForCity(cityId);
+        const localIds = new Set(localRows.map((r) => r.id));
+        for (const row of localRows) {
+          if (remoteIds.has(row.id) || !row.full) continue;
+          step(`Envoi des photos… (${report.uploaded + 1})`);
+          await uploadPhoto(row);
+          report.uploaded++;
         }
-        report.downloaded++;
+        for (const row of remotePhotos) {
+          if (row.city !== cityId || localIds.has(row.id)) continue;
+          step(`Réception des photos… (${report.downloaded + 1})`);
+          const blob = await downloadPhoto(row);
+          await CW.store.putPhoto({
+            id: row.id, city: row.city, spot: row.spot, w: row.w || 0, h: row.h || 0,
+            takenAt: row.takenAt || '', caption: '', createdAt: row.createdAt || Date.now(),
+            full: blob, thumb: blob,
+          });
+          const entry = CW.store.ensureEntry(row.city, row.spot);
+          if (!entry.photos.includes(row.id)) {
+            CW.store.updateEntry(row.city, row.spot, { photos: entry.photos.concat([row.id]), done: true });
+          }
+          report.downloaded++;
+        }
       }
+    } catch (err) {
+      if (err && err.code === 'unauthorized') throw err;
+      report.photoIssue = err && err.code === 'photos_disabled'
+        ? 'Les photos ne sont pas encore synchronisées par ce serveur ; elles restent sur cet appareil.'
+        : (err && err.message) || 'Les photos n’ont pas pu être synchronisées.';
     }
     CW.store.flushAll();
-    writeJSON('citywalker:v1:last-sync', Date.now());
+    writeJSON(LAST_SYNC_KEY, Date.now());
     return report;
   }
 
-  const lastSync = () => readJSON('citywalker:v1:last-sync', 0);
+  const lastSync = () => readJSON(LAST_SYNC_KEY, 0);
 
   CW.cloud = {
-    loadConfig, setConfig, configured, cleanUrl, isBaked,
-    session: loadSession, signUp, signIn, signOut, refresh,
-    resetPassword, magicLink, adoptSessionFromHash,
+    configured, session: loadSession,
+    signUp, signIn, signOut, recover, renewRecovery, account, deleteAccount,
+    newRecoveryCode, deriveKey,
     pullCity, pushCity, listPhotos, uploadPhoto, downloadPhoto, sync, lastSync,
   };
 })();

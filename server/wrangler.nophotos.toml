@@ -1,0 +1,12 @@
+# Variante de test : le même serveur, sans stockage R2 (photos désactivées),
+# comme sur un compte Cloudflare où R2 n'a pas été activé.
+name = "citywalker-api"
+main = "src/index.js"
+compatibility_date = "2026-09-01"
+workers_dev = true
+
+[[d1_databases]]
+binding = "DB"
+database_name = "citywalker"
+database_id = "00000000-0000-0000-0000-000000000000"
+migrations_dir = "migrations"

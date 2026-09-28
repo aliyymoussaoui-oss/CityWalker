@@ -7,7 +7,7 @@ const file = new URL('../dist/citywalker.html', import.meta.url).href;
 const b = await chromium.launch({ executablePath: process.env.CW_CHROME || (existsSync('/opt/pw-browsers/chromium-1194/chrome-linux/chrome') ? '/opt/pw-browsers/chromium-1194/chrome-linux/chrome' : undefined) });
 const p = await (await b.newContext({ viewport: { width: 1280, height: 800 } })).newPage();
 const errs = [];
-p.on('console', m => m.type() === 'error' && errs.push(m.text()));
+p.on('console', m => m.type() === 'error' && !/basemaps\.cartocdn\.com/.test(m.location().url || '') && errs.push(m.text()));
 p.on('pageerror', e => errs.push(e.message));
 p.on('requestfailed', r => { if (!/basemaps\.cartocdn\.com/.test(r.url())) errs.push('req ' + r.url()); });
 // `load` attendrait les tuiles ; l'application démarre sur DOMContentLoaded.

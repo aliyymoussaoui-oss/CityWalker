@@ -85,6 +85,23 @@ Restent ensuite Bordeaux, Marseille, Toulouse, Nantes, Lisbonne, Séville : mêm
 recette, une heure de curation chacune. C'est l'atout principal du projet —
 ajouter cinquante villes est un week-end de curation, pas une équipe.
 
+## v1.4 — synchronisation qui ne s'endort pas (fait)
+
+Le projet Supabase gratuit s'était mis en pause faute d'activité, emportant
+comptes et synchronisation. Le serveur est désormais un Cloudflare Worker
+(`server/`, D1 pour les comptes et la progression, R2 pour les photos), dont
+l'offre gratuite ne met rien en pause. Le workflow de publication le crée et le
+met à jour tout seul à partir de deux secrets.
+
+- Le mot de passe ne quitte plus l'appareil (PBKDF2 côté navigateur).
+- Plus d'e-mail : une clé de secours remplace « mot de passe oublié ».
+- Plafonds de stockage et d'envois sous l'offre gratuite de R2 : un refus poli
+  plutôt qu'une facture.
+- Suppression de compte en libre-service.
+- Testé pour de vrai : le serveur tourne en local dans le moteur de Cloudflare
+  (59 vérifications), de vrais navigateurs s'y synchronisent (25), et le script
+  de déploiement est joué face à une imitation de l'API Cloudflare (21).
+
 ## v2 — application mobile
 
 L'application est déjà une PWA : installable, plein écran, hors ligne. C'est

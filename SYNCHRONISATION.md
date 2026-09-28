@@ -1,104 +1,117 @@
 # Comptes et synchronisation
 
-Par défaut CityWalker ne demande aucun compte et n'envoie rien nulle part. Un
-compte ne sert qu'à une chose : **retrouver sa carte et ses photos sur un autre
-appareil**. Sans configuration, tout fonctionne en local, comme avant.
+Facultatif : sans rien faire, CityWalker fonctionne entièrement sur l'appareil.
+La synchronisation sert à retrouver sa carte — progression, ambiances, notes et
+photos — sur un autre téléphone ou ordinateur, avec un compte.
 
-Le dépôt contient tout ce qu'il faut côté base. Il ne reste que deux valeurs à
-renseigner.
+## Pourquoi Cloudflare, et plus Supabase
 
-## 1. Le schéma s'applique tout seul
+Le projet Supabase gratuit s'est mis en pause tout seul après une semaine sans
+activité ; son adresse a même disparu du DNS. C'est la règle de leur offre
+gratuite, et elle aurait recommencé.
 
-`supabase/migrations/` contient la migration complète : les tables `progress` et
-`photos`, leurs règles RLS, le bac de stockage privé `photos` et ses politiques.
-L'intégration GitHub de Supabase l'applique à chaque poussée sur la branche
-raccordée.
+Le serveur tourne désormais chez **Cloudflare** (Workers + D1 + R2), dont l'offre
+gratuite ne met rien en pause pour inactivité. Il fait moins de 700 lignes
+(`server/src/index.js`) ; une base SQL (D1) garde les comptes et la
+progression, un stockage d'objets (R2) garde les photos.
 
-Pour vérifier : tableau de bord Supabase → **Database → Migrations**, la
-migration `citywalker` doit apparaître comme appliquée. Sinon, **Table Editor**
-doit montrer `progress` et `photos`, et **Storage** un bac `photos` privé.
+Et surtout, rien n'en dépend vraiment : chaque appareil garde toutes ses
+données. Le serveur ne fait que relayer entre appareils. S'il disparaissait,
+personne ne perdrait rien — il suffirait d'en remettre un en ligne et de
+resynchroniser.
 
-Si l'intégration n'est pas active, le même fichier se colle tel quel dans
-**SQL Editor** → *Run*. Il est idempotent : le rejouer ne casse rien.
+## Mise en route (une fois, dix minutes)
 
-## 2. Les deux valeurs à renseigner
+Tout le reste est automatique : à chaque poussée sur la branche par défaut, le
+workflow « Publier sur GitHub Pages » crée ce qui manque chez Cloudflare (base,
+stockage, adresse), met le serveur à jour, vérifie qu'il répond, puis publie le
+site branché dessus.
 
-Dans Supabase, **Project Settings → API** :
+1. **Créer un compte** sur [dash.cloudflare.com](https://dash.cloudflare.com/sign-up)
+   (gratuit, aucune carte demandée à ce stade).
 
-- l'**URL du projet**, `https://xxxx.supabase.co` ;
-- la clé **anon public**. Elle est publique par conception : ce sont les règles
-  RLS ci-dessus qui protègent les données. Ne colle jamais la clé
-  `service_role`.
+2. **Activer R2** pour les photos : menu **R2 Object Storage** → **Purchase R2
+   Plan**. Cloudflare exige un moyen de paiement, mais l'offre gratuite couvre
+   10 Go et un million d'envois par mois. Le serveur s'interdit de dépasser
+   9 Go au total, 4 Go par compte et 20 000 envois par jour : il refuse
+   poliment un envoi plutôt que de coûter quoi que ce soit.
+   *Étape facultative* : sans R2, comptes et progression se synchronisent quand
+   même, et les photos restent sur chaque appareil. Activer R2 plus tard suffit,
+   le déploiement suivant s'en aperçoit tout seul.
 
-Trois façons de les fournir, de la plus durable à la plus rapide.
+3. **Créer un jeton d'API** : icône de profil → **My Profile → API Tokens →
+   Create Token** → modèle **« Edit Cloudflare Workers »** → **Use template**.
+   Dans « Permissions », ajouter une ligne **Account · D1 · Edit**. Dans
+   « Account Resources », choisir ton compte. **Continue to summary → Create
+   Token**, puis copier le jeton (il ne sera plus affiché).
 
-**a. Variables de dépôt GitHub — recommandé.** Dépôt → *Settings* → *Secrets and
-variables* → *Actions* → onglet **Variables** → *New repository variable* :
+4. **Noter l'identifiant de compte** : page d'accueil du tableau de bord, menu
+   « ⋯ » à côté du nom du compte → **Copy account ID** (32 caractères).
 
-| Nom | Valeur |
-| --- | --- |
-| `SUPABASE_URL` | `https://xxxx.supabase.co` |
-| `SUPABASE_ANON_KEY` | la clé anon |
+5. **Les donner au dépôt GitHub** : **Settings → Secrets and variables → Actions
+   → New repository secret**, deux fois :
 
-Le workflow de publication réécrit `assets/js/config.js` au déploiement. Rien à
-committer, rien à saisir sur chaque appareil, et la synchronisation est active
-pour tout le monde dès la poussée suivante.
+   | Nom | Valeur |
+   | --- | --- |
+   | `CLOUDFLARE_API_TOKEN` | le jeton de l'étape 3 |
+   | `CLOUDFLARE_ACCOUNT_ID` | l'identifiant de l'étape 4 |
 
-**Condition indispensable** : dépôt → *Settings* → *Pages* → *Build and
-deployment* → **Source : GitHub Actions**. Avec « Deploy from a branch », GitHub
-republie le dépôt brut par-dessus l'artefact du workflow, et le fichier injecté
-n'atteint jamais le visiteur — l'injection réussit dans le journal, mais le site
-sert quand même une configuration vide.
+6. **Relancer le déploiement** : onglet **Actions → Publier sur GitHub Pages →
+   Run workflow**. Deux à cinq minutes plus tard, le journal de l'étape
+   « Déployer le serveur de synchronisation » se termine par
+   `en ligne : {"ok":true,…}` et le site est branché.
 
-Peu importe laquelle des adresses Supabase est collée : celle du projet, de
-l'API REST ou de l'auth. Elle est ramenée à l'origine du projet, à l'injection
-comme à l'exécution.
+Ensuite, sur chaque appareil : **⚙ Réglages → Compte et synchronisation**.
 
-**b. Dans le dépôt.** Écrire les deux valeurs dans `assets/js/config.js` et
-pousser.
+## Côté utilisateur
 
-**c. Sur l'appareil.** **⚙ Réglages → Compte et synchronisation** : coller les
-deux valeurs. Utile pour essayer sans toucher au dépôt, mais à refaire sur
-chaque appareil.
+- **Créer un compte** : une adresse e-mail et un mot de passe de 8 caractères.
+  Aucun e-mail n'est jamais envoyé : l'adresse sert d'identifiant.
+- **La clé de secours** s'affiche une seule fois, à la création du compte (ou à
+  la demande, « Nouvelle clé de secours »). Sans e-mail, c'est elle qui permet
+  de choisir un nouveau mot de passe : **Mot de passe oublié ?** Elle se copie
+  ou se télécharge en fichier texte.
+- **Synchroniser** fusionne dans les deux sens ; la fusion ne retire jamais
+  rien. La synchronisation automatique à l'ouverture se coche dans le même
+  panneau.
+- **Supprimer mon compte** efface tout ce qui est en ligne (le mot de passe est
+  redemandé). Ce qui est sur l'appareil reste.
 
-## 3. Autoriser le site
+## Sécurité, en bref
 
-**Authentication → URL Configuration** : mettre
-`https://aliyymoussaoui-oss.github.io/CityWalker/` dans *Site URL* et dans
-*Redirect URLs*. Sans cela, le lien de connexion et la réinitialisation de mot
-de passe renverront vers la mauvaise adresse.
+- Le mot de passe ne quitte jamais l'appareil : le navigateur en dérive une clé
+  (PBKDF2-SHA256, 600 000 tours) et n'envoie qu'elle. Le serveur la hache à son
+  tour avec un sel aléatoire. Le calcul lent se fait sur l'appareil parce que le
+  plan gratuit des Workers n'accorde que 10 ms de calcul par requête ; une fuite
+  de la base n'en oblige pas moins un attaquant à payer les 600 000 tours pour
+  chaque mot de passe essayé.
+- Les sessions sont des jetons aléatoires ; la base n'en garde que l'empreinte.
+- Les essais de connexion sont limités (par adresse, par IP) ; les créations de
+  compte aussi.
+- Chaque photo est rangée sous l'identifiant de son compte : impossible
+  d'atteindre celle d'un autre, même en devinant son nom. Seules les images
+  (JPEG, PNG, WebP) sont acceptées.
 
-Pour essayer sans attendre le mail de confirmation :
-**Authentication → Providers → Email** → décocher *Confirm email*.
+## Et les données de l'ancien Supabase ?
 
-## 4. Utiliser
+Elles sont toujours sur les appareils qui s'étaient synchronisés. Crée ton
+compte sur le nouveau serveur depuis l'un d'eux et synchronise : tout repart en
+ligne. Si un appareil a été vidé entre-temps, le projet Supabase en pause peut
+encore être réactivé depuis son tableau de bord (Supabase le permet pendant
+90 jours) le temps de récupérer une sauvegarde.
 
-**⚙ Réglages → Compte et synchronisation** → créer un compte, puis
-*Synchroniser maintenant*. La case « synchroniser automatiquement à l'ouverture »
-est cochée par défaut.
+## Développer et tester en local
 
-Mot de passe oublié et connexion par lien sans mot de passe sont sur le même
-écran.
+Aucun compte Cloudflare n'est nécessaire : `wrangler dev` fait tourner le
+serveur dans le moteur de Cloudflare, avec une base et un stockage locaux.
 
-## Ce qui se passe à la synchronisation
+```sh
+npm install
+cd server && npx wrangler d1 migrations apply citywalker --local && npx wrangler dev
+```
 
-1. Pour chaque ville, la progression distante est récupérée et **fusionnée**
-   avec la locale. La fusion ne retire jamais rien : si deux appareils
-   divergent, l'union des deux gagne.
-2. Le résultat est renvoyé au serveur.
-3. Les photos présentes ici mais pas là-bas sont envoyées ; celles présentes
-   là-bas mais pas ici sont téléchargées.
-
-## Ce qui n'est pas fait
-
-- Pas de partage de compte à plusieurs. Pour montrer sa carte à quelqu'un, le
-  lien de partage reste la bonne réponse, et il ne demande aucun compte.
-- Les photos téléchargées depuis le serveur n'ont pas de vignette séparée : la
-  version pleine sert des deux côtés.
-
-## Tester sans Supabase
-
-`node tests/cloud.mjs` lance un serveur qui imite les points d'entrée utilisés
-et rejoue le scénario complet : création de compte, envoi, connexion depuis un
-second navigateur, réception de la carte et de la photo, refus d'un mauvais mot
-de passe. Aucun compte réel n'est nécessaire.
+```sh
+node tests/api.mjs      # le serveur seul : 59 vérifications
+node tests/cloud.mjs    # de vrais navigateurs contre le vrai serveur local
+node tests/deploy.mjs   # server/deploy.sh face à une imitation de l'API Cloudflare
+```
