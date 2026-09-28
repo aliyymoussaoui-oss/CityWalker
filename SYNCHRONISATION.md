@@ -68,7 +68,7 @@ Ensuite, sur chaque appareil : **⚙ Réglages → Compte et synchronisation**.
 - **Créer un compte** : une adresse e-mail et un mot de passe de 8 caractères.
   Aucun e-mail n'est jamais envoyé : l'adresse sert d'identifiant.
 - **La clé de secours** s'affiche une seule fois, à la création du compte (ou à
-  la demande, « Nouvelle clé de secours »). Sans e-mail, c'est elle qui permet
+  la demande, « Nouvelle clé de secours », mot de passe redemandé). Sans e-mail, c'est elle qui permet
   de choisir un nouveau mot de passe : **Mot de passe oublié ?** Elle se copie
   ou se télécharge en fichier texte.
 - **Synchroniser** fusionne dans les deux sens ; la fusion ne retire jamais
@@ -87,7 +87,13 @@ Ensuite, sur chaque appareil : **⚙ Réglages → Compte et synchronisation**.
   chaque mot de passe essayé.
 - Les sessions sont des jetons aléatoires ; la base n'en garde que l'empreinte.
 - Les essais de connexion sont limités (par adresse, par IP) ; les créations de
-  compte aussi.
+  compte aussi. Chaque tentative est comptée avant d'être examinée, en une
+  seule écriture : des requêtes lancées en rafale ne passent pas entre les
+  mailles.
+- Les plafonds de stockage sont réservés avant l'envoi par des écritures
+  atomiques : des envois simultanés ne peuvent pas les dépasser.
+- Changer la clé de secours ou supprimer le compte redemande le mot de passe :
+  un jeton de session volé ne suffit pas à prendre le compte.
 - Chaque photo est rangée sous l'identifiant de son compte : impossible
   d'atteindre celle d'un autre, même en devinant son nom. Seules les images
   (JPEG, PNG, WebP) sont acceptées.
@@ -111,7 +117,7 @@ cd server && npx wrangler d1 migrations apply citywalker --local && npx wrangler
 ```
 
 ```sh
-node tests/api.mjs      # le serveur seul : 59 vérifications
+node tests/api.mjs      # le serveur seul : 70 vérifications, attaques en parallèle comprises
 node tests/cloud.mjs    # de vrais navigateurs contre le vrai serveur local
 node tests/deploy.mjs   # server/deploy.sh face à une imitation de l'API Cloudflare
 ```

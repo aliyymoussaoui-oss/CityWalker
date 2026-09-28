@@ -52,10 +52,16 @@ for k in sys.argv[1].split("."):
     elif isinstance(d,dict): d=d.get(k)
     if d is None: sys.exit(0)
 print(d if not isinstance(d,bool) else str(d).lower())' "$1"; }
+# Motifs d'erreur lisibles (sans f-string : doit marcher avec tout Python 3).
 errors() { python3 -c 'import json,sys
 try: d=json.load(sys.stdin)
 except Exception: print("réponse illisible"); sys.exit(0)
-print("; ".join(f"{e.get(\"code\")}: {e.get(\"message\")}" for e in d.get("errors") or []))'; }
+print("; ".join("%s: %s" % (e.get("code"), e.get("message")) for e in d.get("errors") or []) or "sans détail")'; }
+# Codes d'erreur Cloudflare d'une réponse, un par ligne.
+codes() { python3 -c 'import json,sys
+try: d=json.load(sys.stdin)
+except Exception: sys.exit(0)
+for e in d.get("errors") or []: print(e.get("code"))'; }
 
 echo "— Vérification du jeton"
 check=$(cf GET "/accounts/$ACCOUNT/workers/scripts")
@@ -82,17 +88,31 @@ else
 fi
 
 echo "— Stockage R2 « $BUCKET »"
+# Le serveur ne part sans photos que si Cloudflare dit expressément que R2
+# n'est pas activé (code 10042). Toute autre erreur — passagère, droits du
+# jeton — arrête le déploiement : retirer le stockage d'un serveur en service
+# couperait les photos de tout le monde.
 PHOTOS=false
-if [ "$(cf GET "/accounts/$ACCOUNT/r2/buckets/$BUCKET" | field success)" = "true" ]; then
+R2_DISABLED="::warning::R2 n'est pas activé sur ce compte. Le serveur part sans photos : active R2 dans le tableau de bord Cloudflare (R2 → Purchase R2 Plan, gratuit jusqu'à 10 Go) puis relance ce workflow."
+got=$(cf GET "/accounts/$ACCOUNT/r2/buckets/$BUCKET" || true)
+if [ "$(echo "$got" | field success)" = "true" ]; then
   PHOTOS=true
   echo "  existe déjà"
+elif echo "$got" | codes | grep -qx 10042; then
+  echo "$R2_DISABLED"
 else
-  created=$(cf POST "/accounts/$ACCOUNT/r2/buckets" "{\"name\":\"$BUCKET\"}")
+  created=$(cf POST "/accounts/$ACCOUNT/r2/buckets" "{\"name\":\"$BUCKET\"}" || true)
   if [ "$(echo "$created" | field success)" = "true" ]; then
     PHOTOS=true
     echo "  créé"
+  elif echo "$created" | codes | grep -qx 10004; then
+    PHOTOS=true   # « existe déjà, et c'est le tien » : la lecture avait échoué pour une autre raison
+    echo "  existe déjà"
+  elif echo "$created" | codes | grep -qx 10042; then
+    echo "$R2_DISABLED"
   else
-    echo "::warning::R2 indisponible ($(echo "$created" | errors)). Le serveur part sans photos : active R2 dans le tableau de bord Cloudflare (R2 → Purchase R2 Plan, gratuit jusqu'à 10 Go) puis relance ce workflow."
+    echo "::error::Stockage R2 inaccessible : $(echo "$created" | errors). Rien n'est déployé ; relance le workflow, et vérifie que le jeton a la permission « Workers R2 Storage : Edit »."
+    exit 1
   fi
 fi
 

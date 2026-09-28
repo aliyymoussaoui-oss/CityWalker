@@ -2164,16 +2164,21 @@ window.CW_CONFIG = {
   const apiUrl = () => String((window.CW_CONFIG && window.CW_CONFIG.apiUrl) || '').trim().replace(/\/+$/, '');
   const configured = () => !!apiUrl();
 
-  let session = null;
+  // La session est relue à chaque appel : plusieurs onglets (ou l'application
+  // installée et un onglet) partagent le même stockage, et une copie en
+  // mémoire finirait par écraser la session plus récente d'un autre onglet.
+  // La mémoire ne sert que si le stockage est indisponible.
+  let memory = null;
   function loadSession() {
-    if (session === null) {
-      const s = readJSON(SESSION_KEY, null);
-      session = s && typeof s.token === 'string' && s.token.length === 43 ? s : false;
-    }
-    return session || null;
+    let s = memory;
+    try {
+      const raw = localStorage.getItem(SESSION_KEY);
+      s = raw ? JSON.parse(raw) : null;
+    } catch (_) { /* stockage indisponible : on garde la copie en mémoire */ }
+    return s && typeof s.token === 'string' && s.token.length === 43 ? s : null;
   }
   function saveSession(s) {
-    session = s || false;
+    memory = s || null;
     writeJSON(SESSION_KEY, s || null);
   }
 
@@ -2227,6 +2232,7 @@ window.CW_CONFIG = {
     const url = apiUrl();
     if (!url) throw new Error('La synchronisation n’est pas activée sur ce site.');
     const headers = {};
+    let sent = '';
     if (o.auth !== false) {
       const s = loadSession();
       if (!s) {
@@ -2234,6 +2240,7 @@ window.CW_CONFIG = {
         err.code = 'unauthorized';
         throw err;
       }
+      sent = s.token;
       headers.authorization = `Bearer ${s.token}`;
     }
     let body;
@@ -2253,9 +2260,14 @@ window.CW_CONFIG = {
     }
     let data = {};
     try { data = await res.json(); } catch (_) { /* corps illisible */ }
-    // Seule une session refusée déconnecte : un mauvais mot de passe au moment
-    // de supprimer le compte, par exemple, ne doit pas faire perdre la session.
-    if (data.error === 'unauthorized') saveSession(null);
+    // Seule une session refusée déconnecte (un mauvais mot de passe au moment
+    // de supprimer le compte ne doit pas faire perdre la session), et seulement
+    // si c'est encore elle qui est enregistrée : un autre onglet a pu se
+    // reconnecter entre-temps.
+    if (data.error === 'unauthorized') {
+      const current = loadSession();
+      if (current && current.token === sent) saveSession(null);
+    }
     const err = new Error(MESSAGES[data.error] || data.message || `Le serveur a refusé la requête (${res.status}).`);
     err.code = data.error || String(res.status);
     throw err;
@@ -2289,10 +2301,13 @@ window.CW_CONFIG = {
     return adopt(await request('POST', '/v1/auth/recover', { auth: false, json: { email: normEmail(email), recovery: recoveryCode, key } }));
   }
 
-  /** Remplace la clé de secours ; l'ancienne cesse de fonctionner. */
-  async function renewRecovery() {
+  /** Remplace la clé de secours (mot de passe redemandé) ; l'ancienne cesse de fonctionner. */
+  async function renewRecovery(password) {
+    const s = loadSession();
+    if (!s) throw new Error(MESSAGES.unauthorized);
     const recovery = newRecoveryCode();
-    await request('PUT', '/v1/account/recovery', { json: { recovery } });
+    const key = await deriveKey(s.email, password);
+    await request('PUT', '/v1/account/recovery', { json: { recovery, key } });
     return recovery;
   }
 
@@ -2345,7 +2360,8 @@ window.CW_CONFIG = {
       city: record.city, spot: record.spot,
       w: String(record.w || 0), h: String(record.h || 0),
       takenAt: record.takenAt ? String(record.takenAt).slice(0, 40) : '',
-      createdAt: String(Math.round(record.createdAt || Date.now())),
+      // Peut être négatif (photo d'avant 1970) : le serveur l'accepte.
+      createdAt: String(Math.round(Number.isFinite(record.createdAt) ? record.createdAt : Date.now())),
     });
     await request('PUT', `/v1/photos/${encodeURIComponent(record.id)}?${q}`, { blob: record.full });
   }
@@ -2356,6 +2372,65 @@ window.CW_CONFIG = {
   }
 
   // ---------------------------------------------------------- orchestration
+
+  // Un refus qui vaudra pour toutes les photos suivantes : inutile d'insister.
+  const STOP_UPLOADS = new Set(['quota_user', 'quota_total', 'quota_daily', 'photos_disabled']);
+
+  /**
+   * Photos, dans les deux sens. Les réceptions passent d'abord : un compte
+   * plein, ou une photo que le serveur refuse, n'empêche jamais de recevoir
+   * celles des autres appareils. Chaque photo échoue seule ; seuls une
+   * session expirée ou un serveur injoignable arrêtent tout.
+   */
+  async function syncPhotos(cityIds, report, step) {
+    const note = (msg) => { if (!report.photoIssue) report.photoIssue = msg; };
+    const fatal = (err) => !err || !err.code || err.code === 'unauthorized' || err.code === 'photos_disabled';
+
+    step('Comparaison des photos…');
+    const remotePhotos = await listPhotos();
+    const remoteIds = new Set(remotePhotos.map((r) => r.id));
+    const local = new Map();
+    for (const cityId of cityIds) local.set(cityId, await CW.store.photosForCity(cityId));
+
+    for (const cityId of cityIds) {
+      const localIds = new Set(local.get(cityId).map((r) => r.id));
+      for (const row of remotePhotos) {
+        if (row.city !== cityId || localIds.has(row.id)) continue;
+        step(`Réception des photos… (${report.downloaded + 1})`);
+        try {
+          const blob = await downloadPhoto(row);
+          await CW.store.putPhoto({
+            id: row.id, city: row.city, spot: row.spot, w: row.w || 0, h: row.h || 0,
+            takenAt: row.takenAt || '', caption: '', createdAt: row.createdAt || Date.now(),
+            full: blob, thumb: blob,
+          });
+          const entry = CW.store.ensureEntry(row.city, row.spot);
+          if (!entry.photos.includes(row.id)) {
+            CW.store.updateEntry(row.city, row.spot, { photos: entry.photos.concat([row.id]), done: true });
+          }
+          report.downloaded++;
+        } catch (err) {
+          if (fatal(err)) throw err;
+          note(`Une photo n’a pas pu être reçue : ${err.message}`);
+        }
+      }
+    }
+
+    for (const cityId of cityIds) {
+      for (const row of local.get(cityId)) {
+        if (remoteIds.has(row.id) || !row.full) continue;
+        step(`Envoi des photos… (${report.uploaded + 1})`);
+        try {
+          await uploadPhoto(row);
+          report.uploaded++;
+        } catch (err) {
+          if (fatal(err)) throw err;
+          if (STOP_UPLOADS.has(err.code)) { note(err.message); return; }
+          note(`Une photo n’a pas pu être envoyée : ${err.message}`);
+        }
+      }
+    }
+  }
 
   /**
    * Synchronise dans les deux sens. La fusion ne retire jamais rien : en cas
@@ -2383,34 +2458,7 @@ window.CW_CONFIG = {
     }
 
     try {
-      step('Comparaison des photos…');
-      const remotePhotos = await listPhotos();
-      const remoteIds = new Set(remotePhotos.map((r) => r.id));
-      for (const cityId of cityIds) {
-        const localRows = await CW.store.photosForCity(cityId);
-        const localIds = new Set(localRows.map((r) => r.id));
-        for (const row of localRows) {
-          if (remoteIds.has(row.id) || !row.full) continue;
-          step(`Envoi des photos… (${report.uploaded + 1})`);
-          await uploadPhoto(row);
-          report.uploaded++;
-        }
-        for (const row of remotePhotos) {
-          if (row.city !== cityId || localIds.has(row.id)) continue;
-          step(`Réception des photos… (${report.downloaded + 1})`);
-          const blob = await downloadPhoto(row);
-          await CW.store.putPhoto({
-            id: row.id, city: row.city, spot: row.spot, w: row.w || 0, h: row.h || 0,
-            takenAt: row.takenAt || '', caption: '', createdAt: row.createdAt || Date.now(),
-            full: blob, thumb: blob,
-          });
-          const entry = CW.store.ensureEntry(row.city, row.spot);
-          if (!entry.photos.includes(row.id)) {
-            CW.store.updateEntry(row.city, row.spot, { photos: entry.photos.concat([row.id]), done: true });
-          }
-          report.downloaded++;
-        }
-      }
+      await syncPhotos(cityIds, report, step);
     } catch (err) {
       if (err && err.code === 'unauthorized') throw err;
       report.photoIssue = err && err.code === 'photos_disabled'
@@ -4293,8 +4341,12 @@ window.CW_CONFIG = {
       btn.disabled = true;
       btn.textContent = label;
       try { return await fn(); }
-      catch (err) { CW.toast((err && err.message) || 'Échec.', 'error', 6000); return null; }
-      finally { btn.disabled = false; btn.textContent = before; }
+      catch (err) {
+        CW.toast((err && err.message) || 'Échec.', 'error', 6000);
+        // Session révoquée ailleurs : retour au formulaire, pas de boutons morts.
+        if (err && err.code === 'unauthorized') setTimeout(render, 0);
+        return null;
+      } finally { btn.disabled = false; btn.textContent = before; }
     }
 
     function render() {
@@ -4451,10 +4503,21 @@ window.CW_CONFIG = {
       const danger = el('div', { class: 'account-danger' });
       danger.appendChild(el('div', { class: 'modal-actions' }, [
         el('button', {
-          type: 'button', class: 'btn btn-small btn-ghost', onclick: async (ev) => {
-            if (!confirm('Créer une nouvelle clé de secours ? L’ancienne ne fonctionnera plus.')) return;
-            const code = await busy(ev.currentTarget, 'Création…', () => CW.cloud.renewRecovery());
-            if (code) { freshRecovery = code; render(); }
+          type: 'button', class: 'btn btn-small btn-ghost', onclick: () => {
+            CW.clear(danger);
+            const pass = el('input', { type: 'password', placeholder: 'Ton mot de passe', autocomplete: 'current-password' });
+            danger.appendChild(el('p', { class: 'hint' }, 'Une nouvelle clé de secours remplace l’ancienne, qui cessera de fonctionner. Le mot de passe est redemandé.'));
+            danger.appendChild(field('Mot de passe', pass));
+            danger.appendChild(el('div', { class: 'modal-actions' }, [
+              el('button', {
+                type: 'button', class: 'btn btn-primary', onclick: async (ev) => {
+                  if (!pass.value) { CW.toast('Mot de passe requis.', 'error'); return; }
+                  const code = await busy(ev.currentTarget, 'Création…', () => CW.cloud.renewRecovery(pass.value));
+                  if (code) { freshRecovery = code; render(); }
+                },
+              }, 'Créer la nouvelle clé'),
+              el('button', { type: 'button', class: 'btn', onclick: () => render() }, 'Annuler'),
+            ]));
           },
         }, 'Nouvelle clé de secours'),
         el('button', {

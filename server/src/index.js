@@ -32,9 +32,11 @@ const DEFAULTS = {
   MAX_CITIES: 50,
   UPLOADS_PER_USER_PER_DAY: 3000,
   UPLOADS_PER_DAY: 20000,                  // 600 000 par mois : sous le million d'écritures gratuites
-  LOGIN_FAILURES_PER_ACCOUNT_IP: 10,       // par quart d'heure, pour une adresse et une IP
-  LOGIN_FAILURES_PER_ACCOUNT: 30,          // par quart d'heure, toutes IP confondues
-  LOGIN_FAILURES_PER_IP: 50,               // par quart d'heure, tous comptes confondus
+  // Tentatives de connexion (et de récupération, de suppression…) par quart
+  // d'heure ; une réussite remet l'adresse à zéro.
+  LOGIN_ATTEMPTS_PER_ACCOUNT_IP: 10,       // pour une adresse depuis une IP
+  LOGIN_ATTEMPTS_PER_ACCOUNT: 30,          // pour une adresse, toutes IP confondues
+  LOGIN_ATTEMPTS_PER_IP: 50,               // depuis une IP, tous comptes confondus
   SIGNUPS_PER_IP: 10,                      // par heure
   MAX_SESSIONS_PER_USER: 30,
 };
@@ -240,22 +242,28 @@ function intParam(v, min, max) {
 
 // ------------------------------------------------------------------ compteurs
 
-/** Secondes à attendre si le compteur `key` a atteint `max` dans sa fenêtre, sinon 0. */
-async function waitFor(env, key, max) {
-  const row = await env.DB.prepare('SELECT count, reset_at FROM throttle WHERE key = ?').bind(key).first();
+/**
+ * Compteurs à fenêtre. Chaque tentative est comptée AVANT d'être examinée, et
+ * la décision porte sur la valeur que renvoie l'écriture elle-même : cent
+ * requêtes simultanées ne peuvent plus toutes lire « 0 » avant qu'aucune
+ * n'écrive. `limits` : [{ key, window, max }]. Renvoie les secondes à attendre
+ * si l'un des compteurs dépasse son plafond, sinon 0.
+ */
+async function hit(env, limits) {
   const now = Date.now();
-  if (row && row.reset_at > now && row.count >= max) return Math.max(1, Math.ceil((row.reset_at - now) / 1000));
-  return 0;
-}
-
-function bumpStatement(env, key, windowMs) {
-  const now = Date.now();
-  return env.DB.prepare(
+  const results = await env.DB.batch(limits.map((l) => env.DB.prepare(
     `INSERT INTO throttle (key, count, reset_at) VALUES (?1, 1, ?2)
      ON CONFLICT(key) DO UPDATE SET
        count = CASE WHEN throttle.reset_at <= ?3 THEN 1 ELSE throttle.count + 1 END,
-       reset_at = CASE WHEN throttle.reset_at <= ?3 THEN ?2 ELSE throttle.reset_at END`,
-  ).bind(key, now + windowMs, now);
+       reset_at = CASE WHEN throttle.reset_at <= ?3 THEN ?2 ELSE throttle.reset_at END
+     RETURNING count, reset_at`,
+  ).bind(l.key, now + l.window, now)));
+  let wait = 0;
+  results.forEach((r, i) => {
+    const row = r.results && r.results[0];
+    if (row && row.count > limits[i].max) wait = Math.max(wait, Math.ceil((row.reset_at - now) / 1000), 1);
+  });
+  return wait;
 }
 
 function tooMany(seconds) {
@@ -265,22 +273,29 @@ function tooMany(seconds) {
     { retryAfter: seconds });
 }
 
-/** Refuse avant même de vérifier quoi que ce soit si l'adresse ou l'IP est bloquée. */
+/** Compte la tentative (adresse+IP, adresse, IP) et refuse au-delà des plafonds. */
 async function guardLogin(env, scope, email, ip) {
-  const wait = Math.max(
-    await waitFor(env, `${scope}:${email}:${ip}`, limit(env, 'LOGIN_FAILURES_PER_ACCOUNT_IP')),
-    await waitFor(env, `${scope}:${email}`, limit(env, 'LOGIN_FAILURES_PER_ACCOUNT')),
-    await waitFor(env, `ip:${ip}`, limit(env, 'LOGIN_FAILURES_PER_IP')),
-  );
+  const wait = await hit(env, [
+    { key: `${scope}:${email}:${ip}`, window: LOGIN_WINDOW, max: limit(env, 'LOGIN_ATTEMPTS_PER_ACCOUNT_IP') },
+    { key: `${scope}:${email}`, window: LOGIN_WINDOW, max: limit(env, 'LOGIN_ATTEMPTS_PER_ACCOUNT') },
+    { key: `ip:${ip}`, window: LOGIN_WINDOW, max: limit(env, 'LOGIN_ATTEMPTS_PER_IP') },
+  ]);
   if (wait) tooMany(wait);
 }
 
-async function recordFailure(env, scope, email, ip) {
-  await env.DB.batch([
-    bumpStatement(env, `${scope}:${email}:${ip}`, LOGIN_WINDOW),
-    bumpStatement(env, `${scope}:${email}`, LOGIN_WINDOW),
-    bumpStatement(env, `ip:${ip}`, LOGIN_WINDOW),
-  ]);
+/** Après une réussite, l'adresse repart de zéro (l'IP garde son compte). */
+function clearAttempts(env, scope, email, ip) {
+  return env.DB.prepare('DELETE FROM throttle WHERE key IN (?, ?)').bind(`${scope}:${email}:${ip}`, `${scope}:${email}`);
+}
+
+/** Vérifie le mot de passe d'un compte déjà authentifié (actions sensibles). */
+async function confirmPassword(env, user, key, ip, scope) {
+  await guardLogin(env, scope, user.email, ip);
+  const row = await env.DB.prepare('SELECT pw_salt, pw_hash FROM users WHERE id = ?').bind(user.id).first();
+  if (!row || !sameHex(await sha256Hex(fromHex(row.pw_salt), key), row.pw_hash)) {
+    fail(401, 'invalid_credentials', 'Mot de passe incorrect.');
+  }
+  await clearAttempts(env, scope, user.email, ip).run();
 }
 
 // ------------------------------------------------------------------ sessions
@@ -337,9 +352,8 @@ async function signup(request, env) {
   if (!recovery) fail(400, 'bad_recovery', 'Clé de secours illisible : recharge la page et réessaie.');
 
   const ip = clientIp(request);
-  const wait = await waitFor(env, `signup:${ip}`, limit(env, 'SIGNUPS_PER_IP'));
+  const wait = await hit(env, [{ key: `signup:${ip}`, window: SIGNUP_WINDOW, max: limit(env, 'SIGNUPS_PER_IP') }]);
   if (wait) tooMany(wait);
-  await bumpStatement(env, `signup:${ip}`, SIGNUP_WINDOW).run();
 
   const id = crypto.randomUUID();
   const pwSalt = randomBytes(16);
@@ -372,11 +386,8 @@ async function login(request, env) {
 
   const user = await env.DB.prepare('SELECT id, email, pw_salt, pw_hash FROM users WHERE email = ?').bind(email).first();
   const ok = !!user && sameHex(await sha256Hex(fromHex(user.pw_salt), key), user.pw_hash);
-  if (!ok) {
-    await recordFailure(env, 'login', email, ip);
-    fail(401, 'invalid_credentials', 'Adresse ou mot de passe incorrect.');
-  }
-  await env.DB.prepare('DELETE FROM throttle WHERE key IN (?, ?)').bind(`login:${email}:${ip}`, `login:${email}`).run();
+  if (!ok) fail(401, 'invalid_credentials', 'Adresse ou mot de passe incorrect.');
+  await clearAttempts(env, 'login', email, ip).run();
   const token = await createSession(env, user.id);
   return json(200, { token, user: publicUser(user) });
 }
@@ -393,17 +404,14 @@ async function recover(request, env) {
 
   const user = await env.DB.prepare('SELECT id, email, rc_salt, rc_hash FROM users WHERE email = ?').bind(email).first();
   const ok = !!user && !!recovery && sameHex(await sha256Hex(fromHex(user.rc_salt), encoder.encode(recovery)), user.rc_hash);
-  if (!ok) {
-    await recordFailure(env, 'recover', email, ip);
-    fail(401, 'invalid_recovery', 'Adresse ou clé de secours incorrecte.');
-  }
+  if (!ok) fail(401, 'invalid_recovery', 'Adresse ou clé de secours incorrecte.');
   const pwSalt = randomBytes(16);
   await env.DB.batch([
     env.DB.prepare('UPDATE users SET pw_salt = ?, pw_hash = ? WHERE id = ?')
       .bind(toHex(pwSalt), await sha256Hex(pwSalt, key), user.id),
     env.DB.prepare('DELETE FROM sessions WHERE user_id = ?').bind(user.id),
-    env.DB.prepare('DELETE FROM throttle WHERE key IN (?, ?, ?, ?)')
-      .bind(`recover:${email}:${ip}`, `recover:${email}`, `login:${email}:${ip}`, `login:${email}`),
+    clearAttempts(env, 'recover', email, ip),
+    clearAttempts(env, 'login', email, ip),
   ]);
   const token = await createSession(env, user.id);
   return json(200, { token, user: publicUser(user) });
@@ -425,11 +433,19 @@ async function me(request, env) {
   });
 }
 
+/**
+ * Nouvelle clé de secours. Le mot de passe est redemandé : sans lui, un jeton
+ * de session volé suffirait à poser sa propre clé, puis à changer le mot de
+ * passe et à enfermer le propriétaire dehors.
+ */
 async function replaceRecovery(request, env) {
   const user = await authenticate(request, env);
   const body = await readJson(request);
   const recovery = normRecovery(body.recovery);
+  const key = parseKey(body.key);
   if (!recovery) fail(400, 'bad_recovery', 'Clé de secours illisible.');
+  if (!key) fail(400, 'bad_request', 'Mot de passe manquant.');
+  await confirmPassword(env, user, key, clientIp(request), 'recovery');
   const rcSalt = randomBytes(16);
   await env.DB.prepare('UPDATE users SET rc_salt = ?, rc_hash = ? WHERE id = ?')
     .bind(toHex(rcSalt), await sha256Hex(rcSalt, encoder.encode(recovery)), user.id).run();
@@ -442,13 +458,7 @@ async function deleteAccount(request, env) {
   const body = await readJson(request);
   const key = parseKey(body.key);
   if (!key) fail(400, 'bad_request', 'Mot de passe manquant.');
-  const ip = clientIp(request);
-  await guardLogin(env, 'delete', user.email, ip);
-  const row = await env.DB.prepare('SELECT pw_salt, pw_hash FROM users WHERE id = ?').bind(user.id).first();
-  if (!row || !sameHex(await sha256Hex(fromHex(row.pw_salt), key), row.pw_hash)) {
-    await recordFailure(env, 'delete', user.email, ip);
-    fail(401, 'invalid_credentials', 'Mot de passe incorrect.');
-  }
+  await confirmPassword(env, user, key, clientIp(request), 'delete');
   if (env.PHOTOS) {
     let cursor;
     do {
@@ -459,8 +469,9 @@ async function deleteAccount(request, env) {
     } while (cursor);
   }
   await env.DB.batch([
-    env.DB.prepare(`INSERT INTO usage (key, value) VALUES ('bytes', 0)
-                    ON CONFLICT(key) DO UPDATE SET value = MAX(0, value - ?)`).bind(user.bytes),
+    // Le total est lu dans la même transaction : un envoi concurrent ne le fausse pas.
+    env.DB.prepare(`UPDATE usage SET value = value - COALESCE((SELECT bytes FROM users WHERE id = ?), 0)
+                    WHERE key = 'bytes'`).bind(user.id),
     env.DB.prepare('DELETE FROM photos WHERE user_id = ?').bind(user.id),
     env.DB.prepare('DELETE FROM progress WHERE user_id = ?').bind(user.id),
     env.DB.prepare('DELETE FROM sessions WHERE user_id = ?').bind(user.id),
@@ -484,15 +495,16 @@ async function putProgress(request, env, city) {
   const body = await readJson(request, limit(env, 'MAX_PROGRESS_BYTES'));
   const data = body.data;
   if (!data || typeof data !== 'object' || Array.isArray(data)) fail(400, 'bad_request', 'Progression illisible.');
-  const exists = await env.DB.prepare('SELECT 1 AS one FROM progress WHERE user_id = ? AND city = ?').bind(user.id, city).first();
-  if (!exists) {
-    const n = await env.DB.prepare('SELECT COUNT(*) AS n FROM progress WHERE user_id = ?').bind(user.id).first();
-    if (n && n.n >= limit(env, 'MAX_CITIES')) fail(413, 'too_many_cities', 'Trop de villes pour un seul compte.');
-  }
-  await env.DB.prepare(
-    `INSERT INTO progress (user_id, city, data, updated_at) VALUES (?, ?, ?, ?)
+  // Le plafond de villes est vérifié par l'écriture elle-même : une ville déjà
+  // connue se met à jour, une nouvelle n'entre que s'il reste de la place.
+  const res = await env.DB.prepare(
+    `INSERT INTO progress (user_id, city, data, updated_at)
+     SELECT ?1, ?2, ?3, ?4
+      WHERE EXISTS (SELECT 1 FROM progress WHERE user_id = ?1 AND city = ?2)
+         OR (SELECT COUNT(*) FROM progress WHERE user_id = ?1) < ?5
      ON CONFLICT(user_id, city) DO UPDATE SET data = excluded.data, updated_at = excluded.updated_at`,
-  ).bind(user.id, city, JSON.stringify(data), Date.now()).run();
+  ).bind(user.id, city, JSON.stringify(data), Date.now(), limit(env, 'MAX_CITIES')).run();
+  if (!res.meta || !res.meta.changes) fail(413, 'too_many_cities', 'Trop de villes pour un seul compte.');
   return done();
 }
 
@@ -526,49 +538,74 @@ async function putPhoto(request, env, url, id) {
   const w = intParam(q.get('w') || '0', 0, 100000);
   const h = intParam(q.get('h') || '0', 0, 100000);
   const takenAt = q.get('takenAt') || '';
-  const createdAt = intParam(q.get('createdAt') || String(Date.now()), 0, 8.64e15);
+  // Une photo scannée peut dater d'avant 1970 : horodatage négatif accepté.
+  const createdAt = intParam(q.get('createdAt') || String(Date.now()), -8.64e15, 8.64e15);
   if (!CITY_RE.test(city) || !spot || spot.length > 64 || w === null || h === null
       || takenAt.length > 40 || createdAt === null) {
     fail(400, 'bad_request', 'Description de photo invalide.');
   }
 
-  const perUser = await waitFor(env, `up:${user.id}`, limit(env, 'UPLOADS_PER_USER_PER_DAY'));
-  const global = await waitFor(env, 'up:all', limit(env, 'UPLOADS_PER_DAY'));
-  if (perUser || global) {
-    fail(429, 'quota_daily', 'Assez de photos envoyées pour aujourd’hui : la suite partira demain.',
-      { retryAfter: Math.max(perUser, global) });
+  const daily = await hit(env, [
+    { key: `up:${user.id}`, window: DAY, max: limit(env, 'UPLOADS_PER_USER_PER_DAY') },
+    { key: 'up:all', window: DAY, max: limit(env, 'UPLOADS_PER_DAY') },
+  ]);
+  if (daily) {
+    fail(429, 'quota_daily', 'Assez de photos envoyées pour aujourd’hui : la suite partira demain.', { retryAfter: daily });
   }
 
   const bytes = await readBytes(request, limit(env, 'MAX_PHOTO_BYTES'));
   const type = sniffImage(bytes);
   if (!type) fail(415, 'not_an_image', 'Seules les images JPEG, PNG ou WebP sont acceptées.');
+  const size = bytes.byteLength;
 
-  const existing = await env.DB.prepare('SELECT size FROM photos WHERE user_id = ? AND id = ?').bind(user.id, id).first();
-  const delta = bytes.byteLength - (existing ? existing.size : 0);
-  if (delta > 0) {
-    if (user.bytes + delta > limit(env, 'MAX_USER_BYTES')) {
-      fail(507, 'quota_user', 'Ton espace photo en ligne est plein. Tes photos restent sur cet appareil.');
-    }
-    const total = await env.DB.prepare(`SELECT value FROM usage WHERE key = 'bytes'`).first();
-    if ((total ? total.value : 0) + delta > limit(env, 'MAX_TOTAL_BYTES')) {
+  // 1. Réserver la place. Chaque UPDATE conditionnel est atomique : deux envois
+  //    simultanés ne peuvent pas tous deux se glisser sous le plafond. Pour un
+  //    remplacement, seule la croissance est réservée ; l'ajustement exact se
+  //    fait à l'étape 3.
+  const before = await env.DB.prepare('SELECT size FROM photos WHERE user_id = ? AND id = ?').bind(user.id, id).first();
+  const reserved = Math.max(0, size - (before ? before.size : 0));
+  const release = () => env.DB.batch([
+    env.DB.prepare(`UPDATE usage SET value = value - ? WHERE key = 'bytes'`).bind(reserved),
+    env.DB.prepare('UPDATE users SET bytes = bytes - ? WHERE id = ?').bind(reserved, user.id),
+  ]);
+  if (reserved > 0) {
+    const total = await env.DB.prepare(`UPDATE usage SET value = value + ?1 WHERE key = 'bytes' AND value + ?1 <= ?2`)
+      .bind(reserved, limit(env, 'MAX_TOTAL_BYTES')).run();
+    if (!total.meta.changes) {
       fail(507, 'quota_total', 'Le serveur a atteint sa limite de stockage gratuite. Tes photos restent sur cet appareil.');
+    }
+    const mine = await env.DB.prepare('UPDATE users SET bytes = bytes + ?1 WHERE id = ?2 AND bytes + ?1 <= ?3')
+      .bind(reserved, user.id, limit(env, 'MAX_USER_BYTES')).run();
+    if (!mine.meta.changes) {
+      await env.DB.prepare(`UPDATE usage SET value = value - ? WHERE key = 'bytes'`).bind(reserved).run();
+      fail(507, 'quota_user', 'Ton espace photo en ligne est plein. Tes photos restent sur cet appareil.');
     }
   }
 
-  await env.PHOTOS.put(photoKey(user.id, id), bytes, { httpMetadata: { contentType: type } });
+  // 2. Stocker l'image ; en cas d'échec, rendre la place réservée.
+  try {
+    await env.PHOTOS.put(photoKey(user.id, id), bytes, { httpMetadata: { contentType: type } });
+  } catch (err) {
+    if (reserved > 0) await release();
+    throw err;
+  }
+
+  // 3. Enregistrer, dans une seule transaction : l'ancienne taille est relue au
+  //    moment même de l'écriture, si bien que des remplacements concurrents
+  //    retirent chacun la taille réellement présente, jamais deux fois la même.
+  const adjust = size - reserved;
   await env.DB.batch([
+    env.DB.prepare(`UPDATE users SET bytes = bytes + ?3 - COALESCE((SELECT size FROM photos WHERE user_id = ?1 AND id = ?2), 0)
+                    WHERE id = ?1`).bind(user.id, id, adjust),
+    env.DB.prepare(`UPDATE usage SET value = value + ?3 - COALESCE((SELECT size FROM photos WHERE user_id = ?1 AND id = ?2), 0)
+                    WHERE key = 'bytes'`).bind(user.id, id, adjust),
     env.DB.prepare(
       `INSERT INTO photos (user_id, id, city, spot, w, h, taken_at, created_at, size, type)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT(user_id, id) DO UPDATE SET
          city = excluded.city, spot = excluded.spot, w = excluded.w, h = excluded.h,
          taken_at = excluded.taken_at, size = excluded.size, type = excluded.type`,
-    ).bind(user.id, id, city, spot, w, h, takenAt, createdAt, bytes.byteLength, type),
-    env.DB.prepare('UPDATE users SET bytes = MAX(0, bytes + ?) WHERE id = ?').bind(delta, user.id),
-    env.DB.prepare(`INSERT INTO usage (key, value) VALUES ('bytes', MAX(0, ?1))
-                    ON CONFLICT(key) DO UPDATE SET value = MAX(0, value + ?1)`).bind(delta),
-    bumpStatement(env, `up:${user.id}`, DAY),
-    bumpStatement(env, 'up:all', DAY),
+    ).bind(user.id, id, city, spot, w, h, takenAt, createdAt, size, type),
   ]);
   return done();
 }

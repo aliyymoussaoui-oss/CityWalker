@@ -99,8 +99,11 @@ met à jour tout seul à partir de deux secrets.
   plutôt qu'une facture.
 - Suppression de compte en libre-service.
 - Testé pour de vrai : le serveur tourne en local dans le moteur de Cloudflare
-  (59 vérifications), de vrais navigateurs s'y synchronisent (25), et le script
-  de déploiement est joué face à une imitation de l'API Cloudflare (21).
+  (70 vérifications, dont des attaques en parallèle sur les limites et les
+  quotas), de vrais navigateurs s'y synchronisent (31), et le script de
+  déploiement est joué face à une imitation de l'API Cloudflare (27).
+- Une revue adversariale a trouvé dix défauts, tous reproduits puis corrigés,
+  chacun couvert par un test qui échouait avant la correction.
 
 ## v2 — application mobile
 

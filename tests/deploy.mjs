@@ -51,10 +51,14 @@ function fakeCloudflare(s) {
         return send(200, ok({ uuid: s.db, name: JSON.parse(body).name }));
       }
       if (rest === '/r2/buckets/citywalker-photos' && req.method === 'GET') {
+        if (s.r2GetFails) return send(500, ko(10001, 'Internal error'));
+        if (!s.r2Enabled) return send(403, ko(10042, 'Please enable R2 through the Cloudflare Dashboard.'));
         return s.bucket ? send(200, ok({ name: 'citywalker-photos' })) : send(404, ko(10006, 'The specified bucket does not exist.'));
       }
       if (rest === '/r2/buckets' && req.method === 'POST') {
+        if (s.r2PostFails) return send(500, ko(10001, 'Internal error'));
         if (!s.r2Enabled) return send(403, ko(10042, 'Please enable R2 through the Cloudflare Dashboard.'));
+        if (s.bucket) return send(409, ko(10004, 'The bucket you tried to create already exists, and you own it.'));
         s.bucket = true;
         return send(200, ok({ name: JSON.parse(body).name }));
       }
@@ -108,6 +112,7 @@ console.log('\n— Sans secrets —');
 await scenario('Jeton refusé', {}, { CLOUDFLARE_API_TOKEN: 'mauvais' }, (r) => {
   check('le déploiement s’arrête', r.code !== 0);
   check('avec un message qui dit quoi corriger', /jeton Cloudflare.*refusé/.test(r.log), r.log.slice(-400));
+  check('et la raison donnée par Cloudflare', /10000: Authentication error/.test(r.log), r.log.slice(-400));
   check('sans publier d’URL', !/url=http/.test(r.output));
 });
 
@@ -131,9 +136,20 @@ await scenario('Redéploiement : tout existe déjà', { r2Enabled: true, db: 'de
 
 await scenario('R2 non activé (pas de moyen de paiement)', { r2Enabled: false, sub: 'maison' }, {}, (r) => {
   check('le déploiement réussit quand même', r.code === 0, r.log.slice(-600));
-  check('un avertissement explique comment activer R2', /R2 indisponible.*Purchase R2 Plan/.test(r.log));
+  check('un avertissement explique comment activer R2', /R2 n'est pas activé.*Purchase R2 Plan/.test(r.log), r.log.slice(-500));
   check('le serveur part sans stockage de photos', !r.toml.includes('r2_buckets'));
   check('une URL est publiée : comptes et progression marchent', /^url=https:\/\/citywalker-api\.maison\.workers\.dev$/.test(r.output.trim()));
+});
+
+await scenario('R2 en service, lecture en échec passager', { r2Enabled: true, bucket: true, sub: 'maison', db: 'deja-la', r2GetFails: true }, {}, (r) => {
+  check('le déploiement réussit', r.code === 0, r.log.slice(-600));
+  check('le stockage des photos est conservé (« existe déjà, et c’est le tien »)', /\[\[r2_buckets\]\]/.test(r.toml));
+});
+
+await scenario('R2 injoignable (panne Cloudflare)', { r2Enabled: true, bucket: true, sub: 'maison', db: 'deja-la', r2GetFails: true, r2PostFails: true }, {}, (r) => {
+  check('le déploiement s’arrête au lieu de retirer les photos', r.code !== 0);
+  check('rien n’est publié', !/url=http/.test(r.output));
+  check('le message donne la raison', /Stockage R2 inaccessible : 10001: Internal error/.test(r.log), r.log.slice(-500));
 });
 
 rmSync(GENERATED, { force: true });

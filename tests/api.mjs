@@ -66,7 +66,7 @@ async function deriveKey(email, password) {
 const RECOVERY = 'ABCDE-FGHJK-MNPQR-STVWX-YZ012';
 
 async function main() {
-  const srv = await startServer({ port: 8790, vars: { SIGNUPS_PER_IP: 6, LOGIN_FAILURES_PER_ACCOUNT_IP: 3, MAX_USER_BYTES: 11000, UPLOADS_PER_USER_PER_DAY: 50 } });
+  const srv = await startServer({ port: 8790, vars: { SIGNUPS_PER_IP: 6, LOGIN_ATTEMPTS_PER_ACCOUNT_IP: 3, MAX_USER_BYTES: 11000, UPLOADS_PER_USER_PER_DAY: 50 } });
   const B = srv.base;
   const call = async (method, path, { token, body, raw, type } = {}) => {
     const headers = {};
@@ -200,7 +200,11 @@ async function main() {
     r = await call('POST', '/v1/auth/login', { body: { email: 'souad@example.test', key: newKey } });
     check('le nouveau, si', r.status === 200);
     r = await call('PUT', '/v1/account/recovery', { token: tokenA3, body: { recovery: '22222-33333-44444-55555-66666' } });
-    check('une nouvelle clé de secours peut être générée', r.status === 200);
+    check('changer la clé de secours sans mot de passe est refusé (un jeton volé ne suffit pas)', r.status === 400);
+    r = await call('PUT', '/v1/account/recovery', { token: tokenA3, body: { recovery: '22222-33333-44444-55555-66666', key } });
+    check('avec un mauvais mot de passe aussi', r.status === 401);
+    r = await call('PUT', '/v1/account/recovery', { token: tokenA3, body: { recovery: '22222-33333-44444-55555-66666', key: newKey } });
+    check('avec le bon, une nouvelle clé de secours est posée', r.status === 200);
     r = await call('POST', '/v1/auth/recover', { body: { email: 'souad@example.test', recovery: RECOVERY, key: newKey } });
     check('l’ancienne clé de secours ne vaut plus rien', r.status === 401);
 
@@ -228,6 +232,61 @@ async function main() {
     check('aucune erreur inattendue dans le journal du serveur', !/Erreur inattendue|Uncaught|✘ \[ERROR\]/.test(srv.log()), srv.log().split('\n').filter((l) => /ERROR|Erreur/.test(l)).join(' | '));
   } finally {
     await srv.stop();
+  }
+
+  console.log('\n— En parallèle : les limites tiennent —');
+  const jpeg = readFileSync(join(ROOT, 'tests', 'fixtures', 'comedie-1.jpg'));
+  const fake = (n) => { const b = Buffer.alloc(n, 0x41); b[0] = 0xff; b[1] = 0xd8; b[2] = 0xff; return b; };
+  const race = await startServer({ port: 8797, vars: {
+    LOGIN_ATTEMPTS_PER_ACCOUNT_IP: 3, SIGNUPS_PER_IP: 3, MAX_CITIES: 3,
+    MAX_USER_BYTES: 3 * jpeg.length, MAX_TOTAL_BYTES: 100000000,
+  } });
+  try {
+    const R = race.base;
+    const post = (path, body, token) => fetch(R + path, { method: 'POST', headers: token ? { authorization: `Bearer ${token}` } : {}, body: JSON.stringify(body) });
+    const kR = await deriveKey('race@example.test', 'motdepasse123');
+    const su = await (await post('/v1/auth/signup', { email: 'race@example.test', key: kR, recovery: RECOVERY })).json();
+    const T = su.token;
+    const bad = await deriveKey('race@example.test', 'pas-le-bon');
+    const logins = await Promise.all(Array.from({ length: 30 }, () => post('/v1/auth/login', { email: 'race@example.test', key: bad })));
+    const tried = logins.filter((x) => x.status === 401).length;
+    check('30 essais simultanés : au plus 3 mots de passe examinés', tried <= 3, `${tried} examinés`);
+
+    const signups = await Promise.all(Array.from({ length: 20 }, (_, i) => post('/v1/auth/signup', { email: `burst${i}@example.test`, key: kR, recovery: RECOVERY })));
+    const made = signups.filter((x) => x.status === 201).length;
+    check('20 inscriptions simultanées : le plafond par IP tient (3 au total)', made <= 2, `${made} créées en plus de la première`);
+
+    const auth = { authorization: `Bearer ${T}` };
+    const cities = await Promise.all(Array.from({ length: 20 }, (_, i) => fetch(`${R}/v1/progress/c${i}`, { method: 'PUT', headers: auth, body: JSON.stringify({ data: { spots: {} } }) })));
+    const kept = cities.filter((x) => x.status === 200).length;
+    check('20 villes simultanées : 3 au plus', kept === 3, `${kept} acceptées`);
+
+    const ups = await Promise.all(Array.from({ length: 10 }, (_, i) => fetch(`${R}/v1/photos/par${i}?city=paris&spot=x`, { method: 'PUT', headers: auth, body: jpeg })));
+    const stored = ups.filter((x) => x.status === 200).length;
+    const me1 = await (await fetch(`${R}/v1/me`, { headers: auth })).json();
+    const list1 = await (await fetch(`${R}/v1/photos`, { headers: auth })).json();
+    const sum1 = list1.photos.reduce((a, p) => a + p.size, 0);
+    check('10 envois simultanés : le quota du compte tient', stored === 3 && me1.bytes <= me1.maxBytes, `${stored} acceptés, ${me1.bytes}/${me1.maxBytes}`);
+    check('et le compteur égale ce qui est réellement stocké', me1.bytes === sum1, `${me1.bytes} ≠ ${sum1}`);
+
+    // Remplacements concurrents d'une même photo : le compteur ne doit pas dériver.
+    const big = await fetch(`${R}/v1/photos/par0?city=paris&spot=x`, { method: 'PUT', headers: auth, body: fake(4000) });
+    check('une photo peut être remplacée par une plus petite, même compte plein', big.status === 200, String(big.status));
+    const reps = await Promise.all(Array.from({ length: 8 }, (_, i) => fetch(`${R}/v1/photos/par0?city=paris&spot=x`, { method: 'PUT', headers: auth, body: fake(10 + i) })));
+    const me2 = await (await fetch(`${R}/v1/me`, { headers: auth })).json();
+    const list2 = await (await fetch(`${R}/v1/photos`, { headers: auth })).json();
+    const sum2 = list2.photos.reduce((a, p) => a + p.size, 0);
+    check('8 remplacements simultanés : le compteur reste exact', reps.every((x) => x.status === 200) && me2.bytes === sum2 && me2.bytes < 13200,
+      `${reps.map((x) => x.status)} — compteur ${me2.bytes}, stocké ${sum2}`);
+
+    const old = await fetch(`${R}/v1/photos/scan1965?city=paris&spot=x&createdAt=-157766400000`, { method: 'PUT', headers: auth, body: fake(50) });
+    const list3 = await (await fetch(`${R}/v1/photos`, { headers: auth })).json();
+    check('une photo datée de 1965 est acceptée', old.status === 200 && list3.photos.some((p) => p.id === 'scan1965' && p.createdAt === -157766400000));
+
+    const del = await fetch(`${R}/v1/account`, { method: 'DELETE', headers: auth, body: JSON.stringify({ key: kR }) });
+    check('la suppression d’un compte rempli fonctionne', del.status === 200);
+  } finally {
+    await race.stop();
   }
 
   console.log('\n— Sans R2 (stockage photo non activé) —');

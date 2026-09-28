@@ -915,8 +915,12 @@
       btn.disabled = true;
       btn.textContent = label;
       try { return await fn(); }
-      catch (err) { CW.toast((err && err.message) || 'Échec.', 'error', 6000); return null; }
-      finally { btn.disabled = false; btn.textContent = before; }
+      catch (err) {
+        CW.toast((err && err.message) || 'Échec.', 'error', 6000);
+        // Session révoquée ailleurs : retour au formulaire, pas de boutons morts.
+        if (err && err.code === 'unauthorized') setTimeout(render, 0);
+        return null;
+      } finally { btn.disabled = false; btn.textContent = before; }
     }
 
     function render() {
@@ -1073,10 +1077,21 @@
       const danger = el('div', { class: 'account-danger' });
       danger.appendChild(el('div', { class: 'modal-actions' }, [
         el('button', {
-          type: 'button', class: 'btn btn-small btn-ghost', onclick: async (ev) => {
-            if (!confirm('Créer une nouvelle clé de secours ? L’ancienne ne fonctionnera plus.')) return;
-            const code = await busy(ev.currentTarget, 'Création…', () => CW.cloud.renewRecovery());
-            if (code) { freshRecovery = code; render(); }
+          type: 'button', class: 'btn btn-small btn-ghost', onclick: () => {
+            CW.clear(danger);
+            const pass = el('input', { type: 'password', placeholder: 'Ton mot de passe', autocomplete: 'current-password' });
+            danger.appendChild(el('p', { class: 'hint' }, 'Une nouvelle clé de secours remplace l’ancienne, qui cessera de fonctionner. Le mot de passe est redemandé.'));
+            danger.appendChild(field('Mot de passe', pass));
+            danger.appendChild(el('div', { class: 'modal-actions' }, [
+              el('button', {
+                type: 'button', class: 'btn btn-primary', onclick: async (ev) => {
+                  if (!pass.value) { CW.toast('Mot de passe requis.', 'error'); return; }
+                  const code = await busy(ev.currentTarget, 'Création…', () => CW.cloud.renewRecovery(pass.value));
+                  if (code) { freshRecovery = code; render(); }
+                },
+              }, 'Créer la nouvelle clé'),
+              el('button', { type: 'button', class: 'btn', onclick: () => render() }, 'Annuler'),
+            ]));
           },
         }, 'Nouvelle clé de secours'),
         el('button', {

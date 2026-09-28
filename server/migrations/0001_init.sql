@@ -57,3 +57,7 @@ CREATE TABLE usage (
   key   TEXT PRIMARY KEY,
   value INTEGER NOT NULL
 );
+
+-- La ligne existe dès le départ : les réservations d'espace sont de simples
+-- UPDATE conditionnels, atomiques.
+INSERT INTO usage (key, value) VALUES ('bytes', 0);
